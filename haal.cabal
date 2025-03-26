@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Automaton
       Model
   other-modules:
       Paths_haal
