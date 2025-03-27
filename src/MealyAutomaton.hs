@@ -9,12 +9,15 @@ module MealyAutomaton
     mealyStep,
     mealyWalk,
     mealyStateTransitions,
+    mealyReset,
   )
 where
 
+import qualified Automaton
 import Data.Data
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Model
 
 data MealyAutomaton input output state = MealyAutomaton
   { transitions :: Map.Map (state, input) (state, output),
@@ -58,7 +61,7 @@ mkMealyAutomaton transitions state =
         else Error UnusedInputSymbol
 
 -- | Step the Mealy Automaton with an input symbol.
-mealyStep :: (Ord s, Ord i) => MealyAutomaton i o s -> i -> (MealyAutomaton i o s, o)
+mealyStep :: (Ord i, Ord s) => MealyAutomaton i o s -> i -> (MealyAutomaton i o s, o)
 mealyStep before input = (MealyAutomaton {transitions = edges, current = nextState}, output)
   where
     edges = transitions before
@@ -67,7 +70,6 @@ mealyStep before input = (MealyAutomaton {transitions = edges, current = nextSta
       Just (nextState, output) -> (nextState, output)
       Nothing -> error "A transition for some state was not found."
 
--- | Walk the Mealy Automaton with a list of input symbols.
 mealyWalk :: (Ord i, Ord s) => MealyAutomaton i o s -> [i] -> (MealyAutomaton i o s, [o])
 mealyWalk before inputs = (MealyAutomaton {transitions = edges, current = nextState}, outputs)
   where
@@ -81,3 +83,18 @@ mealyWalk before inputs = (MealyAutomaton {transitions = edges, current = nextSt
 mealyStateTransitions :: (Eq s) => MealyAutomaton i o s -> s -> Map.Map (s, i) (s, o)
 mealyStateTransitions mo st = Map.filterWithKey (\k _ -> fst k == st) $ transitions mo
 
+mealyReset :: forall i o s. (Bounded s) => MealyAutomaton i o s -> MealyAutomaton i o s
+mealyReset MealyAutomaton {transitions = transitions, current = _} =
+  MealyAutomaton {transitions = transitions, current = minBound :: s}
+
+instance Model.Model MealyAutomaton where
+  step = mealyStep
+  walk = mealyWalk
+  current = current
+  reset = mealyReset
+
+instance Automaton.Automaton MealyAutomaton where
+  step = mealyStep
+  walk = mealyWalk
+  current = current
+  transitions = transitions
