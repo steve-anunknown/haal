@@ -13,11 +13,10 @@ module MealyAutomaton
   )
 where
 
-import qualified Automaton
 import Data.Data
 import qualified Data.List as List
 import qualified Data.Map as Map
-import qualified Model
+import qualified BlackBox
 
 data MealyAutomaton input output state = MealyAutomaton
   { transitions :: Map.Map (state, input) (state, output),
@@ -87,14 +86,13 @@ mealyReset :: forall i o s. (Bounded s) => MealyAutomaton i o s -> MealyAutomato
 mealyReset MealyAutomaton {transitions = transitions, current = _} =
   MealyAutomaton {transitions = transitions, current = minBound :: s}
 
-instance Model.Model MealyAutomaton where
+instance BlackBox.BlackBox MealyAutomaton where
   step = mealyStep
   walk = mealyWalk
   current = current
-  reset = mealyReset
 
-instance Automaton.Automaton MealyAutomaton where
-  step = mealyStep
-  walk = mealyWalk
-  current = current
+instance BlackBox.Automaton MealyAutomaton where
   transitions = transitions
+
+instance BlackBox.SUL MealyAutomaton where
+  reset = mealyReset
