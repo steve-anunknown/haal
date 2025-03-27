@@ -25,8 +25,7 @@ source-repository head
 
 library
   exposed-modules:
-      Automaton
-      Model
+      MealyAutomaton
   other-modules:
       Paths_haal
   autogen-modules:
