@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       BlackBox
+      DFA
       MealyAutomaton
   other-modules:
       Paths_haal
