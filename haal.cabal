@@ -26,8 +26,7 @@ source-repository head
 library
   exposed-modules:
       BlackBox
-      DFA
-      MealyAutomaton
+      MealyAutomatonFormal
   other-modules:
       Paths_haal
   autogen-modules:
