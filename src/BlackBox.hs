@@ -5,6 +5,7 @@ module BlackBox
   )
 where
 
+import qualified Data.Data as Data
 import qualified Data.Map as Map
 
 class BlackBox a where
@@ -13,7 +14,7 @@ class BlackBox a where
   current :: a i o s -> s
 
 class (BlackBox a) => Automaton a where
-  transitions :: a i o s -> Map.Map (s, i) (s, o)
+  transitions :: (Data.Data s, Data.Data i, Ord s, Ord i) => a i o s -> Map.Map (s, i) (s, o)
 
 class (BlackBox a) => SUL a where
   reset :: (Bounded s) => a i o s -> a i o s
