@@ -8,6 +8,7 @@ module MealyAutomaton (
     mealyStep,
     mealyWalk,
     mealyReset,
+    mealyDistinguishingSequence,
 )
 where
 
@@ -15,6 +16,7 @@ import qualified BlackBox
 import qualified Data.Data as Data
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 {- | The 'MealyAutomaton' data type is parameterised by the 'input', 'output' and 'state' types
  which play the role of the input alphabet, output alphabet and set of states respectively.
@@ -106,10 +108,47 @@ mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- doma
     domainS = List.map Data.fromConstr constructorsS
     domainI = List.map Data.fromConstr constructorsI
 
+mealyAlphabet ::
+    forall i o s.
+    (Ord i, Data.Data i) =>
+    MealyAutomaton i o s ->
+    Set.Set i
+mealyAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)) :: [i])
+
+mealyCharacterizingSet :: MealyAutomaton i o s -> Set.Set [i]
+mealyCharacterizingSet m = undefined
+
+mealyDistinguishingSequence ::
+    forall i o s.
+    (Ord i, Data.Data i, Ord s, Ord o) =>
+    MealyAutomaton i o s ->
+    s ->
+    s ->
+    [i]
+mealyDistinguishingSequence _ s1 s2 | s1 == s2 = []
+mealyDistinguishingSequence m s1 s2 = explore [(model1, model2, [])]
+  where
+    model1 = mealyUpdateState m s1
+    model2 = mealyUpdateState m s2
+    alphabet = Set.toList (mealyAlphabet m)
+
+    explore :: [(MealyAutomaton i o s, MealyAutomaton i o s, [i])] -> [i]
+    explore [] = []
+    explore (x : xs) = result
+      where
+        (m1, m2, prefix) = x
+        (models1, outputs1) = List.unzip $ List.map (mealyStep m1) alphabet
+        (models2, outputs2) = List.unzip $ List.map (mealyStep m2) alphabet
+        discrepancy = List.elemIndex False $ List.zipWith (/=) outputs1 outputs2
+        result = case discrepancy of
+            Just index -> List.reverse (alphabet !! index : prefix)
+            Nothing -> explore (xs ++ List.zip3 models1 models2 [i : prefix | i <- alphabet])
+
 instance BlackBox.BlackBox MealyAutomaton where
     step = mealyStep
     walk = mealyWalk
     current = mealyCurrentS
+    alphabet = mealyAlphabet
 
 instance BlackBox.Automaton MealyAutomaton where
     transitions = mealyTransitions
