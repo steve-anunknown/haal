@@ -26,7 +26,10 @@ source-repository head
 library
   exposed-modules:
       BlackBox
+      DFA
+      Learning
       MealyAutomaton
+      MooreAutomaton
   other-modules:
       Paths_haal
   autogen-modules:
