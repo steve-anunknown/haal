@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Mealy automaton.
@@ -9,6 +8,9 @@ module MealyAutomaton (
     mealyStep,
     mealyWalk,
     mealyReset,
+    mealyTransitions,
+    mealyStates,
+    mealyAlphabet,
     mealyDistinguishingSequence,
     mealyGlobalCharacterizingSet,
     mealyLocalCharacterizingSet,
@@ -31,8 +33,7 @@ import qualified Data.Set as Set
 -}
 data MealyAutomaton input output state = MealyAutomaton
     { mealyDelta :: state -> input -> state
-    , mealyLambda :: state -> input -> output
-    , mealyInitialS :: state
+    , mealyLambda :: state -> input -> output , mealyInitialS :: state
     , mealyCurrentS :: state
     }
 
