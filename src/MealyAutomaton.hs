@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Mealy automaton.
@@ -9,10 +10,13 @@ module MealyAutomaton (
     mealyWalk,
     mealyReset,
     mealyDistinguishingSequence,
+    mealyGlobalCharacterizingSet,
+    mealyLocalCharacterizingSet,
 )
 where
 
 import qualified BlackBox
+import qualified Data.Bifunctor as Bif
 import qualified Data.Data as Data
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -115,43 +119,72 @@ mealyAlphabet ::
     Set.Set i
 mealyAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)) :: [i])
 
-mealyCharacterizingSet :: MealyAutomaton i o s -> Set.Set [i]
-mealyCharacterizingSet m = undefined
+mealyStates ::
+    forall i o s.
+    (Ord s, Data.Data s) =>
+    MealyAutomaton i o s ->
+    Set.Set s
+mealyStates _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: s)) :: [s])
+
+mealyGlobalCharacterizingSet ::
+    (Ord i, Data.Data i, Ord s, Data.Data s, Eq o) =>
+    MealyAutomaton i o s ->
+    Set.Set [i]
+mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states, s2 <- states, s1 < s2]
+  where
+    states = Set.toList $ mealyStates m
+    distinguish = mealyDistinguishingSequence m
+
+mealyLocalCharacterizingSet ::
+    (Ord i, Data.Data i, Ord s, Data.Data s, Eq o) =>
+    MealyAutomaton i o s ->
+    s ->
+    Set.Set [i]
+mealyLocalCharacterizingSet m s = Set.fromList [distinguish s sx | sx <- states, s /= sx]
+  where
+    states = Set.toList $ mealyStates m
+    distinguish = mealyDistinguishingSequence m
 
 mealyDistinguishingSequence ::
     forall i o s.
-    (Ord i, Data.Data i, Ord s, Ord o) =>
+    (Ord i, Data.Data i, Ord s, Eq o) =>
     MealyAutomaton i o s ->
     s ->
     s ->
     [i]
 mealyDistinguishingSequence _ s1 s2 | s1 == s2 = []
-mealyDistinguishingSequence m s1 s2 = explore [(model1, model2, [])]
+mealyDistinguishingSequence m s1 s2 = explore Map.empty [(s1, s2, [])]
   where
-    model1 = mealyUpdateState m s1
-    model2 = mealyUpdateState m s2
     alphabet = Set.toList (mealyAlphabet m)
 
-    explore :: [(MealyAutomaton i o s, MealyAutomaton i o s, [i])] -> [i]
-    explore [] = []
-    explore (x : xs) = result
+    explore _ [] = []
+    explore visited ((q1, q2, prefix) : queue)
+        | Just seqFound <- discrepancy = reverse (seqFound : prefix)
+        | otherwise = explore newVisited (queue ++ newQueue)
       where
-        (m1, m2, prefix) = x
-        (models1, outputs1) = List.unzip $ List.map (mealyStep m1) alphabet
-        (models2, outputs2) = List.unzip $ List.map (mealyStep m2) alphabet
-        discrepancy = List.elemIndex False $ List.zipWith (/=) outputs1 outputs2
-        result = case discrepancy of
-            Just index -> List.reverse (alphabet !! index : prefix)
-            Nothing -> explore (xs ++ List.zip3 models1 models2 [i : prefix | i <- alphabet])
+        newVisited = Map.insert (q1, q2) prefix visited
+
+        (nextStates1, outputs1) = List.unzip $ List.map (mealyStepPair m q1) alphabet
+        (nextStates2, outputs2) = List.unzip $ List.map (mealyStepPair m q2) alphabet
+
+        discrepancy = List.elemIndex False (List.zipWith (==) outputs1 outputs2) >>= \idx -> Just (alphabet !! idx)
+
+        toBeVisited = Map.fromList [((s1', s2'), i : prefix) | (s1', s2', i) <- zip3 nextStates1 nextStates2 alphabet]
+        newQueue = [(s1', s2', p) | ((s1', s2'), p) <- Map.toList toBeVisited, (s1', s2') `Map.notMember` visited]
+
+    mealyStepPair mo state i = Bif.first mealyCurrentS (mealyStep (mealyUpdateState mo state) i)
 
 instance BlackBox.BlackBox MealyAutomaton where
     step = mealyStep
     walk = mealyWalk
-    current = mealyCurrentS
     alphabet = mealyAlphabet
 
 instance BlackBox.Automaton MealyAutomaton where
+    current = mealyCurrentS
     transitions = mealyTransitions
+    states = mealyStates
+    localCharacterizingSet = mealyLocalCharacterizingSet
+    globalCharacterizingSet = mealyGlobalCharacterizingSet
 
 instance BlackBox.SUL MealyAutomaton where
     reset = mealyReset
