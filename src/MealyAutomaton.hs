@@ -10,7 +10,8 @@ module MealyAutomaton (
     mealyReset,
     mealyTransitions,
     mealyStates,
-    mealyAlphabet,
+    mealyInAlphabet,
+    mealyOutAlphabet,
     mealyDistinguishingSequence,
     mealyGlobalCharacterizingSet,
     mealyLocalCharacterizingSet,
@@ -19,10 +20,12 @@ where
 
 import qualified BlackBox
 import qualified Data.Bifunctor as Bif
-import qualified Data.Data as Data
+import Data.Data (Data (dataTypeOf), dataTypeConstrs, fromConstr)
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Data.Maybe
 import qualified Data.Set as Set
+import Test.QuickCheck (Arbitrary (arbitrary), Gen, choose, vectorOf)
 
 {- | The 'MealyAutomaton' data type is parameterised by the 'input', 'output' and 'state' types
  which play the role of the input alphabet, output alphabet and set of states respectively.
@@ -33,7 +36,8 @@ import qualified Data.Set as Set
 -}
 data MealyAutomaton input output state = MealyAutomaton
     { mealyDelta :: state -> input -> state
-    , mealyLambda :: state -> input -> output , mealyInitialS :: state
+    , mealyLambda :: state -> input -> output
+    , mealyInitialS :: state
     , mealyCurrentS :: state
     }
 
@@ -101,34 +105,41 @@ and 'mealyLambda' functions.
 -}
 mealyTransitions ::
     forall i o s.
-    (Data.Data s, Data.Data i, Ord s, Ord i) =>
+    (Data s, Data i, Ord s, Ord i) =>
     MealyAutomaton i o s ->
     Map.Map (s, i) (s, o)
 mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- domainS, i <- domainI]
   where
     delta = mealyDelta m
     lambda = mealyLambda m
-    constructorsS = Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: s)
-    constructorsI = Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)
-    domainS = List.map Data.fromConstr constructorsS
-    domainI = List.map Data.fromConstr constructorsI
+    constructorsS = dataTypeConstrs $ dataTypeOf (undefined :: s)
+    constructorsI = dataTypeConstrs $ dataTypeOf (undefined :: i)
+    domainS = List.map fromConstr constructorsS
+    domainI = List.map fromConstr constructorsI
 
-mealyAlphabet ::
+mealyInAlphabet ::
     forall i o s.
-    (Ord i, Data.Data i) =>
+    (Ord i, Data i) =>
     MealyAutomaton i o s ->
     Set.Set i
-mealyAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)) :: [i])
+mealyInAlphabet _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i])
+
+mealyOutAlphabet ::
+    forall i o s.
+    (Ord o, Data o) =>
+    MealyAutomaton i o s ->
+    Set.Set o
+mealyOutAlphabet _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: o)) :: [o])
 
 mealyStates ::
     forall i o s.
-    (Ord s, Data.Data s) =>
+    (Ord s, Data s) =>
     MealyAutomaton i o s ->
     Set.Set s
-mealyStates _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: s)) :: [s])
+mealyStates _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: s)) :: [s])
 
 mealyGlobalCharacterizingSet ::
-    (Ord i, Data.Data i, Ord s, Data.Data s, Eq o) =>
+    (Ord i, Data i, Ord s, Data s, Eq o) =>
     MealyAutomaton i o s ->
     Set.Set [i]
 mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states, s2 <- states, s1 < s2]
@@ -137,7 +148,7 @@ mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states,
     distinguish = mealyDistinguishingSequence m
 
 mealyLocalCharacterizingSet ::
-    (Ord i, Data.Data i, Ord s, Data.Data s, Eq o) =>
+    (Ord i, Data i, Ord s, Data s, Eq o) =>
     MealyAutomaton i o s ->
     s ->
     Set.Set [i]
@@ -148,7 +159,7 @@ mealyLocalCharacterizingSet m s = Set.fromList [distinguish s sx | sx <- states,
 
 mealyDistinguishingSequence ::
     forall i o s.
-    (Ord i, Data.Data i, Ord s, Eq o) =>
+    (Ord i, Data i, Ord s, Eq o) =>
     MealyAutomaton i o s ->
     s ->
     s ->
@@ -156,7 +167,7 @@ mealyDistinguishingSequence ::
 mealyDistinguishingSequence _ s1 s2 | s1 == s2 = []
 mealyDistinguishingSequence m s1 s2 = explore Map.empty [(s1, s2, [])]
   where
-    alphabet = Set.toList (mealyAlphabet m)
+    alphabet = Set.toList (mealyInAlphabet m)
 
     explore _ [] = []
     explore visited ((q1, q2, prefix) : queue)
@@ -178,7 +189,7 @@ mealyDistinguishingSequence m s1 s2 = explore Map.empty [(s1, s2, [])]
 instance BlackBox.BlackBox MealyAutomaton where
     step = mealyStep
     walk = mealyWalk
-    alphabet = mealyAlphabet
+    alphabet = mealyInAlphabet
 
 instance BlackBox.Automaton MealyAutomaton where
     current = mealyCurrentS
@@ -189,3 +200,81 @@ instance BlackBox.Automaton MealyAutomaton where
 
 instance BlackBox.SUL MealyAutomaton where
     reset = mealyReset
+
+instance
+    ( Show i
+    , Show o
+    , Show s
+    , Data s
+    , Data i
+    , Ord s
+    , Ord i
+    ) =>
+    Show (MealyAutomaton i o s)
+    where
+    show m =
+        "{\n\tTransitions: "
+            ++ show transitions
+            ++ ",\n\tCurrent State: "
+            ++ show current
+            ++ ",\n\tInitial State: "
+            ++ show initial
+            ++ "\n}"
+      where
+        transitions = mealyTransitions m
+        initial = mealyInitialS m
+        current = mealyCurrentS m
+
+instance
+    ( Arbitrary i
+    , Arbitrary o
+    , Arbitrary s
+    , Ord s
+    , Ord i
+    , Ord o
+    , Data s
+    , Data i
+    , Data o
+    ) =>
+    Arbitrary (MealyAutomaton i o s)
+    where
+    arbitrary = do
+        delta <- generateDelta
+        lambda <- generateLambda
+
+        initialState <- arbitrary
+        currentState <- arbitrary
+
+        return
+            MealyAutomaton
+                { mealyDelta = delta
+                , mealyLambda = lambda
+                , mealyInitialS = initialState
+                , mealyCurrentS = currentState
+                }
+      where
+        generateDelta :: Gen (s -> i -> s)
+        generateDelta = do
+            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton i o s)
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton i o s)
+                complete = [(st, inp) | st <- states, inp <- inputs]
+                (numS, numI) = Bif.bimap List.length List.length (states, inputs)
+            matching <- vectorOf (numS * numI) (choose (0, numS - 1))
+            let stateOutputs = [states !! index | index <- matching]
+                stateMappings = Map.fromList $ List.zip complete stateOutputs
+            fallbackState <- arbitrary :: Gen s
+            return $ \s i -> Data.Maybe.fromMaybe fallbackState (Map.lookup (s, i) stateMappings)
+
+        generateLambda :: Gen (s -> i -> o)
+        generateLambda = do
+            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton i o s)
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton i o s)
+                outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton i o s)
+                complete = [(st, inp) | st <- states, inp <- inputs]
+                (numS, numI) = Bif.bimap List.length List.length (states, inputs)
+                numO = List.length outputs
+            matching <- vectorOf (numS * numI) (choose (0, numO - 1))
+            let outputOutputs = [outputs !! index | index <- matching]
+                outputMappings = Map.fromList $ List.zip complete outputOutputs
+            fallbackOutput <- arbitrary :: Gen o
+            return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
