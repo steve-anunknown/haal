@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module MealyAutomatonSpec (
     spec,
@@ -24,6 +25,65 @@ import MealyAutomaton (
  )
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, elements, property, vectorOf, (==>))
+
+newtype Mealy i o s = Mealy (MealyAutomaton i o s) deriving (Show)
+
+instance
+    ( Arbitrary i
+    , Arbitrary o
+    , Arbitrary s
+    , Ord s
+    , Ord i
+    , Ord o
+    , Data s
+    , Data i
+    , Data o
+    ) =>
+    Arbitrary (Mealy i o s)
+    where
+    arbitrary = do
+        delta <- generateDelta
+        lambda <- generateLambda
+
+        initialState <- arbitrary
+        currentState <- arbitrary
+
+        return
+            ( Mealy
+                ( MealyAutomaton
+                    { mealyDelta = delta
+                    , mealyLambda = lambda
+                    , mealyInitialS = initialState
+                    , mealyCurrentS = currentState
+                    }
+                )
+            )
+      where
+        generateDelta :: Gen (s -> i -> s)
+        generateDelta = do
+            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton i o s)
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton i o s)
+                complete = [(st, inp) | st <- states, inp <- inputs]
+                (numS, numI) = Bif.bimap List.length List.length (states, inputs)
+            matching <- vectorOf (numS * numI) (choose (0, numS - 1))
+            let stateOutputs = [states !! index | index <- matching]
+                stateMappings = Map.fromList $ List.zip complete stateOutputs
+            fallbackState <- arbitrary :: Gen s
+            return $ \s i -> Data.Maybe.fromMaybe fallbackState (Map.lookup (s, i) stateMappings)
+
+        generateLambda :: Gen (s -> i -> o)
+        generateLambda = do
+            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton i o s)
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton i o s)
+                outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton i o s)
+                complete = [(st, inp) | st <- states, inp <- inputs]
+                (numS, numI) = Bif.bimap List.length List.length (states, inputs)
+                numO = List.length outputs
+            matching <- vectorOf (numS * numI) (choose (0, numO - 1))
+            let outputOutputs = [outputs !! index | index <- matching]
+                outputMappings = Map.fromList $ List.zip complete outputOutputs
+            fallbackOutput <- arbitrary :: Gen o
+            return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
 
 data Input = A | B | C | D deriving (Show, Eq, Ord, Data)
 data Output = X | Y | Z | W deriving (Show, Eq, Ord, Data)
@@ -113,8 +173,8 @@ emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
                 ==> []
                 `Set.member` mealyGlobalCharacterizingSet automaton
 
-mappingEquivalentToFunctions :: MealyAutomaton Input Output State -> Bool
-mappingEquivalentToFunctions automaton =
+mappingEquivalentToFunctions :: Mealy Input Output State -> Bool
+mappingEquivalentToFunctions (Mealy automaton) =
     let transitions = mealyTransitions automaton
         alphabet = Set.toList $ mealyInAlphabet automaton
         states = Set.toList $ mealyStates automaton

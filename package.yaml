@@ -37,8 +37,6 @@ library:
   source-dirs: src
   dependencies:
     - containers
-    - QuickCheck 
-    - hspec
 
 executables:
   haal-exe:
