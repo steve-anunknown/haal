@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | This module tests the Mealy automaton implementation.
 module MealyAutomatonSpec (
     spec,
 )
@@ -23,9 +24,10 @@ import MealyAutomaton (
     mealyLambda,
     mealyOutAlphabet,
     mealyStates,
+    mealyStep,
     mealyTransitions,
     mealyUpdateState,
-    mealyWalk, mealyStep,
+    mealyWalk,
  )
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, elements, property, vectorOf, (==>))
@@ -221,6 +223,7 @@ findReachable automaton =
              in bfs newVisited newQueue
      in bfs (Set.singleton initialState) [initialState]
 
+-- The access sequences returned by 'mealyAccessSequences' cover all reachable states.
 prop_completeAccessSequences :: Mealy Input Output State -> Property
 prop_completeAccessSequences (Mealy automaton) = states == reachable ==> allin
   where
@@ -229,6 +232,7 @@ prop_completeAccessSequences (Mealy automaton) = states == reachable ==> allin
     reachable = findReachable automaton
     allin = all (`Map.member` seqs) reachable
 
+-- The access sequences returned by 'mealyAccessSequences' are the shortest
 prop_shortestAccessSequences :: Mealy Input Output State -> State -> State -> Property
 prop_shortestAccessSequences (Mealy automaton) s1 s2 =
     s1 `Set.member` reachable
@@ -268,12 +272,11 @@ spec = do
             property
                 prop_mappingEquivalentToFunctions
 
-    describe "MealyAutomaton.mealyAccessSequences" $
+    describe "MealyAutomaton.mealyAccessSequences" $ do
         it "returns a map from states to list of inputs that covers all reachable states" $
             property
                 prop_completeAccessSequences
 
-    describe "MealyAutomaton.mealyAccessSequences" $
         it "returns a map from reachable states to shortest list of inputs that access them" $
             property
                 prop_shortestAccessSequences
