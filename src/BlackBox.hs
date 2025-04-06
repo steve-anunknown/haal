@@ -19,7 +19,8 @@ and retrieve the current state.
 class BlackBox a where
     step :: (Ord i, Ord s) => a i o s -> i -> (a i o s, o)
     walk :: (Ord i, Ord s, Traversable t) => a i o s -> t i -> (a i o s, t o)
-    alphabet :: (Ord i, Data.Data i) => a i o s -> Set.Set i
+    inputs :: (Ord i, Data.Data i) => a i o s -> Set.Set i
+    outputs :: (Ord o, Data.Data o) => a i o s -> Set.Set o
 
 
 {- | The 'Automaton' type class extends the 'BlackBox' type class and adds a method
