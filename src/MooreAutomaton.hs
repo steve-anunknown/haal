@@ -5,7 +5,9 @@ module MooreAutomaton (
     mooreStep,
     mooreWalk,
     mooreTransitions,
-    mooreAlphabet,
+    mooreInAlphabet,
+    mooreOutAlphabet,
+    mooreStates,
 )
 where
 
@@ -82,8 +84,11 @@ mooreTransitions m = Map.fromList [((s, i), (delta s i, lambda s)) | s <- domain
     domainS = List.map Data.fromConstr constructorsS
     domainI = List.map Data.fromConstr constructorsI
 
-mooreAlphabet :: forall i o s. (Ord i, Data.Data i) => MooreAutomaton i o s -> Set.Set i
-mooreAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)) :: [i])
+mooreInAlphabet :: forall i o s. (Ord i, Data.Data i) => MooreAutomaton i o s -> Set.Set i
+mooreInAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)) :: [i])
+
+mooreOutAlphabet :: forall i o s. (Ord o, Data.Data o) => MooreAutomaton i o s -> Set.Set o
+mooreOutAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: o)) :: [o])
 
 mooreStates ::
     forall i o s.
@@ -95,13 +100,14 @@ mooreStates _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ D
 instance BlackBox.BlackBox MooreAutomaton where
     step = mooreStep
     walk = mooreWalk
-    alphabet = mooreAlphabet
+    inputs = mooreInAlphabet
+    outputs = mooreOutAlphabet
 
 instance BlackBox.Automaton MooreAutomaton where
     transitions = mooreTransitions
     current = mooreCurrentS
     states = mooreStates
-    localCharacterizingSet = error "TODO" 
+    localCharacterizingSet = error "TODO"
     globalCharacterizingSet = error "TODO"
 
 instance BlackBox.SUL MooreAutomaton where
