@@ -24,6 +24,9 @@ data MooreAutomaton input output state = MooreAutomaton
     , mooreCurrentS :: state
     }
 
+{- | The 'mkMooreAutomaton' constructor returns a 'MooreAutomaton' by requiring the 'mooreDelta'
+function, the 'mooreLambda' function and the initial state 'mooreInitialS'.
+-}
 mkMooreAutomaton :: (s -> i -> s) -> (s -> o) -> s -> MooreAutomaton i o s
 mkMooreAutomaton delta lambda initial =
     MooreAutomaton
@@ -84,17 +87,16 @@ mooreTransitions m = Map.fromList [((s, i), (delta s i, lambda s)) | s <- domain
     domainS = List.map Data.fromConstr constructorsS
     domainI = List.map Data.fromConstr constructorsI
 
+-- | Returns the input alphabet of the automaton.
 mooreInAlphabet :: forall i o s. (Ord i, Data.Data i) => MooreAutomaton i o s -> Set.Set i
 mooreInAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)) :: [i])
 
+-- | Returns the output alphabet of the automaton.
 mooreOutAlphabet :: forall i o s. (Ord o, Data.Data o) => MooreAutomaton i o s -> Set.Set o
 mooreOutAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: o)) :: [o])
 
-mooreStates ::
-    forall i o s.
-    (Ord s, Data.Data s) =>
-    MooreAutomaton i o s ->
-    Set.Set s
+-- | Returns a set of all values of the state alphabet of the automaton.
+mooreStates :: forall i o s. (Ord s, Data.Data s) => MooreAutomaton i o s -> Set.Set s
 mooreStates _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: s)) :: [s])
 
 instance BlackBox.BlackBox MooreAutomaton where
