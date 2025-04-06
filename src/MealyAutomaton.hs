@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Mealy automaton.
@@ -220,7 +219,7 @@ mealyAccessSequences m = explore [(initialState, [])] Set.empty (Map.singleton i
                     List.zip (List.map (mealyCurrentS . fst . mealyStep mo) alphabet) alphabet
                 )
         newMap = List.foldr (uncurry Map.insert) theMap nextStates
-        newVisited = List.foldr Set.insert visited (q:List.map fst nextStates)
+        newVisited = List.foldr Set.insert visited (q : List.map fst nextStates)
         newQueue = qs ++ nextStates
 
 instance BlackBox.BlackBox MealyAutomaton where
@@ -262,3 +261,16 @@ instance
         transitions = mealyTransitions m
         initial = mealyInitialS m
         current = mealyCurrentS m
+
+instance
+    ( Ord s
+    , Ord i
+    , Eq o
+    , Data s
+    , Data i
+    ) =>
+    Eq (MealyAutomaton i o s)
+    where
+    m1 == m2 =
+        mealyTransitions m1 == mealyTransitions m2
+            && mealyInitialS m1 == mealyInitialS m2
