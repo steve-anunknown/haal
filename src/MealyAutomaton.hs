@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Mealy automaton.
@@ -10,11 +11,13 @@ module MealyAutomaton (
     mealyReset,
     mealyTransitions,
     mealyStates,
+    mealyUpdateState,
     mealyInAlphabet,
     mealyOutAlphabet,
     mealyDistinguishingSequence,
     mealyGlobalCharacterizingSet,
     mealyLocalCharacterizingSet,
+    mealyAccessSequences,
 )
 where
 
@@ -115,6 +118,7 @@ mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- doma
     domainS = List.map fromConstr constructorsS
     domainI = List.map fromConstr constructorsI
 
+-- | Returns a set of all values of the input alphabet of the automaton.
 mealyInAlphabet ::
     forall i o s.
     (Ord i, Data i) =>
@@ -122,6 +126,7 @@ mealyInAlphabet ::
     Set.Set i
 mealyInAlphabet _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i])
 
+-- | Returns a set of all values of the output alphabet of the automaton.
 mealyOutAlphabet ::
     forall i o s.
     (Ord o, Data o) =>
@@ -129,6 +134,7 @@ mealyOutAlphabet ::
     Set.Set o
 mealyOutAlphabet _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: o)) :: [o])
 
+-- | Returns a set of all values of the states of the automaton.
 mealyStates ::
     forall i o s.
     (Ord s, Data s) =>
@@ -136,6 +142,9 @@ mealyStates ::
     Set.Set s
 mealyStates _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: s)) :: [s])
 
+{- | Returns a set of lists of inputs that can be used to distinguish between any two different states
+of the automaton.
+-}
 mealyGlobalCharacterizingSet ::
     (Ord i, Data i, Ord s, Data s, Eq o) =>
     MealyAutomaton i o s ->
@@ -145,6 +154,9 @@ mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states,
     states = Set.toList $ mealyStates m
     distinguish = mealyDistinguishingSequence m
 
+{- | Returns a set of lists of inputs that can be used to distinguish between the given state and
+ - any other state of the automaton.
+-}
 mealyLocalCharacterizingSet ::
     (Ord i, Data i, Ord s, Data s, Eq o) =>
     MealyAutomaton i o s ->
@@ -155,6 +167,7 @@ mealyLocalCharacterizingSet m s = Set.fromList [distinguish s sx | sx <- states,
     states = Set.toList $ mealyStates m
     distinguish = mealyDistinguishingSequence m
 
+-- | Returns a list of inputs that can be used to distinguish between the two given states of the automaton.
 mealyDistinguishingSequence ::
     forall i o s.
     (Ord i, Data i, Ord s, Eq o) =>
@@ -184,10 +197,37 @@ mealyDistinguishingSequence m s1 s2 = explore Map.empty [(s1, s2, [])]
 
     mealyStepPair mo state i = Bif.first mealyCurrentS (mealyStep (mealyUpdateState mo state) i)
 
+-- | Returns a map containing the shortest sequence to access a given state from the initial state.
+mealyAccessSequences ::
+    forall i o s.
+    (Ord i, Data i, Ord s) =>
+    MealyAutomaton i o s ->
+    Map.Map s [i]
+mealyAccessSequences m = explore [(initialState, [])] Set.empty (Map.singleton initialState [])
+  where
+    alphabet = Set.toList (mealyInAlphabet m)
+    initialState = mealyInitialS m
+
+    explore :: [(s, [i])] -> Set.Set s -> Map.Map s [i] -> Map.Map s [i]
+    explore [] _ theMap = Map.map List.reverse theMap
+    explore ((q, pre) : qs) visited theMap = explore newQueue newVisited newMap
+      where
+        mo = mealyUpdateState m q
+        nextStates =
+            List.map
+                (Bif.second (: pre))
+                ( List.filter ((`Set.notMember` visited) . fst) $
+                    List.zip (List.map (mealyCurrentS . fst . mealyStep mo) alphabet) alphabet
+                )
+        newMap = List.foldr (uncurry Map.insert) theMap nextStates
+        newVisited = List.foldr Set.insert visited (q:List.map fst nextStates)
+        newQueue = qs ++ nextStates
+
 instance BlackBox.BlackBox MealyAutomaton where
     step = mealyStep
     walk = mealyWalk
-    alphabet = mealyInAlphabet
+    inputs = mealyInAlphabet
+    outputs = mealyOutAlphabet
 
 instance BlackBox.Automaton MealyAutomaton where
     current = mealyCurrentS
