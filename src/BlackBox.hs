@@ -7,7 +7,7 @@ module BlackBox (
 )
 where
 
-import qualified Data.Data as Data
+import Data.Data (Data)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -17,17 +17,18 @@ and retrieve the current state.
 -}
 class SUL a where
     step :: (Ord i, Ord s) => a i o s -> i -> (a i o s, o)
-    walk :: (Ord i, Ord s, Traversable t) => a i o s -> t i -> (a i o s, t o)
+    walk :: (Ord i, Ord s) => a i o s -> [i] -> (a i o s, [o])
     reset :: (Bounded s) => a i o s -> a i o s
-    inputs :: (Ord i, Data.Data i) => a i o s -> Set.Set i
-    outputs :: (Ord o, Data.Data o) => a i o s -> Set.Set o
+    inputs :: (Ord i, Data i) => a i o s -> Set.Set i
+    outputs :: (Ord o, Data o) => a i o s -> Set.Set o
 
 {- | The 'Automaton' type class extends the 'SUL' type class and adds
 support for automata operations.
 -}
 class (SUL a) => Automaton a where
-    transitions :: (Data.Data s, Data.Data i, Ord s, Ord i) => a i o s -> Map.Map (s, i) (s, o)
-    states :: (Ord s, Data.Data s) => a i o s -> Set.Set s
+    transitions :: (Data s, Data i, Ord s, Ord i) => a i o s -> Map.Map (s, i) (s, o)
+    states :: (Ord s, Data s) => a i o s -> Set.Set s
     current :: a i o s -> s
-    localCharacterizingSet :: (Data.Data i, Data.Data s, Ord i, Ord s, Eq o) => a i o s -> s -> Set.Set [i]
-    globalCharacterizingSet :: (Data.Data i, Data.Data s, Ord i, Ord s, Eq o) => a i o s -> Set.Set [i]
+    accessSequences :: (Data i, Ord i, Ord s) => a i o s -> Map.Map s [i]
+    localCharacterizingSet :: (Data i, Data s, Ord i, Ord s, Eq o) => a i o s -> s -> Set.Set [i]
+    globalCharacterizingSet :: (Data i, Data s, Ord i, Ord s, Eq o) => a i o s -> Set.Set [i]
