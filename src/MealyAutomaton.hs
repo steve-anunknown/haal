@@ -222,9 +222,10 @@ mealyAccessSequences m = explore [(initialState, [])] Set.empty (Map.singleton i
         newVisited = List.foldr Set.insert visited (q : List.map fst nextStates)
         newQueue = qs ++ nextStates
 
-instance BlackBox.BlackBox MealyAutomaton where
+instance BlackBox.SUL MealyAutomaton where
     step = mealyStep
     walk = mealyWalk
+    reset = mealyReset
     inputs = mealyInAlphabet
     outputs = mealyOutAlphabet
 
@@ -234,9 +235,6 @@ instance BlackBox.Automaton MealyAutomaton where
     states = mealyStates
     localCharacterizingSet = mealyLocalCharacterizingSet
     globalCharacterizingSet = mealyGlobalCharacterizingSet
-
-instance BlackBox.SUL MealyAutomaton where
-    reset = mealyReset
 
 instance
     ( Show i
