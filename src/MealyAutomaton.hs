@@ -233,6 +233,7 @@ instance BlackBox.Automaton MealyAutomaton where
     current = mealyCurrentS
     transitions = mealyTransitions
     states = mealyStates
+    accessSequences = mealyAccessSequences
     localCharacterizingSet = mealyLocalCharacterizingSet
     globalCharacterizingSet = mealyGlobalCharacterizingSet
 

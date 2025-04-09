@@ -112,3 +112,4 @@ instance BlackBox.Automaton MooreAutomaton where
     states = mooreStates
     localCharacterizingSet = error "TODO"
     globalCharacterizingSet = error "TODO"
+    accessSequences = error "TODO"
