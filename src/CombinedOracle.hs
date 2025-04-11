@@ -13,5 +13,6 @@ instance
     ) =>
     EquivalenceOracle (CombinedOracle a b)
     where
+    testSuiteSize (CombinedOracle or1 or2) aut = testSuiteSize or1 aut + testSuiteSize or2 aut
     testSuite (CombinedOracle or1 or2) aut = testSuite or1 aut ++ testSuite or2 aut
     findCex (CombinedOracle or1 or2) aut sul = findCex or1 aut sul <|> findCex or2 aut sul

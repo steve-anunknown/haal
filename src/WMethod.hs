@@ -2,6 +2,7 @@ module WMethod (
     WMethod (..),
     wmethod,
     wmethodSuite,
+    wmethodSuiteSize,
 ) where
 
 import BlackBox (Automaton, SUL, accessSequences, globalCharacterizingSet, inputs, reset, step, walk)
@@ -9,9 +10,28 @@ import Control.Monad (replicateM)
 import Data.Data (Data)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import EquivalenceOracle (EquivalenceOracle, findCex, testSuite)
+import EquivalenceOracle (EquivalenceOracle(..))
 
-newtype WMethod = WMethod {depth :: Int} deriving(Show, Eq)
+newtype WMethod = WMethod {depth :: Int} deriving (Show, Eq)
+
+wmethodSuiteSize ::
+    ( Automaton aut
+    , Ord i
+    , Data i
+    , Ord s
+    , Data s
+    , Eq o
+    ) =>
+    WMethod ->
+    aut i o s ->
+    Int
+wmethodSuiteSize (WMethod{depth = d}) aut = size
+  where
+    alphabet = length (Set.toList $ inputs aut)
+    accessSeqs = length (Map.elems $ accessSequences aut)
+    characterizingSet = length (Set.toList $ globalCharacterizingSet aut)
+    transitionCover = accessSeqs * alphabet
+    size = sum [transitionCover * (alphabet ^ n) * characterizingSet | n <- [0 .. d]]
 
 wmethodSuite ::
     ( Automaton aut
@@ -67,5 +87,6 @@ wmethod (WMethod{depth = d}) aut sul = execute suite
         continue = pairwiseWalk (reset sul) (reset aut) s
 
 instance EquivalenceOracle WMethod where
+    testSuiteSize = wmethodSuiteSize
     testSuite = wmethodSuite
     findCex = wmethod
