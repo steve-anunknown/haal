@@ -27,9 +27,11 @@ library
   exposed-modules:
       BlackBox
       DFA
-      Learning
+      EquivalenceOracle
+      Experiment
       MealyAutomaton
       MooreAutomaton
+      WMethod
   other-modules:
       Paths_haal
   autogen-modules:
@@ -61,6 +63,8 @@ test-suite haal-test
   main-is: Spec.hs
   other-modules:
       MealyAutomatonSpec
+      Utils
+      WMethodSpec
       Paths_haal
   autogen-modules:
       Paths_haal

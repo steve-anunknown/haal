@@ -60,5 +60,5 @@ tests:
     dependencies:
     - haal
     - hspec
-    - containers 
-    - QuickCheck 
+    - containers
+    - QuickCheck
