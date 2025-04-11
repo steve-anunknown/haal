@@ -28,7 +28,8 @@ import Test.QuickCheck (Property, property, (==>))
 import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, findReachable, statesAreEquivalent)
 
 -- The global characterizing set of a non minimal mealy automaton contains
--- the empty list.
+-- the empty list. This will fail if the 'State' type has less than 6-7 constructors
+-- because a lot of test cases will be discarded.
 prop_emptyListInCharacterizingSet :: NonMinimalMealy -> State -> State -> Property
 prop_emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
     statesAreEquivalent automaton s1 s2
