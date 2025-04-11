@@ -11,7 +11,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import EquivalenceOracle (EquivalenceOracle, findCex, testSuite)
 
-newtype WMethod = WMethod {depth :: Int}
+newtype WMethod = WMethod {depth :: Int} deriving(Show, Eq)
 
 wmethodSuite ::
     ( Automaton aut
