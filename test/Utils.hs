@@ -162,13 +162,12 @@ instance Arbitrary NonMinimalMealy where
 
 -- Two states are equivalent if their delta and lambda functions are equivalent.
 statesAreEquivalent :: MealyAutomaton Input Output State -> State -> State -> Bool
-statesAreEquivalent automaton s1 s2 =
-    all
-        ( \i ->
-            mealyDelta automaton s1 i == mealyDelta automaton s2 i
-                && mealyLambda automaton s1 i == mealyLambda automaton s2 i
-        )
-        (mealyInAlphabet automaton)
+statesAreEquivalent _ s1 s2 | s1 == s2 = True
+statesAreEquivalent automaton s1 s2 | otherwise =
+    all ( \i -> (delta s1 i, lambda s1 i) == (delta s2 i, lambda s2 i) ) alphabet
+        where delta = mealyDelta automaton
+              lambda = mealyLambda automaton
+              alphabet = mealyInAlphabet automaton
 
 -- Starts a bfs from the initial state and finds all reachable states
 findReachable :: MealyAutomaton Input Output State -> Set.Set State
