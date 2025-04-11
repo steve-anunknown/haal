@@ -4,8 +4,7 @@ module WMethodSpec (
 
 import Data.Maybe (isJust, isNothing)
 import Test.Hspec (Spec, context, describe, it)
-import Test.QuickCheck (Property, property, quickCheck, (==>))
-import Test.QuickCheck.Property (withMaxSuccess)
+import Test.QuickCheck (Property, property, (==>))
 import Utils (Input, Mealy (..), Output, State)
 import WMethod (WMethod (..), wmethod)
 
