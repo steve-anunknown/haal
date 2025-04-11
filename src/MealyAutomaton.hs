@@ -202,7 +202,7 @@ mealyAccessSequences ::
     (Ord i, Data i, Ord s) =>
     MealyAutomaton i o s ->
     Map.Map s [i]
-mealyAccessSequences m = explore [(initialState, [])] Set.empty (Map.singleton initialState [])
+mealyAccessSequences m = explore [(initialState, [])] (Set.singleton initialState) (Map.singleton initialState [])
   where
     alphabet = Set.toList (mealyInAlphabet m)
     initialState = mealyInitialS m
@@ -219,7 +219,7 @@ mealyAccessSequences m = explore [(initialState, [])] Set.empty (Map.singleton i
                     List.zip (List.map (mealyCurrentS . fst . mealyStep mo) alphabet) alphabet
                 )
         newMap = List.foldr (uncurry Map.insert) theMap nextStates
-        newVisited = List.foldr Set.insert visited (q : List.map fst nextStates)
+        newVisited = List.foldr Set.insert visited (List.map fst nextStates)
         newQueue = qs ++ nextStates
 
 instance BlackBox.SUL MealyAutomaton where
