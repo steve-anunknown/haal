@@ -13,8 +13,7 @@ prop_WMethodIdentity :: Mealy Input Output State -> Bool
 prop_WMethodIdentity (Mealy aut) = isNothing (wmethod (WMethod 2) aut aut)
 
 prop_WMethodDifference :: Mealy Input Output State -> Mealy Input Output State -> Property
-prop_WMethodDifference (Mealy aut1) (Mealy aut2) =
-    aut1 /= aut2 ==> isJust (wmethod (WMethod 4) aut1 aut2)
+prop_WMethodDifference (Mealy aut1) (Mealy aut2) = aut1 /= aut2 ==> isJust (wmethod (WMethod 3) aut1 aut2)
 
 spec :: Spec
 spec = do
@@ -26,4 +25,4 @@ spec = do
 
         context "if 2 automatons are the same" $
             it "returns Nothing" $
-                quickCheck (withMaxSuccess 10 prop_WMethodIdentity)
+                property prop_WMethodIdentity
