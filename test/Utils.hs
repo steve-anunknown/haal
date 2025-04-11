@@ -9,6 +9,7 @@ module Utils (
     Input (..),
     Output (..),
     State (..),
+    ArbWMethod (..),
 )
 where
 
@@ -31,6 +32,14 @@ import qualified Data.Maybe
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 import qualified Data.Set as Set
+import WMethod (WMethod (..))
+
+newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
+
+instance Arbitrary ArbWMethod where
+    arbitrary = do
+        d <- choose (0, 5)
+        return (ArbWMethod (WMethod d))
 
 newtype Mealy i o s = Mealy (MealyAutomaton i o s) deriving (Show)
 
