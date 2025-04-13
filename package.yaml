@@ -37,6 +37,7 @@ library:
   source-dirs: src
   dependencies:
     - containers
+    - mtl
 
 executables:
   haal-exe:

@@ -7,7 +7,7 @@ import BlackBox (Automaton, SUL)
 import Data.Data (Data)
 
 class EquivalenceOracle or where
-    testSuiteSize :: 
+    testSuiteSize ::
         ( Automaton aut
         , Ord i
         , Data i
