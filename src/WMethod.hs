@@ -7,7 +7,6 @@ module WMethod (
 
 import BlackBox (Automaton, SUL, accessSequences, globalCharacterizingSet, inputs, reset, step, walk)
 import Control.Monad (replicateM)
-import Data.Data (Data)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import EquivalenceOracle (EquivalenceOracle(..))
@@ -17,10 +16,8 @@ newtype WMethod = WMethod {depth :: Int} deriving (Show, Eq)
 wmethodSuiteSize ::
     ( Automaton aut
     , Ord i
-    , Data i
     , Ord s
-    , Data s
-    , Eq o
+    , Eq o, Bounded i, Bounded s, Enum i, Enum s
     ) =>
     WMethod ->
     aut i o s ->
@@ -36,10 +33,8 @@ wmethodSuiteSize (WMethod{depth = d}) aut = size
 wmethodSuite ::
     ( Automaton aut
     , Ord i
-    , Data i
     , Ord s
-    , Data s
-    , Eq o
+    , Eq o, Bounded i, Bounded s, Enum i, Enum s
     ) =>
     WMethod ->
     aut i o s ->
@@ -60,12 +55,10 @@ wmethodSuite (WMethod{depth = d}) aut = suite
 wmethod ::
     ( Automaton aut
     , Ord i
-    , Data i
     , Ord s
-    , Data s
     , Eq o
     , Bounded s
-    , SUL sul
+    , SUL sul, Bounded i, Enum i, Enum s
     ) =>
     WMethod ->
     aut i o s ->

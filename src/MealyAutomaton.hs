@@ -22,7 +22,6 @@ where
 
 import qualified BlackBox
 import qualified Data.Bifunctor as Bif
-import Data.Data (Data (dataTypeOf), dataTypeConstrs, fromConstr)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -93,7 +92,7 @@ mealyStep m i = (mealyUpdateState m nextState, output)
 the automaton, returning a tuple containing the automaton with a modified state as well as the
 outputs produced by the transitions.
 -}
-mealyWalk :: (Traversable t) => MealyAutomaton i o s -> t i -> (MealyAutomaton i o s, t o)
+mealyWalk :: MealyAutomaton i o s -> [i] -> (MealyAutomaton i o s, [o])
 mealyWalk = List.mapAccumL mealyStep
 
 -- | Resets the automaton to its initial state.
@@ -105,47 +104,45 @@ and 'mealyLambda' functions.
 -}
 mealyTransitions ::
     forall i o s.
-    (Data s, Data i, Ord s, Ord i) =>
+    (Bounded s, Bounded i, Ord s, Ord i, Enum s, Enum i) =>
     MealyAutomaton i o s ->
     Map.Map (s, i) (s, o)
-mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- domainS, i <- domainI]
+mealyTransitions m = error "TODO: handle infinite states"
   where
     delta = mealyDelta m
     lambda = mealyLambda m
-    constructorsS = dataTypeConstrs $ dataTypeOf (undefined :: s)
-    constructorsI = dataTypeConstrs $ dataTypeOf (undefined :: i)
-    domainS = List.map fromConstr constructorsS
-    domainI = List.map fromConstr constructorsI
+    domainS = [minBound .. maxBound] :: [s]
+    domainI = Set.toList $ mealyInAlphabet m
 
 -- | Returns a set of all values of the input alphabet of the automaton.
 mealyInAlphabet ::
     forall i o s.
-    (Ord i, Data i) =>
+    (Ord i, Bounded i, Enum i) =>
     MealyAutomaton i o s ->
     Set.Set i
-mealyInAlphabet _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i])
+mealyInAlphabet _ = Set.fromList [minBound .. maxBound] :: Set.Set i
 
 -- | Returns a set of all values of the output alphabet of the automaton.
 mealyOutAlphabet ::
     forall i o s.
-    (Ord o, Data o) =>
+    (Ord o, Bounded o, Enum o) =>
     MealyAutomaton i o s ->
     Set.Set o
-mealyOutAlphabet _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: o)) :: [o])
+mealyOutAlphabet _ = Set.fromList [minBound .. maxBound] :: Set.Set o
 
 -- | Returns a set of all values of the states of the automaton.
 mealyStates ::
     forall i o s.
-    (Ord s, Data s) =>
+    (Ord s, Bounded s, Enum s) =>
     MealyAutomaton i o s ->
     Set.Set s
-mealyStates _ = Set.fromList (List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: s)) :: [s])
+mealyStates _ = Set.fromList [minBound .. maxBound] :: Set.Set s
 
 {- | Returns a set of lists of inputs that can be used to distinguish between any two different states
 of the automaton.
 -}
 mealyGlobalCharacterizingSet ::
-    (Ord i, Data i, Ord s, Data s, Eq o) =>
+    (Ord i, Ord s, Eq o, Bounded s, Enum s, Bounded i, Enum i) =>
     MealyAutomaton i o s ->
     Set.Set [i]
 mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states, s2 <- states, s1 < s2]
@@ -157,7 +154,7 @@ mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states,
  - any other state of the automaton.
 -}
 mealyLocalCharacterizingSet ::
-    (Ord i, Data i, Ord s, Data s, Eq o) =>
+    (Ord i, Ord s, Eq o, Bounded s, Enum s, Bounded i, Enum i) =>
     MealyAutomaton i o s ->
     s ->
     Set.Set [i]
@@ -169,7 +166,7 @@ mealyLocalCharacterizingSet m s = Set.fromList [distinguish s sx | sx <- states,
 -- | Returns a list of inputs that can be used to distinguish between the two given states of the automaton.
 mealyDistinguishingSequence ::
     forall i o s.
-    (Ord i, Data i, Ord s, Eq o) =>
+    (Ord i, Ord s, Eq o, Bounded i, Enum i) =>
     MealyAutomaton i o s ->
     s ->
     s ->
@@ -199,7 +196,7 @@ mealyDistinguishingSequence m s1 s2 = explore Map.empty [(s1, s2, [])]
 -- | Returns a map containing the shortest sequence to access a given state from the initial state.
 mealyAccessSequences ::
     forall i o s.
-    (Ord i, Data i, Ord s) =>
+    (Ord i, Ord s, Bounded i, Enum i) =>
     MealyAutomaton i o s ->
     Map.Map s [i]
 mealyAccessSequences m = explore [(initialState, [])] (Set.singleton initialState) (Map.singleton initialState [])
@@ -219,7 +216,7 @@ mealyAccessSequences m = explore [(initialState, [])] (Set.singleton initialStat
                     List.zip (List.map (mealyCurrentS . fst . mealyStep mo) alphabet) alphabet
                 )
         newMap = List.foldr (uncurry Map.insert) theMap nextStates
-        newVisited = List.foldr Set.insert visited (List.map fst nextStates)
+        newVisited = foldr (Set.insert . fst) visited nextStates
         newQueue = qs ++ nextStates
 
 instance BlackBox.SUL MealyAutomaton where
@@ -241,20 +238,22 @@ instance
     ( Show i
     , Show o
     , Show s
-    , Data s
-    , Data i
+    , Bounded s
+    , Bounded i
+    , Enum s
+    , Enum i
     , Ord s
     , Ord i
     ) =>
     Show (MealyAutomaton i o s)
     where
     show m =
-        "{\n\tTransitions: "
-            ++ show transitions
-            ++ ",\n\tCurrent State: "
+        "{\n\tCurrent State: "
             ++ show current
             ++ ",\n\tInitial State: "
             ++ show initial
+            ++ ",\n\tTransitions: "
+            ++ show transitions
             ++ "\n}"
       where
         transitions = mealyTransitions m
@@ -265,8 +264,10 @@ instance
     ( Ord s
     , Ord i
     , Eq o
-    , Data s
-    , Data i
+    , Bounded s
+    , Bounded i
+    , Enum s
+    , Enum i
     ) =>
     Eq (MealyAutomaton i o s)
     where

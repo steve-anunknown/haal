@@ -12,7 +12,6 @@ module MooreAutomaton (
 where
 
 import qualified BlackBox
-import qualified Data.Data as Data
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -75,29 +74,27 @@ and 'mooreLambda' functions.
 -}
 mooreTransitions ::
     forall i o s.
-    (Data.Data s, Data.Data i, Ord s, Ord i) =>
+    (Bounded s, Enum s, Bounded i, Enum i, Ord s, Ord i) =>
     MooreAutomaton i o s ->
     Map.Map (s, i) (s, o)
 mooreTransitions m = Map.fromList [((s, i), (delta s i, lambda s)) | s <- domainS, i <- domainI]
   where
     delta = mooreDelta m
     lambda = mooreLambda m
-    constructorsS = Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: s)
-    constructorsI = Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)
-    domainS = List.map Data.fromConstr constructorsS
-    domainI = List.map Data.fromConstr constructorsI
+    domainS = [minBound .. maxBound] :: [s]
+    domainI = [minBound .. maxBound] :: [i]
 
 -- | Returns the input alphabet of the automaton.
-mooreInAlphabet :: forall i o s. (Ord i, Data.Data i) => MooreAutomaton i o s -> Set.Set i
-mooreInAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: i)) :: [i])
+mooreInAlphabet :: forall i o s. (Ord i, Bounded i, Enum i) => MooreAutomaton i o s -> Set.Set i
+mooreInAlphabet _ = Set.fromList [minBound .. maxBound] :: Set.Set i
 
 -- | Returns the output alphabet of the automaton.
-mooreOutAlphabet :: forall i o s. (Ord o, Data.Data o) => MooreAutomaton i o s -> Set.Set o
-mooreOutAlphabet _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: o)) :: [o])
+mooreOutAlphabet :: forall i o s. (Ord o, Bounded o, Enum o) => MooreAutomaton i o s -> Set.Set o
+mooreOutAlphabet _ = Set.fromList [minBound .. maxBound] :: Set.Set o
 
 -- | Returns a set of all values of the state alphabet of the automaton.
-mooreStates :: forall i o s. (Ord s, Data.Data s) => MooreAutomaton i o s -> Set.Set s
-mooreStates _ = Set.fromList (List.map Data.fromConstr (Data.dataTypeConstrs $ Data.dataTypeOf (undefined :: s)) :: [s])
+mooreStates :: forall i o s. (Ord s, Bounded s, Enum s) => MooreAutomaton i o s -> Set.Set s
+mooreStates _ = Set.fromList [minBound .. maxBound] :: Set.Set s
 
 instance BlackBox.SUL MooreAutomaton where
     step = mooreStep
