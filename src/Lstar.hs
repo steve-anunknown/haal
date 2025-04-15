@@ -1,32 +1,32 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Lstar (
-    initializeOT,
-    lstar,
-)
+module Lstar
 where
 
 import BlackBox
 import Control.Monad.Reader
-import Data.Data
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import Experiment
+import MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
 
 data ObservationTable i o = ObservationTable
     { prefixSetS :: Set.Set [i]
     , suffixSetE :: Set.Set [i]
-    , mappingT :: Map.Map ([i], [i]) [o]
+    , mappingT :: Map.Map ([i], [i]) o
     }
+    deriving (Show)
 
-rows :: forall i o. (Ord i, Data i) => ObservationTable i o -> Set.Set [i]
-rows ot = sm `Set.union` sm_I
-  where
-    alph = List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i]
-    sm = prefixSetS ot
-    sm_I = Set.fromList [w ++ [a] | w <- Set.toList sm, a <- alph]
+type StateID = Word
+
+-- rows :: forall i o. (Ord i, Data i) => ObservationTable i o -> Set.Set [i]
+-- rows ot = sm `Set.union` sm_I
+--   where
+--     alph = List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i]
+--     sm = prefixSetS ot
+--     sm_I = Set.fromList [w ++ [a] | w <- Set.toList sm, a <- alph]
 
 equivalentRows :: forall i o. (Ord i, Eq o) => ObservationTable i o -> [i] -> [i] -> Bool
 equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e)) em
@@ -34,20 +34,20 @@ equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e
     mapping = flip Map.lookup (mappingT ot)
     em = suffixSetE ot
 
-columns = suffixSetE
+-- columns = suffixSetE
 
 initializeOT ::
     forall i o s sul.
-    (Data i, Ord i, SUL sul, Ord s, Bounded s) =>
+    (Bounded i, Enum i, Ord i, SUL sul, Ord s, Bounded s) =>
     sul i o s ->
     ObservationTable i o
-initializeOT sul = do
-    let alph = List.map ((: []) . fromConstr) (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [[i]]
-        domain = Set.fromList alph `Set.cartesianProduct` Set.fromList alph
+initializeOT sul =
+    let alph = List.map (: []) $ Set.toList $ inputs sul
+        domain = (Set.singleton [] `Set.union` Set.fromList alph) `Set.cartesianProduct` Set.fromList alph
         theMapping =
             Map.fromList
                 [ ( (in1, in2)
-                  , snd $ walk (reset sul) (in1 ++ in2)
+                  , last $ snd $ walk (reset sul) (in1 ++ in2)
                   )
                 | (in1, in2) <- Set.toList domain
                 ]
@@ -58,19 +58,19 @@ initializeOT sul = do
             }
         )
 
-otIsClosed :: forall i o. (Data i, Ord i, Eq o) => ObservationTable i o -> [i]
+otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
   where
-    alph = List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i]
+    alph = [minBound .. maxBound] :: [i]
     sm = prefixSetS ot
     sm_I = [w ++ [a] | w <- Set.toList sm, a <- alph]
 
-    exists = List.find (\x -> not $ all (equivalentRows ot x) sm) sm_I
+    exists = List.find (\x -> not $ any (equivalentRows ot x) sm) sm_I
 
-otIsConsistent :: forall i o. (Data i, Ord i, Eq o) => ObservationTable i o -> ([i], [i])
+otIsConsistent :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> ([i], [i])
 otIsConsistent ot = Maybe.fromMaybe ([], []) condition
   where
-    alph = List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i]
+    alph = [minBound .. maxBound] :: [i]
     sm = Set.toList $ prefixSetS ot
 
     equivalentPairs = [(r1, r2) | r1 <- sm, r2 <- sm, r1 /= r2, equivalentRows ot r1 r2]
@@ -86,78 +86,109 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
 
 makeClosed ::
     forall sul i o s.
-    (Ord i, Data i, SUL sul, Ord s) =>
+    (Ord i, Bounded i, Enum i, SUL sul, Ord s) =>
     ObservationTable i o ->
     [i] ->
     sul i o s ->
     ObservationTable i o
 makeClosed ot [] _ = ot
-makeClosed ot inc sul = ObservationTable{prefixSetS = em, suffixSetE = sm', mappingT = tm'}
+makeClosed ot inc sul = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm'}
   where
-    alph = List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i]
+    alph = Set.toList $ inputs sul
     sm = prefixSetS ot
     em = suffixSetE ot
     tm = mappingT ot
     sm' = inc `Set.insert` sm
-    tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), snd $ walk sul e) | s <- alph, e <- Set.toList em]
+    tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), last $ snd $ walk sul e) | s <- alph, e <- Set.toList em]
 
 lstar ::
-    (Automaton aut, SUL sul, Data i, Ord i, Ord s, Bounded s, Eq o) =>
-    aut i o s ->
-    Experiment (sul i o s) (aut i o s)
-lstar aut = do
+    (SUL sul, Bounded i, Enum i, Ord i, Ord s, Bounded s, Eq o) =>
+    Experiment (sul i o s) (MealyAutomaton i o StateID)
+lstar = do
     sul <- ask
-    lstarHelp aut (initializeOT sul)
+    lstarHelp (initializeOT sul)
 
 lstarHelp ::
-    (Automaton aut, SUL sul, Data i, Ord i, Ord s, Bounded s, Eq o) =>
-    aut i o s ->
+    (SUL sul, Bounded i, Enum i, Ord i, Ord s, Bounded s, Eq o) =>
     ObservationTable i o ->
-    Experiment (sul i o s) (aut i o s)
-lstarHelp aut ot = case otIsClosed ot of
+    Experiment (sul i o s) (MealyAutomaton i o StateID)
+lstarHelp ot = case otIsClosed ot of
     [] -> case otIsConsistent ot of
         ([], []) -> return $ makeHypothesis ot
         inc' -> do
             sul <- ask
             let ot' = makeConsistent ot inc' sul
-            lstarHelp aut ot'
+            lstarHelp ot'
     inc -> do
         sul <- ask
         let ot' = makeClosed ot inc sul
-        lstarHelp aut ot'
+        lstarHelp ot'
 
-equivalentToRow :: (Ord i, Eq o) => ObservationTable i o -> [i] -> (Set.Set [i], ObservationTable i o)
-equivalentToRow ot r = (equivalents, ot')
+-- equivalentToRow :: (Ord i, Eq o) => ObservationTable i o -> [i] -> (Set.Set [i], ObservationTable i o)
+-- equivalentToRow ot r = (equivalents, ot')
+--   where
+--     sm = prefixSetS ot
+--     em = suffixSetE ot
+--     tm = mappingT ot
+--     equivalents = Set.filter (equivalentRows ot r) sm
+--     sm' = sm `Set.difference` equivalents
+--     ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm}
+
+equivalenceClasses ::
+    forall i o.
+    (Ord i, Eq o, Bounded i, Enum i) =>
+    ObservationTable i o ->
+    Map.Map [i] [[i]]
+equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
   where
     sm = prefixSetS ot
-    em = suffixSetE ot 
-    tm = mappingT ot
-    equivalents = Set.filter (equivalentRows ot r) sm
-    sm' = sm `Set.difference` equivalents
-    ot' = ObservationTable {prefixSetS=sm', suffixSetE=em, mappingT=tm}
+    sm_I = Set.fromList [w ++ [a] | w <- Set.toList sm, a <- [minBound .. maxBound] :: [i]]
+    go acc s
+        | Set.null s = acc
+        | otherwise =
+            let (x, rest) = Set.deleteFindMin s
+                (equivClass, remainder) = Set.partition (equivalentRows ot x) rest
+                classMembers = x : Set.toList equivClass
+             in go (Map.insert x classMembers acc) remainder
 
-equivalenceClasses :: (Ord i, Eq o) => ObservationTable i o -> [[[i]]]
-equivalenceClasses ot = go [] (prefixSetS ot)
-    where 
-        go acc s 
-            | Set.null s = reverse acc 
-            | otherwise = 
-                let (x, rest) = Set.deleteFindMin s 
-                    (equivClass, remainder) = Set.partition (equivalentRows ot x) rest 
-                in 
-                    go ((x : Set.toList equivClass) : acc) remainder
-
-
-makeHypothesis :: forall aut i o s. (Data i, Ord i, Eq o) => ObservationTable i o -> aut i o s
-makeHypothesis ot = error "todo"
+-- default to Int for the state type and the user can provide a mapping to whatever
+-- type they want for the state.
+makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton i o StateID
+makeHypothesis ot = mkMealyAutomaton delta' lambda' initial
   where
-    classes = equivalenceClasses ot
-    number = length classes
+    -- Equivalence classes: Map from representative prefix to class members
+    equivMap :: Map.Map [i] [[i]]
+    equivMap = equivalenceClasses ot
 
+    -- Assign an integer ID to each class representative
+    repList :: [[i]]
+    repList = Map.keys equivMap
+
+    repToId :: Map.Map [i] StateID
+    repToId = Map.fromList (zip repList [0 ..])
+
+    -- Helper: get the ID for the class a string belongs to
+    getStateId :: [i] -> StateID
+    getStateId s =
+        case List.find (\rep -> equivalentRows ot rep s) repList of
+            Just rep -> repToId Map.! rep
+            Nothing -> error "No equivalent class found for string!"
+
+    delta' :: StateID -> i -> StateID
+    delta' sid i =
+        let rep = repList !! fromIntegral sid
+         in getStateId (rep ++ [i])
+
+    lambda' :: StateID -> i -> o
+    lambda' sid i =
+        let rep = repList !! fromIntegral sid
+         in mappingT ot Map.! (rep, [i])
+
+    initial = getStateId []
 
 makeConsistent ::
     forall i o s sul.
-    (Ord i, SUL sul, Ord s, Data i) =>
+    (Ord i, SUL sul, Ord s, Bounded i, Enum i) =>
     ObservationTable i o ->
     ([i], [i]) ->
     sul i o s ->
@@ -165,7 +196,7 @@ makeConsistent ::
 makeConsistent ot ([], []) _ = ot
 makeConsistent ot (column, symbol) sul = ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm'}
   where
-    alph = List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i]
+    alph = Set.toList $ inputs sul
 
     query = symbol ++ column
     -- prefices = [take n query | n <- [1 .. length query]]
@@ -182,4 +213,4 @@ makeConsistent ot (column, symbol) sul = ObservationTable{prefixSetS = sm, suffi
 
     missing = (sm `Set.union` sm_I) `Set.cartesianProduct` em'
 
-    tm' = Set.foldr (\(a, b) -> Map.insert (a, b) (snd $ walk sul (a ++ b))) tm missing
+    tm' = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk sul (a ++ b))) tm missing

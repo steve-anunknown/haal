@@ -3,7 +3,6 @@ module Experiment (
     Experiment,
 ) where
 
-import BlackBox (SUL)
 import Control.Monad.Reader
 
 type Experiment sul result = Reader sul result
