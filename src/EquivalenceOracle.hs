@@ -4,17 +4,17 @@ module EquivalenceOracle (
 where
 
 import BlackBox (Automaton, SUL)
-import Data.Data (Data)
 
 class EquivalenceOracle or where
     testSuiteSize ::
         ( Automaton aut
         , Ord i
-        , Data i
+        , Bounded i
+        , Enum i
         , Ord s
-        , Data s
         , Eq o
         , Bounded s
+        , Enum s
         ) =>
         or ->
         aut i o s ->
@@ -22,11 +22,12 @@ class EquivalenceOracle or where
     testSuite ::
         ( Automaton aut
         , Ord i
-        , Data i
+        , Bounded i
+        , Enum i
         , Ord s
-        , Data s
-        , Eq o
         , Bounded s
+        , Enum s
+        , Eq o
         ) =>
         or ->
         aut i o s ->
@@ -34,11 +35,12 @@ class EquivalenceOracle or where
     findCex ::
         ( Automaton aut
         , Ord i
-        , Data i
+        , Bounded i
+        , Enum i
         , Ord s
-        , Data s
-        , Eq o
         , Bounded s
+        , Enum s
+        , Eq o
         , SUL sul
         ) =>
         or ->
