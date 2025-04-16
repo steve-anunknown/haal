@@ -28,7 +28,6 @@ library
       BlackBox
       CombinedOracle
       DFA
-      EquivalenceOracle
       Experiment
       Lstar
       MealyAutomaton
