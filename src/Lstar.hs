@@ -24,6 +24,8 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
+newtype LStar i o = LStar (ObservationTable i o)
+
 type StateID = Word
 
 -- rows :: forall i o. (Ord i, Data i) => ObservationTable i o -> Set.Set [i]
@@ -96,18 +98,18 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
              in go (Map.insert x classMembers acc) remainder
 
 lstar ::
-    (SUL sul, Bounded i, Enum i, Ord i, Ord s, Bounded s, Eq o) =>
-    ObservationTable i o ->
-    Experiment (sul i o s) (ObservationTable i o, MealyAutomaton i o StateID)
-lstar ot = case otIsClosed ot of
+    (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
+    LStar i o ->
+    Experiment (sul i o StateID) (LStar i o, MealyAutomaton i o StateID)
+lstar (LStar ot) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
-        ([], []) -> return (ot, makeHypothesis ot)
+        ([], []) -> return (LStar ot, makeHypothesis ot)
         inc' -> do
             ot' <- makeConsistent ot inc'
-            lstar ot'
+            lstar (LStar ot')
     inc -> do
         ot' <- makeClosed ot inc
-        lstar ot'
+        lstar (LStar ot')
 
 otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
@@ -133,6 +135,23 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
                     alph
             )
             equivalentPairs
+
+otRefine :: forall sul i o s. (Ord i, SUL sul, Ord s) => ObservationTable i o -> [i] -> Experiment (sul i o s) (ObservationTable i o)
+otRefine ot [] = return ot
+otRefine ot cex = do
+    sul <- ask
+    let
+        sm = prefixSetS ot
+        em = suffixSetE ot
+        tm = mappingT ot
+
+        sm' = List.foldr Set.insert sm [take n cex | n <- [1 .. length cex]]
+        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- cex]
+        missing = (sm' `Set.union` sm_I') `Set.cartesianProduct` em
+
+        tm' = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk sul (a ++ b))) tm missing
+        ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'}
+    return ot'
 
 -- default to Int for the state type and the user can provide a mapping to whatever
 -- type they want for the state.
@@ -215,3 +234,14 @@ makeClosed ot inc = do
         sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- alph]
         tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), last $ snd $ walk sul e) | s <- alph, e <- Set.toList em]
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
+
+instance Learner LStar where
+    initialize (LStar _) = do
+        LStar <$> initializeOT
+
+    refine (LStar ot) cex = do
+        ot' <- otRefine ot cex
+        return (LStar ot')
+
+    -- TODO there is a type error here. I must remove the 's' type variable from SUL
+    learn (LStar ot) = lstar (LStar ot)
