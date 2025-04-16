@@ -1,9 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
-module Lstar
-(
-    lstar
+module Lstar (
+    lstar,
 )
 where
 
@@ -98,24 +97,17 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 
 lstar ::
     (SUL sul, Bounded i, Enum i, Ord i, Ord s, Bounded s, Eq o) =>
-    Experiment (sul i o s) (MealyAutomaton i o StateID)
-lstar = do
-    ot <- initializeOT
-    lstarHelp ot
-
-lstarHelp ::
-    (SUL sul, Bounded i, Enum i, Ord i, Ord s, Bounded s, Eq o) =>
     ObservationTable i o ->
-    Experiment (sul i o s) (MealyAutomaton i o StateID)
-lstarHelp ot = case otIsClosed ot of
+    Experiment (sul i o s) (ObservationTable i o, MealyAutomaton i o StateID)
+lstar ot = case otIsClosed ot of
     [] -> case otIsConsistent ot of
-        ([], []) -> return $ makeHypothesis ot
+        ([], []) -> return (ot, makeHypothesis ot)
         inc' -> do
             ot' <- makeConsistent ot inc'
-            lstarHelp ot'
+            lstar ot'
     inc -> do
         ot' <- makeClosed ot inc
-        lstarHelp ot'
+        lstar ot'
 
 otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
