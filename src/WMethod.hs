@@ -5,12 +5,14 @@ module WMethod (
     wmethodSuiteSize,
 ) where
 
-import BlackBox (Automaton, SUL, accessSequences, globalCharacterizingSet, inputs, reset, step, walk)
+import BlackBox (Automaton, SUL, StateID, accessSequences, globalCharacterizingSet, inputs, reset, step, walk)
 import Control.Monad (replicateM)
 import Control.Monad.Reader
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Experiment (EquivalenceOracle (..), Experiment)
+import Experiment (EquivalenceOracle (..), Experiment, experiment)
+import Lstar
+import MealyAutomaton
 
 newtype WMethod = WMethod {depth :: Int} deriving (Show, Eq)
 
@@ -96,3 +98,22 @@ instance EquivalenceOracle WMethod where
     testSuiteSize = wmethodSuiteSize
     testSuite = wmethodSuite
     findCex = wmethod
+
+data Input = A | B deriving (Show, Eq, Ord, Bounded, Enum)
+data Output = X | Y deriving (Show, Eq, Ord, Bounded, Enum)
+data State = S0 | S1 | S2 deriving (Show, Eq, Ord, Bounded, Enum)
+
+sulTransitions :: State -> Input -> (State, Output)
+sulTransitions S0 _ = (S1, X)
+sulTransitions S1 _ = (S2, Y)
+sulTransitions S2 A = (S0, X)
+sulTransitions S2 B = (S0, Y)
+
+mysul = mkMealyAutomaton2 sulTransitions S0
+
+myexperiment :: (SUL sul) => Experiment (sul Input Output) (MealyAutomaton StateID Input Output)
+myexperiment = do
+    let thelearner = Lstar (undefined :: ObservationTable Input Output)
+    experiment thelearner (WMethod 2)
+
+learnedmodel = runReader myexperiment mysul

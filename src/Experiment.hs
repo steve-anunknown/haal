@@ -4,6 +4,7 @@ module Experiment (
     Experiment,
     Learner (..),
     EquivalenceOracle (..),
+    experiment,
 ) where
 
 import Control.Monad.Reader
@@ -93,16 +94,30 @@ class Learner l aut | l -> aut where
 
 type Experiment sul result = Reader sul result
 
---
--- experiment ::
---     (SUL sul) =>
---     Learner sul i oid -> -- learner
---     Teacher sul i oid -> -- teacher
---     Refiner sul i oid -> -- refiner
---     Experiment (sul i oid) (MealyAutomaton i o sid)
--- experiment learner teacher refine = do
---     h <- learner
---     cex <- teacher h
---     case cex of
---         Nothing -> return h
---         Just ce -> refine h ce >>= \h' -> experiment (return h') teacher refine
+experiment ::
+    ( SUL sul
+    , Automaton aut s
+    , Learner learner aut
+    , EquivalenceOracle oracle
+    , Ord i
+    , Enum i
+    , Enum o
+    , Bounded i
+    , Bounded o
+    , Ord s
+    , Enum s
+    , Bounded s
+    , Eq o
+    ) =>
+    learner i o ->
+    oracle ->
+    Experiment (sul i o) (aut i o)
+experiment learner oracle = do
+    initializedLearner <- initialize learner
+    (learner', hypothesis) <- learn initializedLearner
+    cex <- findCex oracle hypothesis
+    case cex of
+        Just (inputs, _) -> do
+            refinedLearner <- refine learner' inputs
+            experiment refinedLearner oracle
+        Nothing -> return hypothesis

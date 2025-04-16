@@ -5,6 +5,9 @@
 
 module Lstar (
     lstar,
+    Lstar (..),
+    ObservationTable (..),
+    initializeOT,
 )
 where
 
@@ -27,7 +30,7 @@ data ObservationTable i o = ObservationTable
     deriving (Show)
 
 
-newtype LStar i o = LStar (ObservationTable i o)
+newtype Lstar i o = Lstar (ObservationTable i o)
 
 -- rows :: forall i o. (Ord i, Data i) => ObservationTable i o -> Set.Set [i]
 -- rows ot = sm `Set.union` sm_I
@@ -100,17 +103,17 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 
 lstar ::
     (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
-    LStar i o ->
-    Experiment (sul i o) (LStar i o, MealyAutomaton StateID i o)
-lstar (LStar ot) = case otIsClosed ot of
+    Lstar i o ->
+    Experiment (sul i o) (Lstar i o, MealyAutomaton StateID i o)
+lstar (Lstar ot) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
-        ([], []) -> return (LStar ot, makeHypothesis ot)
+        ([], []) -> return (Lstar ot, makeHypothesis ot)
         inc' -> do
             ot' <- makeConsistent ot inc'
-            lstar (LStar ot')
+            lstar (Lstar ot')
     inc -> do
         ot' <- makeClosed ot inc
-        lstar (LStar ot')
+        lstar (Lstar ot')
 
 otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
@@ -236,12 +239,12 @@ makeClosed ot inc = do
         tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), last $ snd $ walk sul e) | s <- alph, e <- Set.toList em]
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
-instance Learner LStar (MealyAutomaton StateID) where
-    initialize (LStar _) = do
-        LStar <$> initializeOT
+instance Learner Lstar (MealyAutomaton StateID) where
+    initialize (Lstar _) = do
+        Lstar <$> initializeOT
 
-    refine (LStar ot) cex = do
+    refine (Lstar ot) cex = do
         ot' <- otRefine ot cex
-        return (LStar ot')
+        return (Lstar ot')
 
-    learn (LStar ot) = lstar (LStar ot)
+    learn (Lstar ot) = lstar (Lstar ot)
