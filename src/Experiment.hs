@@ -1,3 +1,5 @@
+{-# LANGUAGE FunctionalDependencies #-}
+
 module Experiment (
     Experiment,
     Learner (..),
@@ -10,7 +12,7 @@ import BlackBox (Automaton, SUL)
 
 class EquivalenceOracle or where
     testSuiteSize ::
-        ( Automaton aut
+        ( Automaton aut s
         , Ord i
         , Bounded i
         , Enum i
@@ -20,10 +22,10 @@ class EquivalenceOracle or where
         , Enum s
         ) =>
         or ->
-        aut i o s ->
+        aut i o ->
         Int
     testSuite ::
-        ( Automaton aut
+        ( Automaton aut s
         , Ord i
         , Bounded i
         , Enum i
@@ -33,10 +35,11 @@ class EquivalenceOracle or where
         , Eq o
         ) =>
         or ->
-        aut i o s ->
+        aut i o ->
         [[i]]
     findCex ::
-        ( Automaton aut
+        ( Automaton aut s
+        , SUL sul
         , Ord i
         , Bounded i
         , Enum i
@@ -44,26 +47,23 @@ class EquivalenceOracle or where
         , Bounded s
         , Enum s
         , Eq o
-        , SUL sul
         ) =>
         or ->
-        aut i o s ->
-        Experiment (sul i o s) (Maybe ([i], [o]))
+        aut i o ->
+        Experiment (sul i o) (Maybe ([i], [o]))
 
-class Learner l where
+class Learner l aut | l -> aut where
     initialize ::
         ( SUL sul
+        , Automaton aut s
         , Bounded i
         , Enum i
         , Ord i
         , Bounded o
         , Enum o
-        , Bounded s
-        , Enum s
-        , Ord s
         ) =>
         l i o ->
-        Experiment (sul i o s) (l i o)
+        Experiment (sul i o) (l i o)
     refine ::
         ( SUL sul
         , Bounded i
@@ -71,16 +71,13 @@ class Learner l where
         , Ord i
         , Bounded o
         , Enum o
-        , Bounded s
-        , Enum s
-        , Ord s
         ) =>
         l i o ->
         [i] ->
-        Experiment (sul i o s) (l i o)
+        Experiment (sul i o) (l i o)
     learn ::
         ( SUL sul
-        , Automaton aut
+        , Automaton aut s
         , Bounded i
         , Enum i
         , Ord i
@@ -92,17 +89,17 @@ class Learner l where
         , Ord s
         ) =>
         l i o ->
-        Experiment (sul i o s) (l i o, aut i o s)
+        Experiment (sul i o) (l i o, aut i o)
 
 type Experiment sul result = Reader sul result
 
 --
 -- experiment ::
 --     (SUL sul) =>
---     Learner sul i o sid -> -- learner
---     Teacher sul i o sid -> -- teacher
---     Refiner sul i o sid -> -- refiner
---     Experiment (sul i o sid) (MealyAutomaton i o sid)
+--     Learner sul i oid -> -- learner
+--     Teacher sul i oid -> -- teacher
+--     Refiner sul i oid -> -- refiner
+--     Experiment (sul i oid) (MealyAutomaton i o sid)
 -- experiment learner teacher refine = do
 --     h <- learner
 --     cex <- teacher h

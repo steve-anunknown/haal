@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Lstar (
     lstar,
@@ -24,9 +26,8 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
-newtype LStar i o = LStar (ObservationTable i o)
 
-type StateID = Word
+newtype LStar i o = LStar (ObservationTable i o)
 
 -- rows :: forall i o. (Ord i, Data i) => ObservationTable i o -> Set.Set [i]
 -- rows ot = sm `Set.union` sm_I
@@ -44,9 +45,9 @@ equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e
 -- columns = suffixSetE
 
 initializeOT ::
-    forall i o s sul.
-    (Bounded i, Enum i, Ord i, SUL sul, Ord s, Bounded s) =>
-    Experiment (sul i o s) (ObservationTable i o)
+    forall i o sul.
+    (Bounded i, Enum i, Ord i, SUL sul) =>
+    Experiment (sul i o) (ObservationTable i o)
 initializeOT = do
     sul <- ask
     let alph = List.map (: []) $ Set.toList $ inputs sul
@@ -100,7 +101,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 lstar ::
     (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
     LStar i o ->
-    Experiment (sul i o StateID) (LStar i o, MealyAutomaton i o StateID)
+    Experiment (sul i o) (LStar i o, MealyAutomaton StateID i o)
 lstar (LStar ot) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
         ([], []) -> return (LStar ot, makeHypothesis ot)
@@ -136,7 +137,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
             )
             equivalentPairs
 
-otRefine :: forall sul i o s. (Ord i, SUL sul, Ord s) => ObservationTable i o -> [i] -> Experiment (sul i o s) (ObservationTable i o)
+otRefine :: forall sul i o. (Ord i, SUL sul) => ObservationTable i o -> [i] -> Experiment (sul i o) (ObservationTable i o)
 otRefine ot [] = return ot
 otRefine ot cex = do
     sul <- ask
@@ -155,7 +156,7 @@ otRefine ot cex = do
 
 -- default to Int for the state type and the user can provide a mapping to whatever
 -- type they want for the state.
-makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton i o StateID
+makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton StateID i o
 makeHypothesis ot = mkMealyAutomaton delta' lambda' initial
   where
     -- Equivalence classes: Map from representative prefix to class members
@@ -189,11 +190,11 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' initial
     initial = getStateId []
 
 makeConsistent ::
-    forall i o s sul.
-    (Ord i, SUL sul, Ord s, Bounded i, Enum i) =>
+    forall i o sul.
+    (Ord i, SUL sul, Bounded i, Enum i) =>
     ObservationTable i o ->
     ([i], [i]) ->
-    Experiment (sul i o s) (ObservationTable i o)
+    Experiment (sul i o) (ObservationTable i o)
 makeConsistent ot ([], []) = return ot
 makeConsistent ot (column, symbol) = do
     sul <- ask
@@ -217,11 +218,11 @@ makeConsistent ot (column, symbol) = do
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
 makeClosed ::
-    forall sul i o s.
-    (Ord i, Bounded i, Enum i, SUL sul, Ord s) =>
+    forall sul i o.
+    (Ord i, Bounded i, Enum i, SUL sul) =>
     ObservationTable i o ->
     [i] ->
-    Experiment (sul i o s) (ObservationTable i o)
+    Experiment (sul i o) (ObservationTable i o)
 makeClosed ot [] = return ot
 makeClosed ot inc = do
     sul <- ask
@@ -235,7 +236,7 @@ makeClosed ot inc = do
         tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), last $ snd $ walk sul e) | s <- alph, e <- Set.toList em]
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
-instance Learner LStar where
+instance Learner LStar (MealyAutomaton StateID) where
     initialize (LStar _) = do
         LStar <$> initializeOT
 
@@ -243,5 +244,4 @@ instance Learner LStar where
         ot' <- otRefine ot cex
         return (LStar ot')
 
-    -- TODO there is a type error here. I must remove the 's' type variable from SUL
     learn (LStar ot) = lstar (LStar ot)

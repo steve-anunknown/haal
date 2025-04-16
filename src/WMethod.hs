@@ -10,13 +10,12 @@ import Control.Monad (replicateM)
 import Control.Monad.Reader
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import EquivalenceOracle (EquivalenceOracle (..))
-import Experiment (Experiment)
+import Experiment (EquivalenceOracle (..), Experiment)
 
 newtype WMethod = WMethod {depth :: Int} deriving (Show, Eq)
 
 wmethodSuiteSize ::
-    ( Automaton aut
+    ( Automaton aut s
     , Ord i
     , Ord s
     , Eq o
@@ -26,7 +25,7 @@ wmethodSuiteSize ::
     , Enum s
     ) =>
     WMethod ->
-    aut i o s ->
+    aut i o ->
     Int
 wmethodSuiteSize (WMethod{depth = d}) aut = size
   where
@@ -37,7 +36,7 @@ wmethodSuiteSize (WMethod{depth = d}) aut = size
     size = sum [transitionCover * (alphabet ^ n) * characterizingSet | n <- [0 .. d]]
 
 wmethodSuite ::
-    ( Automaton aut
+    ( Automaton aut s
     , Ord i
     , Ord s
     , Eq o
@@ -47,7 +46,7 @@ wmethodSuite ::
     , Enum s
     ) =>
     WMethod ->
-    aut i o s ->
+    aut i o ->
     [[i]]
 wmethodSuite (WMethod{depth = d}) aut = suite
   where
@@ -63,7 +62,7 @@ wmethodSuite (WMethod{depth = d}) aut = suite
             ]
 
 wmethod ::
-    ( Automaton aut
+    ( Automaton aut s
     , Ord i
     , Ord s
     , Eq o
@@ -74,8 +73,8 @@ wmethod ::
     , Enum s
     ) =>
     WMethod ->
-    aut i o s ->
-    Experiment (sul i o s) (Maybe ([i], [o]))
+    aut i o ->
+    Experiment (sul i o) (Maybe ([i], [o]))
 wmethod (WMethod{depth = d}) aut = do
     sul <- ask
     let
