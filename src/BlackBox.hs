@@ -13,7 +13,7 @@ where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-type StateID = Word
+type StateID = Int
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
 It provides methods to step through the automaton, walk through a list of inputs,

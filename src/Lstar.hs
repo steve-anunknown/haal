@@ -1,13 +1,18 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Lstar (
     lstar,
     Lstar (..),
     ObservationTable (..),
     initializeOT,
+    mysul,
+    Input (..),
+    Output (..),
+    State (..),
+    learnedmodel,
 )
 where
 
@@ -18,7 +23,8 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import Experiment
-import MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import MealyAutomaton
+import WMethod
 
 data ObservationTable i o = ObservationTable
     { prefixSetS :: Set.Set [i]
@@ -29,23 +35,13 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
-
 newtype Lstar i o = Lstar (ObservationTable i o)
-
--- rows :: forall i o. (Ord i, Data i) => ObservationTable i o -> Set.Set [i]
--- rows ot = sm `Set.union` sm_I
---   where
---     alph = List.map fromConstr (dataTypeConstrs $ dataTypeOf (undefined :: i)) :: [i]
---     sm = prefixSetS ot
---     sm_I = Set.fromList [w ++ [a] | w <- Set.toList sm, a <- alph]
 
 equivalentRows :: forall i o. (Ord i, Eq o) => ObservationTable i o -> [i] -> [i] -> Bool
 equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e)) em
   where
     mapping = flip Map.lookup (mappingT ot)
     em = suffixSetE ot
-
--- columns = suffixSetE
 
 initializeOT ::
     forall i o sul.
@@ -73,16 +69,6 @@ initializeOT = do
             , prefixSetSI = sm_I
             }
         )
-
--- equivalentToRow :: (Ord i, Eq o) => ObservationTable i o -> [i] -> (Set.Set [i], ObservationTable i o)
--- equivalentToRow ot r = (equivalents, ot')
---   where
---     sm = prefixSetS ot
---     em = suffixSetE ot
---     tm = mappingT ot
---     equivalents = Set.filter (equivalentRows ot r) sm
---     sm' = sm `Set.difference` equivalents
---     ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm}
 
 equivalenceClasses ::
     forall i o.
@@ -140,7 +126,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
             )
             equivalentPairs
 
-otRefine :: forall sul i o. (Ord i, SUL sul) => ObservationTable i o -> [i] -> Experiment (sul i o) (ObservationTable i o)
+otRefine :: forall sul i o. (Ord i, SUL sul, Bounded i, Enum i) => ObservationTable i o -> [i] -> Experiment (sul i o) (ObservationTable i o)
 otRefine ot [] = return ot
 otRefine ot cex = do
     sul <- ask
@@ -148,9 +134,9 @@ otRefine ot cex = do
         sm = prefixSetS ot
         em = suffixSetE ot
         tm = mappingT ot
-
+        -- insert all prefixes of the counterexample
         sm' = List.foldr Set.insert sm [take n cex | n <- [1 .. length cex]]
-        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- cex]
+        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- Set.toList $ inputs sul]
         missing = (sm' `Set.union` sm_I') `Set.cartesianProduct` em
 
         tm' = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk sul (a ++ b))) tm missing
@@ -160,7 +146,7 @@ otRefine ot cex = do
 -- default to Int for the state type and the user can provide a mapping to whatever
 -- type they want for the state.
 makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton StateID i o
-makeHypothesis ot = mkMealyAutomaton delta' lambda' initial
+makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length repList - 1]) initial
   where
     -- Equivalence classes: Map from representative prefix to class members
     equivMap :: Map.Map [i] [[i]]
@@ -182,12 +168,12 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' initial
 
     delta' :: StateID -> i -> StateID
     delta' sid i =
-        let rep = repList !! fromIntegral sid
+        let rep = repList !! sid
          in getStateId (rep ++ [i])
 
     lambda' :: StateID -> i -> o
     lambda' sid i =
-        let rep = repList !! fromIntegral sid
+        let rep = repList !! sid
          in mappingT ot Map.! (rep, [i])
 
     initial = getStateId []
@@ -248,3 +234,25 @@ instance Learner Lstar (MealyAutomaton StateID) where
         return (Lstar ot')
 
     learn (Lstar ot) = lstar (Lstar ot)
+
+data Input = A | B deriving (Show, Eq, Ord, Bounded, Enum)
+data Output = X | Y deriving (Show, Eq, Ord, Bounded, Enum)
+data State = S0 | S1 | S2 deriving (Show, Eq, Ord, Bounded, Enum)
+
+sulTransitions :: State -> Input -> (State, Output)
+sulTransitions S0 _ = (S1, X)
+sulTransitions S1 _ = (S2, Y)
+sulTransitions S2 A = (S0, X)
+sulTransitions S2 B = (S0, Y)
+
+mysul :: MealyAutomaton State Input Output
+mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
+
+myexperiment :: (SUL sul) => Experiment (sul Input Output) (MealyAutomaton StateID Input Output)
+myexperiment = do
+    let thelearner = Lstar (error "boom" :: ObservationTable Input Output)
+    experiment thelearner (WMethod 2)
+
+learnedmodel :: MealyAutomaton StateID Input Output
+learnedmodel = runReader myexperiment mysul
+

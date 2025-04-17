@@ -11,7 +11,6 @@ module MealyAutomaton (
     mealyWalk,
     mealyReset,
     mealyTransitions,
-    mealyStates,
     mealyUpdateState,
     mealyInAlphabet,
     mealyOutAlphabet,
@@ -40,31 +39,34 @@ data MealyAutomaton state input output = MealyAutomaton
     , mealyLambda :: state -> input -> output
     , mealyInitialS :: state
     , mealyCurrentS :: state
+    , mealyStates :: Set.Set state
     }
 
 {- | The 'mkMealyAutomaton' constructor returns a 'MealyAutomaton' by requiring the 'mealyDelta'
 function, the 'mealyLambda' function and the initial state 'mealyInitialS'.
 -}
-mkMealyAutomaton :: (s -> i -> s) -> (s -> i -> o) -> s -> MealyAutomaton s i o
-mkMealyAutomaton delta lambda initial =
+mkMealyAutomaton :: (s -> i -> s) -> (s -> i -> o) -> Set.Set s -> s -> MealyAutomaton s i o
+mkMealyAutomaton delta lambda states initial =
     MealyAutomaton
         { mealyDelta = delta
         , mealyLambda = lambda
         , mealyInitialS = initial
         , mealyCurrentS = initial
+        , mealyStates = states
         }
 
 {- | The 'mkMealyAutomaton2' constructor returns a 'MealyAutomaton' by requiring just one
 function describing both the state transitions as well as the produced outputs, instead of two
 separate functions, and the initial state 'mealyInitialS'.
 -}
-mkMealyAutomaton2 :: (s -> i -> (s, o)) -> s -> MealyAutomaton s i o
-mkMealyAutomaton2 transitions initial =
+mkMealyAutomaton2 :: (s -> i -> (s, o)) -> Set.Set s -> s -> MealyAutomaton s i o
+mkMealyAutomaton2 transitions states initial =
     MealyAutomaton
         { mealyDelta = \s i -> fst (transitions s i)
         , mealyLambda = \s i -> snd (transitions s i)
         , mealyInitialS = initial
         , mealyCurrentS = initial
+        , mealyStates = states
         }
 
 -- | Convenience function that updates the current state 'mealyCurrentS' of the automaton.
@@ -75,11 +77,13 @@ mealyUpdateState m s =
         , mealyLambda = lambda
         , mealyInitialS = initial
         , mealyCurrentS = s
+        , mealyStates = states
         }
   where
     delta = mealyDelta m
     lambda = mealyLambda m
     initial = mealyInitialS m
+    states = mealyStates m
 
 {- | Performs a step in the automaton and returns a tuple containing the automaton with a modified
 state as well as the output produced by the transition.
@@ -106,14 +110,14 @@ and 'mealyLambda' functions.
 -}
 mealyTransitions ::
     forall s i o.
-    (Bounded s, Bounded i, Ord s, Ord i, Enum s, Enum i) =>
+    (Bounded i, Ord s, Ord i, Enum i) =>
     MealyAutomaton s i o ->
     Map.Map (s, i) (s, o)
-mealyTransitions m = error "TODO: handle infinite states"
+mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- domainS, i <- domainI]
   where
     delta = mealyDelta m
     lambda = mealyLambda m
-    domainS = [minBound .. maxBound] :: [s]
+    domainS = Set.toList $ mealyStates m
     domainI = Set.toList $ mealyInAlphabet m
 
 -- | Returns a set of all values of the input alphabet of the automaton.
@@ -132,19 +136,11 @@ mealyOutAlphabet ::
     Set.Set o
 mealyOutAlphabet _ = Set.fromList [minBound .. maxBound] :: Set.Set o
 
--- | Returns a set of all values of the states of the automaton.
-mealyStates ::
-    forall s i o.
-    (Ord s, Bounded s, Enum s) =>
-    MealyAutomaton s i o ->
-    Set.Set s
-mealyStates _ = Set.fromList [minBound .. maxBound] :: Set.Set s
-
 {- | Returns a set of lists of inputs that can be used to distinguish between any two different states
 of the automaton.
 -}
 mealyGlobalCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded s, Enum s, Bounded i, Enum i) =>
+    (Ord i, Ord s, Eq o, Bounded i, Enum i) =>
     MealyAutomaton s i o ->
     Set.Set [i]
 mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states, s2 <- states, s1 < s2]
@@ -156,7 +152,7 @@ mealyGlobalCharacterizingSet m = Set.fromList [distinguish s1 s2 | s1 <- states,
  - any other state of the automaton.
 -}
 mealyLocalCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded s, Enum s, Bounded i, Enum i) =>
+    (Ord i, Ord s, Eq o, Bounded i, Enum i) =>
     MealyAutomaton s i o ->
     s ->
     Set.Set [i]

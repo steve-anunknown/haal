@@ -1,4 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Experiment (
     Experiment,
@@ -114,10 +116,12 @@ experiment ::
     Experiment (sul i o) (aut i o)
 experiment learner oracle = do
     initializedLearner <- initialize learner
-    (learner', hypothesis) <- learn initializedLearner
-    cex <- findCex oracle hypothesis
-    case cex of
-        Just (inputs, _) -> do
-            refinedLearner <- refine learner' inputs
-            experiment refinedLearner oracle
-        Nothing -> return hypothesis
+    let inner le orc = do
+            (learner', aut) <- learn le
+            cex <- findCex orc aut
+            case cex of
+                Nothing -> return aut
+                Just (ce, _) -> do
+                    refinedLearner <- refine learner' ce
+                    inner refinedLearner orc
+    inner initializedLearner oracle
