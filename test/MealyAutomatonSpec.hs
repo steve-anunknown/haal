@@ -39,7 +39,7 @@ prop_emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
                 `Set.member` mealyGlobalCharacterizingSet automaton
 
 -- Two states that are not equivalent can be distinguished.
-prop_existsDistinguishingSequence :: Mealy Input Output State -> State -> State -> Property
+prop_existsDistinguishingSequence :: Mealy State Input Output -> State -> State -> Property
 prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
     not (statesAreEquivalent automaton s1 s2)
         ==> output1
@@ -53,7 +53,7 @@ prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
 
 -- The map returned by 'mealyTransitions' is equivalent to the 'mealyLambda'
 -- and 'mealyDelta' functions of the automaton.
-prop_mappingEquivalentToFunctions :: Mealy Input Output State -> Bool
+prop_mappingEquivalentToFunctions :: Mealy State Input Output -> Bool
 prop_mappingEquivalentToFunctions (Mealy automaton) =
     let transitions = mealyTransitions automaton
         alphabet = Set.toList $ mealyInAlphabet automaton
@@ -68,7 +68,7 @@ prop_mappingEquivalentToFunctions (Mealy automaton) =
      in mapOutputs == funOutputs
 
 -- The access sequences returned by 'mealyAccessSequences' cover all reachable states.
-prop_completeAccessSequences :: Mealy Input Output State -> Property
+prop_completeAccessSequences :: Mealy State Input Output -> Property
 prop_completeAccessSequences (Mealy automaton) = states == reachable ==> allin
   where
     seqs = mealyAccessSequences automaton
@@ -77,7 +77,7 @@ prop_completeAccessSequences (Mealy automaton) = states == reachable ==> allin
     allin = all (`Map.member` seqs) reachable
 
 -- The access sequences returned by 'mealyAccessSequences' are the shortest
-prop_shortestAccessSequences :: Mealy Input Output State -> State -> State -> Property
+prop_shortestAccessSequences :: Mealy State Input Output -> State -> State -> Property
 prop_shortestAccessSequences (Mealy automaton) s1 s2 =
     s1 `Set.member` reachable
         && s2 `Set.member` reachable

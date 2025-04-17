@@ -41,24 +41,28 @@ instance Arbitrary ArbWMethod where
         d <- choose (0, 5)
         return (ArbWMethod (WMethod d))
 
-newtype Mealy i o s = Mealy (MealyAutomaton i o s) deriving (Show)
+newtype Mealy s i o = Mealy (MealyAutomaton s i o) deriving (Show)
 
 instance
     ( Arbitrary i
     , Arbitrary o
     , Arbitrary s
-    , Ord s
     , Ord i
+    , Enum i
+    , Bounded i
     , Ord o
-    , Data s
-    , Data i
-    , Data o
+    , Enum o
+    , Bounded o
+    , Ord s
+    , Enum s
+    , Bounded s
     ) =>
-    Arbitrary (Mealy i o s)
+    Arbitrary (Mealy s i o)
     where
     arbitrary = do
-        delta <- generateDelta
-        lambda <- generateLambda
+        let states = [minBound .. maxBound]
+        delta <- generateDelta states
+        lambda <- generateLambda states
 
         initialState <- arbitrary
         currentState <- arbitrary
@@ -70,14 +74,15 @@ instance
                     , mealyLambda = lambda
                     , mealyInitialS = initialState
                     , mealyCurrentS = currentState
+                    , mealyStates = Set.fromList states
                     }
                 )
             )
       where
-        generateDelta :: Gen (s -> i -> s)
-        generateDelta = do
-            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton i o s)
-                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton i o s)
+        generateDelta :: [s] -> Gen (s -> i -> s)
+        generateDelta states = do
+            let 
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton s i o)
                 complete = [(st, inp) | st <- states, inp <- inputs]
                 (numS, numI) = Bif.bimap List.length List.length (states, inputs)
             matching <- vectorOf (numS * numI) (choose (0, numS - 1))
@@ -86,11 +91,11 @@ instance
             fallbackState <- arbitrary :: Gen s
             return $ \s i -> Data.Maybe.fromMaybe fallbackState (Map.lookup (s, i) stateMappings)
 
-        generateLambda :: Gen (s -> i -> o)
-        generateLambda = do
-            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton i o s)
-                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton i o s)
-                outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton i o s)
+        generateLambda :: [s] -> Gen (s -> i -> o)
+        generateLambda states = do
+            let 
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton s i o)
+                outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton s i o)
                 complete = [(st, inp) | st <- states, inp <- inputs]
                 (numS, numI) = Bif.bimap List.length List.length (states, inputs)
                 numO = List.length outputs
@@ -100,9 +105,9 @@ instance
             fallbackOutput <- arbitrary :: Gen o
             return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
 
-data Input = A | B | C | D deriving (Show, Eq, Ord, Data)
-data Output = X | Y | Z | W deriving (Show, Eq, Ord, Data)
-data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 deriving (Show, Eq, Ord, Data, Bounded)
+data Input = A | B | C | D deriving (Show, Eq, Ord, Data, Enum, Bounded)
+data Output = X | Y | Z | W deriving (Show, Eq, Ord, Data, Enum, Bounded)
+data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 deriving (Show, Eq, Ord, Data, Enum, Bounded)
 
 -- Arbitrary instances for Input, Output, and State
 instance Arbitrary Input where
@@ -114,12 +119,13 @@ instance Arbitrary Output where
 instance Arbitrary State where
     arbitrary = elements [S0, S1, S2, S3, S4, S5, S6, S7]
 
-newtype NonMinimalMealy = NonMinimalMealy (MealyAutomaton Input Output State) deriving (Show)
+newtype NonMinimalMealy = NonMinimalMealy (MealyAutomaton State Input Output) deriving (Show)
 
 instance Arbitrary NonMinimalMealy where
     arbitrary = do
-        delta <- generateDelta
-        lambda <- generateLambda
+        let states = [minBound .. maxBound]
+        delta <- generateDelta states
+        lambda <- generateLambda states
 
         initialState <- arbitrary :: Gen State
         currentState <- arbitrary :: Gen State
@@ -131,14 +137,15 @@ instance Arbitrary NonMinimalMealy where
                     , mealyLambda = lambda
                     , mealyInitialS = initialState
                     , mealyCurrentS = currentState
+                    , mealyStates = Set.fromList states
                     }
                 )
             )
       where
-        generateDelta :: Gen (State -> Input -> State)
-        generateDelta = do
-            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton Input Output State)
-                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton Input Output State)
+        generateDelta :: [State] -> Gen (State -> Input -> State)
+        generateDelta states = do
+            let 
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton State Input Output)
                 (numS, numI) = Bif.bimap List.length List.length (states, inputs)
                 same = numS `div` 2
                 nonMinimal = [(st, inp) | st <- take same states, inp <- inputs]
@@ -151,11 +158,11 @@ instance Arbitrary NonMinimalMealy where
             fallbackState <- arbitrary :: Gen State
             return $ \s i -> Data.Maybe.fromMaybe fallbackState (Map.lookup (s, i) nonMinimalMappings)
 
-        generateLambda :: Gen (State -> Input -> Output)
-        generateLambda = do
-            let states = Set.toList $ mealyStates (undefined :: MealyAutomaton Input Output State)
-                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton Input Output State)
-                outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton Input Output State)
+        generateLambda :: [State] -> Gen (State -> Input -> Output)
+        generateLambda states = do
+            let 
+                inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton State Input Output)
+                outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton State Input Output)
                 same = numS `div` 2
                 nonMinimal = [(st, inp) | st <- take same states, inp <- inputs]
                 rest = [(st, inp) | st <- drop same states, inp <- inputs]
@@ -170,16 +177,16 @@ instance Arbitrary NonMinimalMealy where
             return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
 
 -- Two states are equivalent if their delta and lambda functions are equivalent.
-statesAreEquivalent :: MealyAutomaton Input Output State -> State -> State -> Bool
+statesAreEquivalent :: MealyAutomaton State Input Output -> State -> State -> Bool
 statesAreEquivalent _ s1 s2 | s1 == s2 = True
-statesAreEquivalent automaton s1 s2 | otherwise =
+statesAreEquivalent automaton s1 s2  =
     all ( \i -> (delta s1 i, lambda s1 i) == (delta s2 i, lambda s2 i) ) alphabet
         where delta = mealyDelta automaton
               lambda = mealyLambda automaton
               alphabet = mealyInAlphabet automaton
 
 -- Starts a bfs from the initial state and finds all reachable states
-findReachable :: MealyAutomaton Input Output State -> Set.Set State
+findReachable :: MealyAutomaton State Input Output -> Set.Set State
 findReachable automaton =
     let initialState = mealyInitialS automaton
         alphabet = mealyInAlphabet automaton

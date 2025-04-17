@@ -5,18 +5,19 @@ module WMethodSpec (
 import Data.Maybe (isJust, isNothing)
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
+import Control.Monad.Reader
 import Utils (ArbWMethod (..), Input, Mealy (..), Output, State)
 import WMethod (WMethod (..), wmethod, wmethodSuite, wmethodSuiteSize)
 
-prop_WMethodCardinality :: ArbWMethod -> Mealy Input Output State -> Bool
+prop_WMethodCardinality :: ArbWMethod -> Mealy State Input Output -> Bool
 prop_WMethodCardinality (ArbWMethod (WMethod d)) (Mealy aut) =
     length (wmethodSuite (WMethod d) aut) == wmethodSuiteSize (WMethod d) aut
 
-prop_WMethodIdentity :: Mealy Input Output State -> Bool
-prop_WMethodIdentity (Mealy aut) = isNothing (wmethod (WMethod 2) aut aut)
+prop_WMethodIdentity :: Mealy State Input Output -> Bool
+prop_WMethodIdentity (Mealy aut) = isNothing (runReader (wmethod (WMethod 2) aut) aut)
 
-prop_WMethodDifference :: Mealy Input Output State -> Mealy Input Output State -> Property
-prop_WMethodDifference (Mealy aut1) (Mealy aut2) = aut1 /= aut2 ==> isJust (wmethod (WMethod 3) aut1 aut2)
+prop_WMethodDifference :: Mealy State Input Output -> Mealy State Input Output -> Property
+prop_WMethodDifference (Mealy aut1) (Mealy aut2) = aut1 /= aut2 ==> isJust (runReader (wmethod (WMethod 3) aut1) aut2)
 
 spec :: Spec
 spec = do
