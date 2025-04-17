@@ -79,4 +79,5 @@ test-suite haal-test
     , containers
     , haal
     , hspec
+    , mtl
   default-language: Haskell2010

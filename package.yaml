@@ -63,3 +63,4 @@ tests:
     - hspec
     - containers
     - QuickCheck
+    - mtl
