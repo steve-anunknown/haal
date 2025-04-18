@@ -9,11 +9,6 @@ module Lstar (
     Lstar (..),
     ObservationTable (..),
     initializeOT,
-    mysul,
-    Input (..),
-    Output (..),
-    State (..),
-    learnedmodel,
 )
 where
 
@@ -25,8 +20,8 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import Experiment
 import MealyAutomaton
-import WMethod
 
+-- | The 'ObservationTable' type is a data type for storing the observation table of the L* algorithm.
 data ObservationTable i o = ObservationTable
     { prefixSetS :: Set.Set [i]
     , suffixSetE :: Set.Set [i]
@@ -36,14 +31,19 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
+-- | The 'Lstar' type is a wrapper around the 'ObservationTable' type and represents the L* algorithm.
 newtype Lstar i o = Lstar (ObservationTable i o)
 
+-- | The 'equivalentRows' function checks if two rows in the observation table are equivalent.
 equivalentRows :: forall i o. (Ord i, Eq o) => ObservationTable i o -> [i] -> [i] -> Bool
 equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e)) em
   where
     mapping = flip Map.lookup (mappingT ot)
     em = suffixSetE ot
 
+{- | The 'initializeOT' function initializes the observation table for the L* algorithm.
+It must be in the 'Experiment' monad to allow queries to the SUL.
+-}
 initializeOT ::
     forall i o sul.
     (Bounded i, Enum i, Ord i, SUL sul) =>
@@ -71,6 +71,7 @@ initializeOT = do
             }
         )
 
+-- | The 'equivalenceClasses' function computes the equivalence classes of the observation table.
 equivalenceClasses ::
     forall i o.
     (Ord i, Eq o, Bounded i, Enum i) =>
@@ -88,6 +89,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
                 classMembers = x : Set.toList equivClass
              in go (Map.insert x classMembers acc) remainder
 
+-- | The 'lstar' function implements one iteration of the L* algorithm.
 lstar ::
     (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
     Lstar i o ->
@@ -102,6 +104,7 @@ lstar (Lstar ot) = case otIsClosed ot of
         ot' <- makeClosed ot inc
         lstar (Lstar ot')
 
+-- | The 'otIsClosed' function checks if the observation table is closed.
 otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
   where
@@ -110,6 +113,7 @@ otIsClosed ot = Maybe.fromMaybe [] exists
 
     exists = List.find (\x -> not $ any (equivalentRows ot x) sm) sm_I
 
+-- | The 'otIsConsistent' function checks if the observation table is consistent.
 otIsConsistent :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> ([i], [i])
 otIsConsistent ot = Maybe.fromMaybe ([], []) condition
   where
@@ -127,6 +131,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
             )
             equivalentPairs
 
+-- | The 'otRefine' function refines the observation table based on a counterexample.
 otRefine :: forall sul i o. (Ord i, SUL sul, Bounded i, Enum i) => ObservationTable i o -> [i] -> Experiment (sul i o) (ObservationTable i o)
 otRefine ot [] = return ot
 otRefine ot cex = do
@@ -144,8 +149,9 @@ otRefine ot cex = do
         ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'}
     return ot'
 
--- default to Int for the state type and the user can provide a mapping to whatever
--- type they want for the state.
+{- | The 'makeHypothesis' function constructs a Mealy automaton from the observation table. It uses
+the default 'StateID' type defined in the 'Experiment' module for representing the automaton states.
+-}
 makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton StateID i o
 makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length repList - 1]) initial
   where
@@ -179,6 +185,7 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length r
 
     initial = getStateId []
 
+-- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
     forall i o sul.
     (Ord i, SUL sul, Bounded i, Enum i) =>
@@ -207,6 +214,7 @@ makeConsistent ot (column, symbol) = do
         tm' = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk sul (a ++ b))) tm missing
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
+-- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
 makeClosed ::
     forall sul i o.
     (Ord i, Bounded i, Enum i, SUL sul) =>
@@ -236,23 +244,23 @@ instance Learner Lstar (MealyAutomaton StateID) where
 
     learn (Lstar ot) = lstar (Lstar ot)
 
-data Input = A | B deriving (Show, Eq, Ord, Bounded, Enum)
-data Output = X | Y deriving (Show, Eq, Ord, Bounded, Enum)
-data State = S0 | S1 | S2 deriving (Show, Eq, Ord, Bounded, Enum)
-
-sulTransitions :: State -> Input -> (State, Output)
-sulTransitions S0 _ = (S1, X)
-sulTransitions S1 _ = (S2, Y)
-sulTransitions S2 A = (S0, X)
-sulTransitions S2 B = (S0, Y)
-
-mysul :: MealyAutomaton State Input Output
-mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
-
-myexperiment :: Experiment (MealyAutomaton State Input Output) (MealyAutomaton StateID Input Output)
-myexperiment = do
-    let thelearner = Lstar (error "boom" :: ObservationTable Input Output)
-    experiment thelearner (WMethod 2)
-
-learnedmodel :: MealyAutomaton StateID Input Output
-learnedmodel = runReader myexperiment mysul
+-- data Input = A | B deriving (Show, Eq, Ord, Bounded, Enum)
+-- data Output = X | Y deriving (Show, Eq, Ord, Bounded, Enum)
+-- data State = S0 | S1 | S2 deriving (Show, Eq, Ord, Bounded, Enum)
+--
+-- sulTransitions :: State -> Input -> (State, Output)
+-- sulTransitions S0 _ = (S1, X)
+-- sulTransitions S1 _ = (S2, Y)
+-- sulTransitions S2 A = (S0, X)
+-- sulTransitions S2 B = (S0, Y)
+--
+-- mysul :: MealyAutomaton State Input Output
+-- mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
+--
+-- myexperiment :: Experiment (MealyAutomaton State Input Output) (MealyAutomaton StateID Input Output)
+-- myexperiment = do
+--     let thelearner = Lstar (error "boom" :: ObservationTable Input Output)
+--     experiment thelearner (WMethod 2)
+--
+-- learnedmodel :: MealyAutomaton StateID Input Output
+-- learnedmodel = runReader myexperiment mysul

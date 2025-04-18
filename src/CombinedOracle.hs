@@ -1,3 +1,4 @@
+-- | This module implements a combined equivalence oracle for two oracles.
 module CombinedOracle (
     CombinedOracle (..),
 ) where
