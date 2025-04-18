@@ -19,6 +19,17 @@
 
 **Haal** is an [Active Automata Learning](https://wcventure.github.io/Active-Automata-Learning/) library aimed at making it easy to construct learning experiments and explore different configurations of learning algorithms and equivalence oracles. The library is still in its early stages, so nothing is set in stone yet. A summary of the current architecture can be found below — but of course, the best documentation is the source code itself.
 
+## Table of Contents
+
+- [Architecture](#architecture)
+  - [Systems under learning](#systems-under-learning)
+  - [Automata](#automata)
+  - [Learning algorithms](#learning-algorithms)
+  - [Equivalence oracles](#equivalence-oracles)
+  - [Experiment](#experiment)
+- [Installing](#installing)
+- [Example](#example)
+
 ## Architecture
 
 The library consists of the following main components:
