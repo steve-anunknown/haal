@@ -243,24 +243,3 @@ instance Learner Lstar (MealyAutomaton StateID) where
         return (Lstar ot')
 
     learn (Lstar ot) = lstar (Lstar ot)
-
--- data Input = A | B deriving (Show, Eq, Ord, Bounded, Enum)
--- data Output = X | Y deriving (Show, Eq, Ord, Bounded, Enum)
--- data State = S0 | S1 | S2 deriving (Show, Eq, Ord, Bounded, Enum)
---
--- sulTransitions :: State -> Input -> (State, Output)
--- sulTransitions S0 _ = (S1, X)
--- sulTransitions S1 _ = (S2, Y)
--- sulTransitions S2 A = (S0, X)
--- sulTransitions S2 B = (S0, Y)
---
--- mysul :: MealyAutomaton State Input Output
--- mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
---
--- myexperiment :: Experiment (MealyAutomaton State Input Output) (MealyAutomaton StateID Input Output)
--- myexperiment = do
---     let thelearner = Lstar (error "boom" :: ObservationTable Input Output)
---     experiment thelearner (WMethod 2)
---
--- learnedmodel :: MealyAutomaton StateID Input Output
--- learnedmodel = runReader myexperiment mysul
