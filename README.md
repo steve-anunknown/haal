@@ -55,3 +55,83 @@ The project is still in its early stages and has not yet been published. For now
 ```bash
 stack install
 ```
+
+## Example
+
+Here's a quick GHCi session putting it all together, showing how to define a simple Mealy machine, configure an experiment, and run a learning algorithm using `haal`.
+
+```haskell
+ghci> :set +m
+ghci> import qualified Data.Set as Set
+
+-- Define input, output, and state types
+ghci> data Input = A | B deriving (Show, Eq, Ord, Enum, Bounded)
+ghci> data Output = X | Y deriving (Show, Eq, Ord, Enum, Bounded)
+ghci> data State = S0 | S1 | S2 deriving (Show, Eq, Ord, Enum, Bounded)
+
+-- Define the transition function for the system under learning
+ghci> let sulTransitions S0 _ = (S1, X)
+ghci|     sulTransitions S1 _ = (S2, Y)
+ghci|     sulTransitions S2 A = (S0, X)
+ghci|     sulTransitions S2 B = (S0, Y)
+
+-- Set up the experiment. A bit clunky at the moment.
+ghci> myexperiment = experiment (Lstar (error "don't worry" :: ObservationTable Input Output)) (WMethod 2)
+
+-- Define the Mealy system under learning. Remember that automata can act as suls.
+ghci> mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
+
+-- Run the experiment
+ghci> learnedmodel = runExperiment myexperiment mysul
+
+-- View the learned model
+ghci> learnedmodel
+{
+    Current State: 0,
+    Initial State: 0,
+    Transitions: fromList [
+        ((0,A),(1,X)),
+        ((0,B),(1,X)),
+        ((1,A),(2,Y)),
+        ((1,B),(2,Y)),
+        ((2,A),(0,X)),
+        ((2,B),(0,Y))
+    ]
+}
+```
+
+This shows how a simple Mealy machine can be learned using the `L*` algorithm and a `W`-method equivalence oracle.
+
+This also showcases some strong points of using a functional programming language like haskell for the task of active automata learning:
+
+### 1. Type-safe alphabets
+
+In Haal, the input and output alphabets are represented as plain Haskell data types. This means the compiler can catch errors early — for example, if a symbol not defined in the alphabet accidentally appears in a transition, the type checker will reject the code. This eliminates entire classes of bugs that are easy to make in more loosely typed implementations.
+
+```haskell
+data Input = A | B deriving (Show, Eq, Ord, Enum, Bounded)
+data Output = X | Y deriving (Show, Eq, Ord, Enum, Bounded)
+```
+
+### 2. Automata as functions
+
+Instead of defining transitions via tables or external formats like `dot`, Haskell allows transitions to be encoded as pure functions:
+
+```haskell
+sulTransitions :: State -> Input -> (State, Output)
+sulTransitions S0 _ = (S1, X)
+sulTransitions S1 _ = (S2, Y)
+sulTransitions S2 A = (S0, X)
+sulTransitions S2 B = (S0, Y)
+```
+
+Combined with exhaustive pattern matching and totality checking, this ensures that:
+- All input cases are handled for each state
+- No states or transitions are forgotten
+- The definition is both human-readable and machine-checkable
+
+In essence, **Haskell itself is the language for defining automata**, without needing external DSLs or formats like DOT.
+
+---
+
+
