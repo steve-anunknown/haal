@@ -7,7 +7,8 @@ maintainer:          "steve.anunknown@gmail.com"
 copyright:           "2025 Stefanos Anagnostou"
 
 extra-source-files:
-- README.md
+- README.md 
+extra-doc-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
@@ -18,6 +19,8 @@ extra-source-files:
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/steve-anunknown/haal#readme>
+synopsis:            "A Haskell library for Active Automata Learning."
+category:            "Model Learning"
 
 dependencies:
 - base >= 4.7 && < 5
@@ -36,8 +39,8 @@ ghc-options:
 library:
   source-dirs: src
   dependencies:
-    - containers
-    - mtl
+    - containers >= 0.6.7 && < 0.7
+    - mtl >= 2.2.2 && <= 2.3.1
 
 executables:
   haal-exe:

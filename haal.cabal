@@ -6,7 +6,9 @@ cabal-version: 2.2
 
 name:           haal
 version:        0.1.0.0
+synopsis:       A Haskell library for Active Automata Learning.
 description:    Please see the README on GitHub at <https://github.com/steve-anunknown/haal#readme>
+category:       Model Learning
 homepage:       https://github.com/steve-anunknown/haal#readme
 bug-reports:    https://github.com/steve-anunknown/haal/issues
 author:         Stefanos Anagnostou
@@ -17,6 +19,7 @@ license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
+extra-doc-files:
     CHANGELOG.md
 
 source-repository head
@@ -42,8 +45,8 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
-    , containers
-    , mtl
+    , containers >=0.6.7 && <0.7
+    , mtl >=2.2.2 && <=2.3.1
   default-language: Haskell2010
 
 executable haal-exe
