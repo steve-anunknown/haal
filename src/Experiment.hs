@@ -4,14 +4,17 @@
 
 module Experiment (
     Experiment,
+    ExperimentT,
     Learner (..),
     EquivalenceOracle (..),
     experiment,
+    runExperiment,
 ) where
 
 import Control.Monad.Reader
 
 import BlackBox (Automaton, SUL)
+import Control.Monad.Identity
 
 class EquivalenceOracle or where
     testSuiteSize ::
@@ -94,7 +97,12 @@ class Learner l aut | l -> aut where
         l i o ->
         Experiment (sul i o) (l i o, aut i o)
 
-type Experiment sul result = Reader sul result
+type ExperimentT sul m result = ReaderT sul m result
+
+type Experiment sul result = ExperimentT sul Identity result
+
+runExperiment :: Experiment r a -> r -> a
+runExperiment = runReader
 
 experiment ::
     ( SUL sul
