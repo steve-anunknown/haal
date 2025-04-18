@@ -81,7 +81,7 @@ instance
       where
         generateDelta :: [s] -> Gen (s -> i -> s)
         generateDelta states = do
-            let 
+            let
                 inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton s i o)
                 complete = [(st, inp) | st <- states, inp <- inputs]
                 (numS, numI) = Bif.bimap List.length List.length (states, inputs)
@@ -93,7 +93,7 @@ instance
 
         generateLambda :: [s] -> Gen (s -> i -> o)
         generateLambda states = do
-            let 
+            let
                 inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton s i o)
                 outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton s i o)
                 complete = [(st, inp) | st <- states, inp <- inputs]
@@ -144,7 +144,7 @@ instance Arbitrary NonMinimalMealy where
       where
         generateDelta :: [State] -> Gen (State -> Input -> State)
         generateDelta states = do
-            let 
+            let
                 inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton State Input Output)
                 (numS, numI) = Bif.bimap List.length List.length (states, inputs)
                 same = numS `div` 2
@@ -160,7 +160,7 @@ instance Arbitrary NonMinimalMealy where
 
         generateLambda :: [State] -> Gen (State -> Input -> Output)
         generateLambda states = do
-            let 
+            let
                 inputs = Set.toList $ mealyInAlphabet (undefined :: MealyAutomaton State Input Output)
                 outputs = Set.toList $ mealyOutAlphabet (undefined :: MealyAutomaton State Input Output)
                 same = numS `div` 2
@@ -179,11 +179,12 @@ instance Arbitrary NonMinimalMealy where
 -- Two states are equivalent if their delta and lambda functions are equivalent.
 statesAreEquivalent :: MealyAutomaton State Input Output -> State -> State -> Bool
 statesAreEquivalent _ s1 s2 | s1 == s2 = True
-statesAreEquivalent automaton s1 s2  =
-    all ( \i -> (delta s1 i, lambda s1 i) == (delta s2 i, lambda s2 i) ) alphabet
-        where delta = mealyDelta automaton
-              lambda = mealyLambda automaton
-              alphabet = mealyInAlphabet automaton
+statesAreEquivalent automaton s1 s2 =
+    all (\i -> (delta s1 i, lambda s1 i) == (delta s2 i, lambda s2 i)) alphabet
+  where
+    delta = mealyDelta automaton
+    lambda = mealyLambda automaton
+    alphabet = mealyInAlphabet automaton
 
 -- Starts a bfs from the initial state and finds all reachable states
 findReachable :: MealyAutomaton State Input Output -> Set.Set State
