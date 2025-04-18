@@ -248,11 +248,10 @@ sulTransitions S2 B = (S0, Y)
 mysul :: MealyAutomaton State Input Output
 mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
 
-myexperiment :: (SUL sul) => Experiment (sul Input Output) (MealyAutomaton StateID Input Output)
+myexperiment :: Experiment (MealyAutomaton State Input Output) (MealyAutomaton StateID Input Output)
 myexperiment = do
     let thelearner = Lstar (error "boom" :: ObservationTable Input Output)
     experiment thelearner (WMethod 2)
 
 learnedmodel :: MealyAutomaton StateID Input Output
 learnedmodel = runReader myexperiment mysul
-
