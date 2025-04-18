@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | This module implements a Moore automaton.
 module MooreAutomaton (
     mkMooreAutomaton,
     mooreStep,

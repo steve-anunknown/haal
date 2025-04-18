@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
+-- | This module implements the L* algorithm for learning Mealy automata.
 module Lstar (
     lstar,
     Lstar (..),

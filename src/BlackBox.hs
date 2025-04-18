@@ -13,6 +13,9 @@ where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+{- | The 'StateID' type is an alias for an integer that represents the state of the automaton.
+ - It is used as a default type for the state of learned automata.
+-}
 type StateID = Int
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.

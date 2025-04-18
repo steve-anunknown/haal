@@ -1,3 +1,4 @@
+-- | This module implements the W-method equivalence oracle.
 module WMethod (
     WMethod (..),
     wmethod,
@@ -12,8 +13,13 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Experiment (EquivalenceOracle (..), Experiment)
 
+{- | The 'WMethod' type represents the W-method equivalence oracle.
+It is just a wrapper around an integer, which is used for configuring
+the exploration depth of the method.
+-}
 newtype WMethod = WMethod {depth :: Int} deriving (Show, Eq)
 
+-- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
     ( Automaton aut s
     , Ord i
@@ -35,6 +41,7 @@ wmethodSuiteSize (WMethod{depth = d}) aut = size
     transitionCover = accessSeqs * alphabet
     size = sum [transitionCover * (alphabet ^ n) * characterizingSet | n <- [0 .. d]]
 
+-- | The 'wmethodSuite' function generates the test suite for the W-method.
 wmethodSuite ::
     ( Automaton aut s
     , Ord i
@@ -61,6 +68,7 @@ wmethodSuite (WMethod{depth = d}) aut = suite
             , middle <- replicateM fixed alphabet
             ]
 
+-- | The 'wmethod' function implements the W-method equivalence oracle.
 wmethod ::
     ( Automaton aut s
     , Ord i
@@ -96,4 +104,3 @@ instance EquivalenceOracle WMethod where
     testSuiteSize = wmethodSuiteSize
     testSuite = wmethodSuite
     findCex = wmethod
-

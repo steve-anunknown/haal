@@ -2,6 +2,9 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+{- | This module exports the basic types, classes and functions that are required to
+easily construct and configure learning experiments.
+-}
 module Experiment (
     Experiment,
     ExperimentT,
@@ -16,6 +19,10 @@ import Control.Monad.Reader
 import BlackBox (Automaton, SUL)
 import Control.Monad.Identity
 
+{- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
+Instances of this class should provide methods to calculate the size of a test suite,
+generate a test suite, and search for counterexamples.
+-}
 class EquivalenceOracle or where
     testSuiteSize ::
         ( Automaton aut s
@@ -58,6 +65,11 @@ class EquivalenceOracle or where
         aut i o ->
         Experiment (sul i o) (Maybe ([i], [o]))
 
+{- | The 'Learner' type class defines the interface for learning algorithms.
+Instances of this class should provide methods to initialize the learner,
+refine the learner with a counterexample, and learn an automaton. The type 'l'
+determines the type of automaton 'aut' that is learned.
+-}
 class Learner l aut | l -> aut where
     initialize ::
         ( SUL sul
@@ -97,13 +109,27 @@ class Learner l aut | l -> aut where
         l i o ->
         Experiment (sul i o) (l i o, aut i o)
 
+{- | The 'ExperimentT' type is a monad transformer that allows for
+running experiments in a reader monad. This may prove useful for
+learning real systems, which requires IO.
+-}
 type ExperimentT sul m result = ReaderT sul m result
 
+{- | The 'Experiment' type is a type alias for the 'ExperimentT' type
+with the 'Identity' monad. This allows for running pure experiments.
+-}
 type Experiment sul result = ExperimentT sul Identity result
 
+{- | The 'runExperiment' function runs an experiment in the 'Experiment' monad.
+It is just an alias for 'runReader'.
+-}
 runExperiment :: Experiment r a -> r -> a
 runExperiment = runReader
 
+{- | The 'experiment' function returns an 'Experiment' that can be run with
+the 'runExperiment' function. It takes a learner and an equivalence oracle
+and then requires a system under learning (SUL) to run the experiment.
+-}
 experiment ::
     ( SUL sul
     , Automaton aut s
