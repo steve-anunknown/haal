@@ -36,6 +36,7 @@ library
       MealyAutomaton
       MooreAutomaton
       WMethod
+      WpMethod
   other-modules:
       Paths_haal
   autogen-modules:
