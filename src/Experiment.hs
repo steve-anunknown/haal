@@ -135,6 +135,7 @@ experiment learner oracle = do
                     inner refinedLearner orc
     inner initializedLearner oracle
 
+-- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
 execute :: (SUL sul, Automaton aut s, Ord i, Eq o) => sul i o -> aut i o -> [[i]] -> Maybe ([i], [o])
 execute _ _ [] = Nothing
 execute theSul theAut (s : ss) =
@@ -144,6 +145,9 @@ execute theSul theAut (s : ss) =
   where
     continue = pairwiseWalk theSul theAut s
 
+{- | The 'pairwiseWalk' function executes a test case on both the SUL and the automaton
+simultaneously, checking if the outputs are the same.
+-}
 pairwiseWalk :: (SUL sul, Automaton aut s, Ord i, Eq o) => sul i o -> aut i o -> [i] -> Bool
 pairwiseWalk _ _ [] = True
 pairwiseWalk theSul theAut (s : ss) = (out1 == out2) && pairwiseWalk sul' aut' ss

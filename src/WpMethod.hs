@@ -12,11 +12,14 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Experiment (EquivalenceOracle (..))
 
+-- | Type for the WpMethod. It simply wraps the depth of the method.
 newtype WpMethod = WpMethod {depth :: Int} deriving (Eq, Show)
 
+-- | The 'wpmethodSuiteSize' returns the nunmber of test cases in the test suite of WpMethod
 wpmethodSuiteSize :: a
 wpmethodSuiteSize = error "todo"
 
+-- | Returns the test suite for the WpMethod.
 wpmethodSuite ::
     forall aut i o s.
     ( Automaton aut s

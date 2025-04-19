@@ -33,6 +33,9 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
+{- | The 'LstarConfig' type is a configuration type for the L* algorithm.
+It allows the user to choose between the original L* algorithm and the L+ algorithm.
+-}
 data LstarConfig = Star | Plus
 
 -- | The 'Lstar' type is a wrapper around the 'ObservationTable' type and represents the L* algorithm.
