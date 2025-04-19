@@ -86,7 +86,7 @@ ghci|     sulTransitions S1 _ = (S2, Y)
 ghci|     sulTransitions S2 A = (S0, X)
 ghci|     sulTransitions S2 B = (S0, Y)
 
--- Set up the experiment. A bit clunky at the moment.
+-- Set up the experiment.
 ghci> myexperiment = experiment (mkLstar Star) (WMethod 2)
 
 -- Define the Mealy system under learning. Remember that automata can act as suls.
