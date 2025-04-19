@@ -87,7 +87,7 @@ ghci|     sulTransitions S2 A = (S0, X)
 ghci|     sulTransitions S2 B = (S0, Y)
 
 -- Set up the experiment. A bit clunky at the moment.
-ghci> myexperiment = experiment (Lstar (error "don't worry" :: ObservationTable Input Output)) (WMethod 2)
+ghci> myexperiment = experiment (mkLstar Star) (WMethod 2)
 
 -- Define the Mealy system under learning. Remember that automata can act as suls.
 ghci> mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
