@@ -12,31 +12,20 @@ module Experiment (
     EquivalenceOracle (..),
     experiment,
     runExperiment,
+    pairwiseWalk,
+    execute,
+    findCex,
 ) where
 
 import Control.Monad.Reader
 
-import BlackBox (Automaton, SUL)
+import BlackBox (Automaton, SUL (step, walk))
 import Control.Monad.Identity
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
-Instances of this class should provide methods to calculate the size of a test suite,
-generate a test suite, and search for counterexamples.
+Instances of this class should provide methods to generate a test suite
 -}
 class EquivalenceOracle or where
-    testSuiteSize ::
-        ( Automaton aut s
-        , Ord i
-        , Bounded i
-        , Enum i
-        , Ord s
-        , Eq o
-        , Bounded s
-        , Enum s
-        ) =>
-        or ->
-        aut i o ->
-        Int
     testSuite ::
         ( Automaton aut s
         , Ord i
@@ -50,20 +39,6 @@ class EquivalenceOracle or where
         or ->
         aut i o ->
         [[i]]
-    findCex ::
-        ( Automaton aut s
-        , SUL sul
-        , Ord i
-        , Bounded i
-        , Enum i
-        , Ord s
-        , Bounded s
-        , Enum s
-        , Eq o
-        ) =>
-        or ->
-        aut i o ->
-        Experiment (sul i o) (Maybe ([i], [o]))
 
 {- | The 'Learner' type class defines the interface for learning algorithms.
 Instances of this class should provide methods to initialize the learner,
@@ -159,3 +134,41 @@ experiment learner oracle = do
                     refinedLearner <- refine learner' ce
                     inner refinedLearner orc
     inner initializedLearner oracle
+
+execute :: (SUL sul, Automaton aut s, Ord i, Eq o) => sul i o -> aut i o -> [[i]] -> Maybe ([i], [o])
+execute _ _ [] = Nothing
+execute theSul theAut (s : ss) =
+    if continue
+        then execute theSul theAut ss
+        else Just (s, snd $ walk theSul s)
+  where
+    continue = pairwiseWalk theSul theAut s
+
+pairwiseWalk :: (SUL sul, Automaton aut s, Ord i, Eq o) => sul i o -> aut i o -> [i] -> Bool
+pairwiseWalk _ _ [] = True
+pairwiseWalk theSul theAut (s : ss) = (out1 == out2) && pairwiseWalk sul' aut' ss
+  where
+    (sul', out1) = step theSul s
+    (aut', out2) = step theAut s
+
+{- | The 'findCex' function executes the test suite of each oracle to the automaton
+and SUL.
+-}
+findCex ::
+    ( Automaton aut s
+    , SUL sul
+    , Ord i
+    , Bounded i
+    , Enum i
+    , Ord s
+    , Bounded s
+    , Enum s
+    , Eq o
+    , EquivalenceOracle or
+    ) =>
+    or ->
+    aut i o ->
+    Experiment (sul i o) (Maybe ([i], [o]))
+findCex oracle aut = do
+    sul <- ask
+    return $ execute sul aut (testSuite oracle aut)
