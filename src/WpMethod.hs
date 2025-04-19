@@ -1,0 +1,76 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
+-- | This module implements the WpMethod.
+module WpMethod (
+    WpMethod (..),
+    wpmethodSuiteSize,
+) where
+
+import BlackBox
+import Control.Monad (replicateM)
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Experiment (EquivalenceOracle (..))
+
+newtype WpMethod = WpMethod {depth :: Int} deriving (Eq, Show)
+
+wpmethodSuiteSize :: a
+wpmethodSuiteSize = error "todo"
+
+wpmethodSuite ::
+    forall aut i o s.
+    ( Automaton aut s
+    , Ord i
+    , Bounded i
+    , Enum i
+    , Ord s
+    , Bounded s
+    , Enum s
+    , Eq o
+    ) =>
+    WpMethod ->
+    aut i o ->
+    [[i]]
+wpmethodSuite (WpMethod{depth = d}) aut = suite
+  where
+    alphabet = inputs aut
+    stateCover = accessSequences aut
+    localSuf =
+        Map.fromList
+            [ (st, localCharacterizingSet aut st) | st <- Set.toList $ states aut
+            ]
+    globalSuf = globalCharacterizingSet aut
+
+    transitionCover =
+        [ acc ++ [a]
+        | acc <- Map.elems stateCover
+        , a <- Set.toList alphabet
+        ]
+    difference =
+        Set.fromList (Map.elems stateCover)
+            `Set.difference` Set.fromList transitionCover
+
+    firstPhase =
+        concat
+            [ [ acc ++ middle ++ suf
+              | acc <- Map.elems stateCover
+              , suf <- Set.toList globalSuf
+              ]
+            | fixed <- [0 .. d]
+            , middle <- replicateM fixed $ Set.toList alphabet
+            ]
+
+    secondPhase =
+        concat
+            [ [ acc ++ middle ++ suf
+              | acc <- Set.toList difference
+              , suf <- Set.toList $ localSuf Map.! current (fst (walk aut (acc ++ middle)))
+              ]
+            | fixed <- [0 .. d]
+            , middle <- replicateM fixed $ Set.toList alphabet
+            ]
+
+    suite = firstPhase ++ secondPhase
+
+instance EquivalenceOracle WpMethod where
+    testSuite = wpmethodSuite
