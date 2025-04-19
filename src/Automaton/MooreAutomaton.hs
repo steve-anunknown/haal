@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Moore automaton.
-module MooreAutomaton (
+module Automaton.MooreAutomaton (
     mkMooreAutomaton,
     mooreStep,
     mooreWalk,

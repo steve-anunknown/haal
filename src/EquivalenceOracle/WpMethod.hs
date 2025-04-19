@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements the WpMethod.
-module WpMethod (
+module EquivalenceOracle.WpMethod (
     WpMethod (..),
     wpmethodSuiteSize,
 ) where

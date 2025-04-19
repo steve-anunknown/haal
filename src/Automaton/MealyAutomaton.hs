@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Mealy automaton.
-module MealyAutomaton (
+module Automaton.MealyAutomaton (
     MealyAutomaton (..),
     mkMealyAutomaton,
     mkMealyAutomaton2,

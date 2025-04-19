@@ -28,15 +28,15 @@ source-repository head
 
 library
   exposed-modules:
+      Automaton.DFA
+      Automaton.MealyAutomaton
+      Automaton.MooreAutomaton
       BlackBox
-      CombinedOracle
-      DFA
+      EquivalenceOracle.CombinedOracle
+      EquivalenceOracle.WMethod
+      EquivalenceOracle.WpMethod
       Experiment
-      Lstar
-      MealyAutomaton
-      MooreAutomaton
-      WMethod
-      WpMethod
+      Learning.Lstar
   other-modules:
       Paths_haal
   autogen-modules:

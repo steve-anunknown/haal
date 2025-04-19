@@ -1,5 +1,5 @@
 -- | This module implements the W-method equivalence oracle.
-module WMethod (
+module EquivalenceOracle.WMethod (
     WMethod (..),
     wmethodSuiteSize,
 ) where

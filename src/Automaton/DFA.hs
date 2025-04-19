@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 -- | This module implements a simple deterministic finite automaton (DFA).
-module DFA (
+module Automaton.DFA (
     DFAState (..),
     DFA (..),
     dfaStep,
