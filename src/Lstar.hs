@@ -7,8 +7,10 @@
 module Lstar (
     lstar,
     Lstar (..),
+    LstarConfig (..),
     ObservationTable (..),
     initializeOT,
+    mkLstar,
 )
 where
 
@@ -31,8 +33,17 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
+data LstarConfig = Star | Plus
+
 -- | The 'Lstar' type is a wrapper around the 'ObservationTable' type and represents the L* algorithm.
-newtype Lstar i o = Lstar (ObservationTable i o)
+data Lstar i o = Lstar (ObservationTable i o) | Lplus (ObservationTable i o)
+
+{- | The 'mkLstar' function creates a new instance of the 'Lstar' type. It holds a dummy value
+so that the user does not have to provide an initial observation table.
+-}
+mkLstar :: LstarConfig -> Lstar i o
+mkLstar Star = Lstar (error "this is invisible")
+mkLstar Plus = Lplus (error "this is invisible")
 
 -- | The 'equivalentRows' function checks if two rows in the observation table are equivalent.
 equivalentRows :: forall i o. (Ord i, Eq o) => ObservationTable i o -> [i] -> [i] -> Bool
@@ -103,6 +114,11 @@ lstar (Lstar ot) = case otIsClosed ot of
     inc -> do
         ot' <- makeClosed ot inc
         lstar (Lstar ot')
+lstar (Lplus ot) = case otIsClosed ot of
+    [] -> return (Lplus ot, makeHypothesis ot)
+    inc -> do
+        ot' <- makeClosed ot inc
+        lstar (Lplus ot')
 
 -- | The 'otIsClosed' function checks if the observation table is closed.
 otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
@@ -131,10 +147,15 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
             )
             equivalentPairs
 
--- | The 'otRefine' function refines the observation table based on a counterexample.
-otRefine :: forall sul i o. (Ord i, SUL sul, Bounded i, Enum i) => ObservationTable i o -> [i] -> Experiment (sul i o) (ObservationTable i o)
-otRefine ot [] = return ot
-otRefine ot cex = do
+-- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
+otRefineAngluin ::
+    forall sul i o.
+    (Ord i, SUL sul, Bounded i, Enum i) =>
+    ObservationTable i o ->
+    [i] ->
+    Experiment (sul i o) (ObservationTable i o)
+otRefineAngluin ot [] = return ot
+otRefineAngluin ot cex = do
     sul <- ask
     let
         sm = prefixSetS ot
@@ -145,7 +166,7 @@ otRefine ot cex = do
         sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- Set.toList $ inputs sul]
         missing = (sm' `Set.union` sm_I') `Set.cartesianProduct` em
 
-        tm' = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk sul (a ++ b))) tm missing
+        tm' = updateMap tm missing sul
         ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'}
     return ot'
 
@@ -237,9 +258,48 @@ makeClosed ot inc = do
 instance Learner Lstar (MealyAutomaton StateID) where
     initialize (Lstar _) = do
         Lstar <$> initializeOT
+    initialize (Lplus _) = do
+        Lplus <$> initializeOT
 
     refine (Lstar ot) cex = do
-        ot' <- otRefine ot cex
+        ot' <- otRefineAngluin ot cex
         return (Lstar ot')
+    refine (Lplus ot) cex = do
+        ot' <- otRefinePlus ot cex
+        return (Lplus ot')
 
     learn (Lstar ot) = lstar (Lstar ot)
+    learn (Lplus ot) = lstar (Lplus ot)
+
+{- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the L+ algorithm,
+which is an improvement over Angluin's algorithm.
+-}
+otRefinePlus ::
+    forall sul i o.
+    (Ord i, SUL sul, Bounded i, Enum i) =>
+    ObservationTable i o ->
+    [i] ->
+    Experiment (sul i o) (ObservationTable i o)
+otRefinePlus ot [] = return ot
+otRefinePlus ot cex = do
+    sul <- ask
+    let sm = prefixSetS ot
+        em = suffixSetE ot
+        tm = mappingT ot
+        sm_I = prefixSetSI ot
+        -- look for the longest prefix of the counterexample
+        -- that is in sm U sm_I
+        prefixes = List.inits cex
+        suffixes = List.tails cex
+        pairs = List.reverse $ List.zip prefixes suffixes
+        wrapped = List.find (\x -> Set.member (fst x) sm || Set.member (fst x) sm_I) pairs
+        (_, suffix) = Maybe.fromMaybe (error "failed to update observation table") wrapped
+        -- the suffix is the distinguishing suffix. insert all suffixes expect from the empty one
+        newSuffixes = em `Set.difference` Set.fromList (init $ List.tails suffix)
+        em' = List.foldr Set.insert em newSuffixes
+        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` newSuffixes
+        tm' = updateMap tm missing sul
+    return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
+
+updateMap :: (Ord i, SUL sul) => Map.Map ([i], [i]) a -> Set.Set ([i], [i]) -> sul i a -> Map.Map ([i], [i]) a
+updateMap themap thestuff thesul = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk thesul (a ++ b))) themap thestuff
