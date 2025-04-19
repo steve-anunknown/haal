@@ -13,7 +13,7 @@ module Utils (
 )
 where
 
-import MealyAutomaton (
+import Automaton.MealyAutomaton (
     MealyAutomaton (..),
     mealyDelta,
     mealyInAlphabet,
@@ -32,7 +32,7 @@ import qualified Data.Maybe
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 import qualified Data.Set as Set
-import WMethod (WMethod (..))
+import EquivalenceOracle.WMethod (WMethod (..))
 
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
 

@@ -2,13 +2,13 @@ module WMethodSpec (
     spec,
 ) where
 
+import Control.Monad.Reader
 import Data.Maybe (isJust, isNothing)
+import EquivalenceOracle.WMethod (WMethod (..), wmethodSuiteSize)
+import Experiment
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
-import Control.Monad.Reader
 import Utils (ArbWMethod (..), Input, Mealy (..), Output, State)
-import WMethod (WMethod (..), wmethodSuiteSize)
-import Experiment
 
 prop_WMethodCardinality :: ArbWMethod -> Mealy State Input Output -> Bool
 prop_WMethodCardinality (ArbWMethod (WMethod d)) (Mealy aut) =

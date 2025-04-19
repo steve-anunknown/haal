@@ -10,8 +10,9 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
-import MealyAutomaton (
+import Automaton.MealyAutomaton (
     MealyAutomaton (..),
+    mealyAccessSequences,
     mealyAccessSequences,
     mealyDelta,
     mealyDistinguishingSequence,
