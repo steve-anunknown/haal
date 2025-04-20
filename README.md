@@ -22,10 +22,11 @@
 
 ## 🔧 Features (constantly updated)
 
-| Automaton Type     | Learning Algorithms         | Equivalence Oracles      |
-|--------------------|-----------------------------|---------------------------|
+| Automaton Type     | Learning Algorithms         | Equivalence Oracles    |
+|--------------------|-----------------------------|------------------------|
 | Mealy Machines     | ✅ L\*                      | ✅ W-method Oracle     |
-|                    | ✅ L\+                      | ✅ Wp-method Oracle        |
+|                    | ✅ L\+                      | ✅ Wp-method Oracle    |
+|                    |                             | ✅ Random Words Oracle |
 
 
 ## Table of Contents
