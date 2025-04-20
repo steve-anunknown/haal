@@ -33,6 +33,7 @@ library
       Automaton.MooreAutomaton
       BlackBox
       EquivalenceOracle.CombinedOracle
+      EquivalenceOracle.RandomWalk
       EquivalenceOracle.RandomWords
       EquivalenceOracle.WMethod
       EquivalenceOracle.WpMethod
