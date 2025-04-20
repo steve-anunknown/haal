@@ -41,6 +41,7 @@ library:
   dependencies:
     - containers >= 0.6.7 && < 0.7
     - mtl >= 2.2.2 && <= 2.3.1
+    - random
 
 tests:
   haal-test:

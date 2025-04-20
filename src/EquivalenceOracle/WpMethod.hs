@@ -33,8 +33,8 @@ wpmethodSuite ::
     ) =>
     WpMethod ->
     aut i o ->
-    [[i]]
-wpmethodSuite (WpMethod{depth = d}) aut = suite
+    (WpMethod, [[i]])
+wpmethodSuite (WpMethod{depth = d}) aut = (WpMethod{depth = d}, suite)
   where
     alphabet = inputs aut
     stateCover = accessSequences aut

@@ -17,4 +17,7 @@ instance
     ) =>
     EquivalenceOracle (CombinedOracle a b)
     where
-    testSuite (CombinedOracle or1 or2) aut = testSuite or1 aut ++ testSuite or2 aut
+    testSuite (CombinedOracle or1 or2) aut =
+        let (or1', testSuite1) = testSuite or1 aut
+            (or2', testSuite2) = testSuite or2 aut
+         in (CombinedOracle or1' or2', testSuite1 ++ testSuite2)

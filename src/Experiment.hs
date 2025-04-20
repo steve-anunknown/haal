@@ -38,7 +38,7 @@ class EquivalenceOracle or where
         ) =>
         or ->
         aut i o ->
-        [[i]]
+        (or, [[i]])
 
 {- | The 'Learner' type class defines the interface for learning algorithms.
 Instances of this class should provide methods to initialize the learner,
@@ -127,12 +127,12 @@ experiment learner oracle = do
     initializedLearner <- initialize learner
     let inner le orc = do
             (learner', aut) <- learn le
-            cex <- findCex orc aut
+            (oracle', cex) <- findCex orc aut
             case cex of
                 Nothing -> return aut
                 Just (ce, _) -> do
                     refinedLearner <- refine learner' ce
-                    inner refinedLearner orc
+                    inner refinedLearner oracle'
     inner initializedLearner oracle
 
 -- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
@@ -172,7 +172,8 @@ findCex ::
     ) =>
     or ->
     aut i o ->
-    Experiment (sul i o) (Maybe ([i], [o]))
+    Experiment (sul i o) (or, Maybe ([i], [o]))
 findCex oracle aut = do
     sul <- ask
-    return $ execute sul aut (testSuite oracle aut)
+    let (oracle', theSuite) = testSuite oracle aut
+    return (oracle', execute sul aut theSuite)

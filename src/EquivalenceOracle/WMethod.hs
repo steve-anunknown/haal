@@ -51,8 +51,8 @@ wmethodSuite ::
     ) =>
     WMethod ->
     aut i o ->
-    [[i]]
-wmethodSuite (WMethod{depth = d}) aut = suite
+    (WMethod, [[i]])
+wmethodSuite (WMethod{depth = d}) aut = (WMethod {depth = d}, suite)
   where
     alphabet = Set.toList $ inputs aut
     accessSeqs = accessSequences aut
