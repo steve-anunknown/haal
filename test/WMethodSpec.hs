@@ -12,13 +12,13 @@ import Utils (ArbWMethod (..), Input, Mealy (..), Output, State)
 
 prop_WMethodCardinality :: ArbWMethod -> Mealy State Input Output -> Bool
 prop_WMethodCardinality (ArbWMethod (WMethod d)) (Mealy aut) =
-    length (testSuite (WMethod d) aut) == wmethodSuiteSize (WMethod d) aut
+    (length (snd (testSuite (WMethod d) aut))) == wmethodSuiteSize (WMethod d) aut
 
 prop_WMethodIdentity :: Mealy State Input Output -> Bool
-prop_WMethodIdentity (Mealy aut) = isNothing (runReader (findCex (WMethod 2) aut) aut)
+prop_WMethodIdentity (Mealy aut) = isNothing $ snd (runReader (findCex (WMethod 2) aut) aut)
 
 prop_WMethodDifference :: Mealy State Input Output -> Mealy State Input Output -> Property
-prop_WMethodDifference (Mealy aut1) (Mealy aut2) = aut1 /= aut2 ==> isJust (runReader (findCex (WMethod 3) aut1) aut2)
+prop_WMethodDifference (Mealy aut1) (Mealy aut2) = aut1 /= aut2 ==> isJust $ snd (runReader (findCex (WMethod 3) aut1) aut2)
 
 spec :: Spec
 spec = do
