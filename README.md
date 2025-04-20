@@ -27,6 +27,7 @@
 | Mealy Machines     | ✅ L\*                      | ✅ W-method Oracle     |
 |                    | ✅ L\+                      | ✅ Wp-method Oracle    |
 |                    |                             | ✅ Random Words Oracle |
+|                    |                             | ✅ Random Walk Oracle  |
 
 
 ## Table of Contents
