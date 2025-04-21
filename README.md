@@ -18,7 +18,7 @@
 ```
 ## A Haskell library for Active Automata Learning
 
-**Haal** is an [Active Automata Learning](https://wcventure.github.io/Active-Automata-Learning/) library aimed at making it easy to construct learning experiments and explore different configurations of learning algorithms and equivalence oracles. The library is still in its early stages, so nothing is set in stone yet. A summary of the current architecture can be found below — but of course, the best documentation is the source code itself.
+**Haal** is an [Active Automata Learning](https://wcventure.github.io/Active-Automata-Learning/) library aimed at making it easy to construct learning experiments and explore different configurations of learning algorithms and equivalence oracles. The library is still in its early stages, so nothing is set in stone yet. Most probably, the more features are added the more will the structure of the library change. For the time being, a summary of the current architecture can be found below — but of course, the best documentation is the source code itself.
 
 ## 🔧 Features (constantly updated)
 
@@ -76,6 +76,12 @@ The project is still in its early stages and has not yet been published. For now
 
 ```bash
 stack install
+```
+
+Moreover, I try to add haddock comments as much as possible. Therefore, documentation can be built using:
+
+```bash
+stack haddock
 ```
 
 ## Example
