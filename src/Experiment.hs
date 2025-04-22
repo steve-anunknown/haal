@@ -19,7 +19,7 @@ module Experiment (
 
 import Control.Monad.Reader
 
-import BlackBox (Automaton, SUL (step, walk))
+import BlackBox (Automaton, SUL, step, walk)
 import Control.Monad.Identity
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.

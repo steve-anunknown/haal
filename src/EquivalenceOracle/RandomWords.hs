@@ -4,7 +4,7 @@ module EquivalenceOracle.RandomWords (
 )
 where
 
-import BlackBox (Automaton, inputs)
+import BlackBox (inputs)
 import qualified Data.Set as Set
 import Experiment (EquivalenceOracle, testSuite)
 import System.Random
@@ -13,7 +13,7 @@ data RandomWords = RandomWords {gen :: StdGen, limit :: Int, minLength :: Int, m
     deriving (Eq, Show)
 
 generateRandomWords ::
-    (Automaton aut s, Ord i, Bounded i, Enum i) =>
+    (Ord i, Bounded i, Enum i) =>
     RandomWords ->
     aut i o ->
     (RandomWords, [[i]])

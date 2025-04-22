@@ -17,7 +17,7 @@ data RandomWalk = RandomWalk {gen :: StdGen, maxSteps :: Int, restart :: Double}
 -- random places.
 
 randomWalkSuite ::
-    (Bounded i, Enum i, Automaton aut s, Ord i) =>
+    (Bounded i, Enum i, Ord i) =>
     RandomWalk ->
     aut i o ->
     (RandomWalk, [[i]])

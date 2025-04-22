@@ -9,7 +9,6 @@ module Learning.Lstar (
     Lstar (..),
     LstarConfig (..),
     ObservationTable (..),
-    initializeOT,
     mkLstar,
 )
 where
@@ -177,7 +176,7 @@ otRefineAngluin ot cex = do
 the default 'StateID' type defined in the 'Experiment' module for representing the automaton states.
 -}
 makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton StateID i o
-makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length repList - 1]) initial
+makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length repList - 1]) starting
   where
     -- Equivalence classes: Map from representative prefix to class members
     equivMap :: Map.Map [i] [[i]]
@@ -207,7 +206,7 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length r
         let rep = repList !! sid
          in mappingT ot Map.! (rep, [i])
 
-    initial = getStateId []
+    starting = getStateId []
 
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
