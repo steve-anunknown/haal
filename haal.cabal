@@ -57,9 +57,9 @@ test-suite haal-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      EquivalenceOracleSpec
       MealyAutomatonSpec
       Utils
-      WMethodSpec
       Paths_haal
   autogen-modules:
       Paths_haal
@@ -73,4 +73,5 @@ test-suite haal-test
     , haal
     , hspec
     , mtl
+    , random
   default-language: Haskell2010

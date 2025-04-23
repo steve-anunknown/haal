@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Utils (
@@ -10,6 +11,10 @@ module Utils (
     Output (..),
     State (..),
     ArbWMethod (..),
+    ArbWpMethod (..),
+    ArbRandomWords (..),
+    ArbRandomWalk (..),
+    OracleWrapper (..),
 )
 where
 
@@ -25,17 +30,57 @@ import Data.Data (Data)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe
+import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 import qualified Data.Set as Set
-import EquivalenceOracle.WMethod (WMethod (..))
+import EquivalenceOracle.RandomWalk (RandomWalk (RandomWalk))
+import EquivalenceOracle.RandomWords (RandomWords (RandomWords))
+import EquivalenceOracle.WMethod (WMethod (WMethod))
+import EquivalenceOracle.WpMethod (WpMethod (WpMethod))
+import Experiment (EquivalenceOracle)
 
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
+newtype ArbWpMethod = ArbWpMethod WpMethod deriving (Show, Eq)
+newtype ArbRandomWords = ArbRandomWords RandomWords deriving (Show, Eq)
+newtype ArbRandomWalk = ArbRandomWalk RandomWalk deriving (Show, Eq)
 
 instance Arbitrary ArbWMethod where
     arbitrary = do
         d <- choose (0, 5)
         return (ArbWMethod (WMethod d))
+instance Arbitrary ArbWpMethod where
+    arbitrary = do
+        d <- choose (0, 5)
+        return (ArbWpMethod (WpMethod d))
+instance Arbitrary ArbRandomWords where
+    arbitrary = do
+        lim <- choose (100, 10000)
+        minL <- choose (1, 10)
+        maxL <- choose (minL, 11)
+        let randGen = mkStdGen 42
+        return (ArbRandomWords (RandomWords randGen lim minL maxL))
+instance Arbitrary ArbRandomWalk where
+    arbitrary = do
+        lim <- choose (100, 10000)
+        restart <- choose (0.0, 1.0)
+        let randGen = mkStdGen 42
+        return (ArbRandomWalk (RandomWalk randGen lim restart))
+
+class (EquivalenceOracle oracle) => OracleWrapper w oracle | w -> oracle where
+    unwrap :: w -> oracle
+
+instance OracleWrapper ArbWMethod WMethod where
+    unwrap (ArbWMethod o) = o
+
+instance OracleWrapper ArbWpMethod WpMethod where
+    unwrap (ArbWpMethod o) = o
+
+instance OracleWrapper ArbRandomWords RandomWords where
+    unwrap (ArbRandomWords o) = o
+
+instance OracleWrapper ArbRandomWalk RandomWalk where
+    unwrap (ArbRandomWalk o) = o
 
 newtype Mealy s i o = Mealy (MealyAutomaton s i o) deriving (Show)
 

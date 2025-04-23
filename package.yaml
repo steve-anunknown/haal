@@ -57,3 +57,4 @@ tests:
     - containers
     - QuickCheck
     - mtl
+    - random
