@@ -4,6 +4,7 @@
 
 -- | This module implements a Moore automaton.
 module Automaton.MooreAutomaton (
+    MooreAutomaton,
     mkMooreAutomaton,
     mooreStep,
     mooreTransitions,
@@ -72,3 +73,29 @@ instance Automaton (MooreAutomaton s) s where
     current = mooreCurrentS
     states = mooreStates
     update m s = m{mooreCurrentS = s}
+
+instance
+    ( Show i
+    , Show o
+    , Show s
+    , Bounded s
+    , Bounded i
+    , Enum s
+    , Enum i
+    , Ord s
+    , Ord i
+    ) =>
+    Show (MooreAutomaton s i o)
+    where
+    show m =
+        "{\n\tCurrent State: "
+            ++ show currentS
+            ++ ",\n\tInitial State: "
+            ++ show initialS
+            ++ ",\n\tTransitions: "
+            ++ show transs
+            ++ "\n}"
+      where
+        transs = mooreTransitions m
+        initialS = initial m
+        currentS = current m
