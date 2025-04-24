@@ -5,39 +5,26 @@ module EquivalenceOracle.RandomWords (
 where
 
 import BlackBox (inputs)
+import Control.Monad (replicateM)
+import Control.Monad.State
 import qualified Data.Set as Set
+import qualified Data.Vector as V
 import Experiment (EquivalenceOracle, testSuite)
 import System.Random
 
 data RandomWords = RandomWords {gen :: StdGen, limit :: Int, minLength :: Int, maxLength :: Int}
     deriving (Eq, Show)
 
-generateRandomWords ::
-    (Ord i, Bounded i, Enum i) =>
-    RandomWords ->
-    aut i o ->
-    (RandomWords, [[i]])
+generateRandomWords :: (Ord a, Bounded a, Enum a) => RandomWords -> sul a o -> (RandomWords, [[a]])
 generateRandomWords (RandomWords{gen = generator, limit = count, minLength = minL, maxLength = maxL}) aut =
-    (oracle, suite)
+    let alphaVec = V.fromList . Set.toList $ inputs aut
+        (ranWords, finalGen) = runState (replicateM count (genWord alphaVec)) generator
+        oracle = RandomWords{gen = finalGen, limit = count, minLength = minL, maxLength = maxL}
+     in (oracle, ranWords)
   where
-    alpha = Set.toList $ inputs aut
-
-    go 0 g acc = (reverse acc, g)
-    go n g acc =
-        let (len, g1) = randomR (minL, maxL) g
-            (word, g2) = generateWord g1 len alpha
-         in go (n - 1) g2 (word : acc)
-
-    generateWord :: StdGen -> Int -> [i] -> ([i], StdGen)
-    generateWord g 0 _ = ([], g)
-    generateWord g n a =
-        let (ix, g1) = randomR (0, length a - 1) g
-            sym = a !! ix
-            (rest, g2) = generateWord g1 (n - 1) a
-         in (sym : rest, g2)
-
-    (suite, stdgen) = go count generator []
-    oracle = RandomWords{gen = stdgen, limit = count, minLength = minL, maxLength = maxL}
+    genWord alphaVec = do
+        len <- state $ randomR (minL, maxL)
+        replicateM len (state $ \g -> let (ix, g') = randomR (0, V.length alphaVec - 1) g in (alphaVec V.! ix, g'))
 
 instance EquivalenceOracle RandomWords where
     testSuite = generateRandomWords

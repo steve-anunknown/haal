@@ -13,10 +13,10 @@ import Control.Monad (replicateM)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import qualified Data.Vector as Vec
 import EquivalenceOracle.RandomWords
 import Experiment
-import System.Random (Random (randomR, randomRs), RandomGen (split), StdGen)
-import qualified Data.Vector as Vec
+import System.Random (Random (randomRs), RandomGen (split), StdGen)
 
 {- | The 'WMethod' type represents the W-method equivalence oracle.
 It is just a wrapper around an integer, which is used for configuring
@@ -40,9 +40,9 @@ wmethodSuiteSize ::
     Int
 wmethodSuiteSize (WMethod{depth = d}) aut = size
   where
-    alphabet = length (Set.toList $ inputs aut)
-    accessSeqs = length (Map.elems $ accessSequences aut)
-    characterizingSet = length (Set.toList $ globalCharacterizingSet aut)
+    alphabet = length $ inputs aut
+    accessSeqs = length $ accessSequences aut
+    characterizingSet = length $ globalCharacterizingSet aut
     transitionCover = accessSeqs * alphabet
     size = sum [transitionCover * (alphabet ^ n) * characterizingSet | n <- [0 .. d]]
 
@@ -66,11 +66,12 @@ wmethodSuite (WMethod{depth = d}) aut = (WMethod{depth = d}, suite)
     accessSeqs = accessSequences aut
     characterizingSet = Set.toList $ globalCharacterizingSet aut
     transitionCover = [a ++ [inp] | a <- Map.elems accessSeqs, inp <- alphabet]
+    middlesByDepth = [replicateM n alphabet | n <- [0 .. d]]
     suite =
         concat
             [ [acc ++ middle ++ char | acc <- transitionCover, char <- characterizingSet]
-            | fixed <- [0 .. d]
-            , middle <- replicateM fixed alphabet
+            | middles <- middlesByDepth
+            , middle <- middles
             ]
 
 instance EquivalenceOracle WMethod where
@@ -105,25 +106,21 @@ randomWMethodSuite ::
     RandomWMethod ->
     aut i o ->
     (RandomWMethod, [[i]])
-randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut = (RandomWMethod (RandomWMethodConfig gen''' wpr wl), suite)
-  where
-    shorthand = error "RandomWMethodSuite: This shouldn't be evaluated" :: aut i o
-    rorc = RandomWords g wpr 0 wl
-    prefixes = accessSequences aut
-    globalCharSet = globalCharacterizingSet aut
-    vecSuffixes = Vec.fromList $ Set.toList globalCharSet
+randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
+    let rorc = RandomWords g wpr 0 wl
+        prefixes = Map.elems $ accessSequences aut
+        vecSuffixes = Vec.fromList $ Set.toList $ globalCharacterizingSet aut
 
-    (RandomWords gen' _ _ _, randomwords) = List.mapAccumL testSuite rorc (replicate (length prefixes) shorthand)
-    randomWords = concat randomwords
+        (roc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut i o))
+        flatWords = concat wordBatches
 
-    (gen'', gen''') = split gen'
+        (gen'', gen''') = split (gen roc')
+        samples = length prefixes * wpr
+        randomSuffixes = take samples $ randomRs (0, Vec.length vecSuffixes - 1) gen''
+        suffixes = map (vecSuffixes Vec.!) randomSuffixes
 
-    -- make a random choice from globalCharSet (length prefix) times (wpr)
-    samples = length prefixes * wpr
-    randomSuffixes = take samples $ randomRs (0, Vec.length vecSuffixes - 1) gen''
-    suffixes = map (vecSuffixes Vec.!) randomSuffixes
-
-    suite = [prefix ++ rand ++ suffix | prefix <- Map.elems prefixes, rand <- randomWords, suffix <- suffixes]
+        suite = [prefix ++ rand ++ suffix | prefix <- prefixes, rand <- flatWords, suffix <- suffixes]
+     in (RandomWMethod (RandomWMethodConfig gen''' wpr wl), suite)
 
 instance EquivalenceOracle RandomWMethod where
     testSuite = randomWMethodSuite

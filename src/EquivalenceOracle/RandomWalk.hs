@@ -4,10 +4,10 @@ module EquivalenceOracle.RandomWalk (
 where
 
 import BlackBox
-import qualified Data.List as List
 import qualified Data.Set as Set
+import qualified Data.Vector as V
 import Experiment
-import System.Random
+import System.Random (Random (randomR), RandomGen (split), StdGen, randomRs)
 
 data RandomWalk = RandomWalk {gen :: StdGen, maxSteps :: Int, restart :: Double} deriving (Show, Eq)
 
@@ -16,17 +16,12 @@ data RandomWalk = RandomWalk {gen :: StdGen, maxSteps :: Int, restart :: Double}
 -- of length maxSteps with random symbols and then split it in
 -- random places.
 
-randomWalkSuite ::
-    (Bounded i, Enum i, Ord i) =>
-    RandomWalk ->
-    aut i o ->
-    (RandomWalk, [[i]])
+randomWalkSuite :: (Ord a, Bounded a, Enum a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
 randomWalkSuite (RandomWalk{gen = g, maxSteps = maxS, restart = restartP}) aut =
     let (g1, g2) = split g
-        alphabet = Set.toList $ inputs aut
-        alphaLen = length alphabet
-        randomInputs = take maxS $ List.unfoldr (Just . randomR (0, alphaLen - 1)) g1
-        inputSequence = map (alphabet !!) randomInputs
+        alphabet = V.fromList . Set.toList $ inputs aut
+        randomInputs = take maxS $ randomRs (0, V.length alphabet - 1) g1
+        inputSequence = map (alphabet V.!) randomInputs
         (inputSequence', g3) = splitWithProbability g2 restartP inputSequence
         oracle' = RandomWalk{gen = g3, maxSteps = maxS, restart = restartP}
      in (oracle', inputSequence')
