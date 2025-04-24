@@ -33,11 +33,11 @@ randomWalkSuite (RandomWalk (RandomWalkConfig{rwlGen = g, rwlMaxSteps = maxS, rw
 splitWithProbability :: StdGen -> Double -> [a] -> ([[a]], StdGen)
 splitWithProbability generator p symbols = go generator symbols [] []
   where
-    go g [] acc word = (reverse (reverse word : acc), g)
+    go g [] acc word = (word : acc, g)
     go g (x : xs) acc word =
         let (r, g') = randomR (0.0, 1.0) g
          in if r < p && not (null word)
-                then go g' xs (reverse word : acc) [x]
+                then go g' xs (word : acc) [x]
                 else go g' xs acc (x : word)
 
 instance EquivalenceOracle RandomWalk where
