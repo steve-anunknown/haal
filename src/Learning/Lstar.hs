@@ -16,6 +16,8 @@ where
 import Automaton.MealyAutomaton
 import BlackBox
 import Control.Monad.Reader
+import qualified Data.HashSet as HS
+import Data.Hashable (Hashable)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -59,11 +61,11 @@ It must be in the 'Experiment' monad to allow queries to the SUL.
 -}
 initializeOT ::
     forall i o sul.
-    (Bounded i, Enum i, Ord i, SUL sul) =>
+    (Bounded i, Enum i, Ord i, SUL sul, Hashable i) =>
     Experiment (sul i o) (ObservationTable i o)
 initializeOT = do
     sul <- ask
-    let alph = List.map (: []) $ Set.toList $ inputs sul
+    let alph = List.map (: []) $ HS.toList $ inputs sul
         sm = Set.singleton []
         sm_I = Set.fromList alph
         em = Set.fromList alph
@@ -104,7 +106,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 
 -- | The 'lstar' function implements one iteration of the L* algorithm.
 lstar ::
-    (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
+    (SUL sul, Bounded i, Enum i, Ord i, Eq o, Hashable i) =>
     Lstar i o ->
     Experiment (sul i o) (Lstar i o, MealyAutomaton StateID i o)
 lstar (Lstar ot) = case otIsClosed ot of
@@ -152,7 +154,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
 -- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
 otRefineAngluin ::
     forall sul i o.
-    (Ord i, SUL sul, Bounded i, Enum i) =>
+    (Ord i, SUL sul, Bounded i, Enum i, Hashable i) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)
@@ -165,7 +167,7 @@ otRefineAngluin ot cex = do
         tm = mappingT ot
         -- insert all prefixes of the counterexample
         sm' = List.foldr Set.insert sm [take n cex | n <- [1 .. length cex]]
-        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- Set.toList $ inputs sul]
+        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- HS.toList $ inputs sul]
         missing = (sm' `Set.union` sm_I') `Set.cartesianProduct` em
 
         tm' = updateMap tm missing sul
@@ -176,7 +178,7 @@ otRefineAngluin ot cex = do
 the default 'StateID' type defined in the 'Experiment' module for representing the automaton states.
 -}
 makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton StateID i o
-makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length repList - 1]) starting
+makeHypothesis ot = mkMealyAutomaton delta' lambda' (HS.fromList [0 .. length repList - 1]) starting
   where
     -- Equivalence classes: Map from representative prefix to class members
     equivMap :: Map.Map [i] [[i]]
@@ -240,7 +242,7 @@ makeConsistent ot (column, symbol) = do
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
 makeClosed ::
     forall sul i o.
-    (Ord i, Bounded i, Enum i, SUL sul) =>
+    (Ord i, Bounded i, Enum i, SUL sul, Hashable i) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)
@@ -248,7 +250,7 @@ makeClosed ot [] = return ot
 makeClosed ot inc = do
     sul <- ask
     let
-        alph = Set.toList $ inputs sul
+        alph = HS.toList $ inputs sul
         sm = prefixSetS ot
         em = suffixSetE ot
         tm = mappingT ot

@@ -12,10 +12,10 @@ import Automaton.MealyAutomaton (
     mealyLambda,
  )
 import BlackBox
-import qualified Data.List as List
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.HashSet as HS
+import qualified Data.List as List
 import qualified Data.Maybe as Maybe
-import qualified Data.Set as Set
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
 import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, findReachable, statesAreEquivalent)
@@ -29,13 +29,14 @@ prop_emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
         && s1
             /= s2
                 ==> []
-                `Set.member` globalCharacterizingSet automaton
+                `HS.member` globalCharacterizingSet automaton
 
 -- Two states that are not equivalent can be distinguished.
 prop_existsDistinguishingSequence :: Mealy State Input Output -> State -> State -> Property
 prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
     not (statesAreEquivalent automaton s1 s2)
-        ==> not $ null dist && output1 /= output2
+        ==> not
+        $ null dist && output1 /= output2
   where
     dist = distinguish automaton s1 s2
     (_, output1) = walk (update automaton s1) dist
@@ -46,8 +47,8 @@ prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
 prop_mappingEquivalentToFunctions :: Mealy State Input Output -> Bool
 prop_mappingEquivalentToFunctions (Mealy automaton) =
     let transs = transitions automaton
-        alphabet = Set.toList $ inputs automaton
-        sts = Set.toList $ states automaton
+        alphabet = HS.toList $ inputs automaton
+        sts = HS.toList $ states automaton
         -- Calculate outputs using mealyDelta and mealyLambda
         mapOutputs =
             [ Maybe.fromJust (HMS.lookup (s, a) transs)
@@ -69,8 +70,8 @@ prop_completeAccessSequences (Mealy automaton) = sts == reachable ==> allin
 -- The access sequences returned by 'mealyAccessSequences' are the shortest
 prop_shortestAccessSequences :: Mealy State Input Output -> State -> State -> Property
 prop_shortestAccessSequences (Mealy automaton) s1 s2 =
-    s1 `Set.member` reachable
-        && s2 `Set.member` reachable
+    s1 `HS.member` reachable
+        && s2 `HS.member` reachable
         && existsS1toS2 ==> List.length seq2 <= List.length seq1 + 1
   where
     reachable = findReachable automaton

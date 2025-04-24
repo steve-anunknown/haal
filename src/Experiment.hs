@@ -29,13 +29,14 @@ Instances of this class should provide methods to generate a test suite
 class EquivalenceOracle or where
     testSuite ::
         ( Automaton aut s
-        , Ord i
+        , Hashable i
         , Bounded i
         , Enum i
-        , Ord s
+        , Ord i
         , Hashable s
         , Bounded s
         , Enum s
+        , Ord s
         , Eq o
         ) =>
         or ->
@@ -51,6 +52,7 @@ class Learner l aut | l -> aut where
     initialize ::
         ( SUL sul
         , Automaton aut s
+        , Hashable i
         , Bounded i
         , Enum i
         , Ord i
@@ -61,6 +63,7 @@ class Learner l aut | l -> aut where
         Experiment (sul i o) (l i o)
     refine ::
         ( SUL sul
+        , Hashable i
         , Bounded i
         , Enum i
         , Ord i
@@ -73,6 +76,7 @@ class Learner l aut | l -> aut where
     learn ::
         ( SUL sul
         , Automaton aut s
+        , Hashable i
         , Bounded i
         , Enum i
         , Ord i
@@ -122,6 +126,7 @@ experiment ::
     , Bounded s
     , Eq o
     , Hashable s
+    , Hashable i
     ) =>
     learner i o ->
     oracle ->
@@ -173,6 +178,7 @@ findCex ::
     , Eq o
     , EquivalenceOracle or
     , Hashable s
+    , Hashable i
     ) =>
     or ->
     aut i o ->

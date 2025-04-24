@@ -1,7 +1,7 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -30,7 +30,6 @@ import Automaton.MealyAutomaton (
 
 import BlackBox
 import qualified Data.Bifunctor as Bif
-import Data.Data (Data)
 import Data.Hashable (Hashable)
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -40,6 +39,7 @@ import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 import qualified Data.Set as Set
+import qualified Data.HashSet as HS
 import EquivalenceOracle.RandomWalk (
     RandomWalk (RandomWalk),
     RandomWalkConfig (RandomWalkConfig),
@@ -157,12 +157,15 @@ instance
     , Ord i
     , Enum i
     , Bounded i
+    , Hashable i
     , Ord o
     , Enum o
     , Bounded o
+    , Hashable o
     , Ord s
     , Enum s
     , Bounded s
+    , Hashable s
     ) =>
     Arbitrary (Mealy s i o)
     where
@@ -181,7 +184,7 @@ instance
                     , mealyLambda = lambda
                     , mealyInitialS = initialState
                     , mealyCurrentS = currentState
-                    , mealyStates = Set.fromList sts
+                    , mealyStates = HS.fromList sts
                     }
                 )
             )
@@ -189,7 +192,7 @@ instance
         generateDelta :: [s] -> Gen (s -> i -> s)
         generateDelta sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton s i o)
+                ins = HS.toList $ inputs (undefined :: MealyAutomaton s i o)
                 complete = [(st, inp) | st <- sts, inp <- ins]
                 (numS, numI) = Bif.bimap List.length List.length (sts, ins)
             matching <- vectorOf (numS * numI) (choose (0, numS - 1))
@@ -201,8 +204,8 @@ instance
         generateLambda :: [s] -> Gen (s -> i -> o)
         generateLambda sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton s i o)
-                outs = Set.toList $ outputs (undefined :: MealyAutomaton s i o)
+                ins = HS.toList $ inputs (undefined :: MealyAutomaton s i o)
+                outs = HS.toList $ outputs (undefined :: MealyAutomaton s i o)
                 complete = [(st, inp) | st <- sts, inp <- ins]
                 (numS, numI) = Bif.bimap List.length List.length (sts, ins)
                 numO = List.length outs
@@ -212,17 +215,19 @@ instance
             fallbackOutput <- arbitrary :: Gen o
             return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
 
-data Input = A | B | C | D 
-  deriving stock (Show, Eq, Ord, Enum, Bounded)
-  deriving anyclass (Hashable)
-  deriving stock (Generic)
+data Input = A | B | C | D
+    deriving stock (Show, Eq, Ord, Enum, Bounded)
+    deriving anyclass (Hashable)
+    deriving stock (Generic)
 
-data Output = X | Y | Z | W 
-  deriving stock (Show, Eq, Ord, Enum, Bounded)
+data Output = X | Y | Z | W
+    deriving stock (Show, Eq, Ord, Enum, Bounded)
+    deriving anyclass (Hashable)
+    deriving stock (Generic)
 
-data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 
-  deriving stock (Show, Eq, Ord, Enum, Bounded, Generic)
-  deriving anyclass (Hashable)
+data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7
+    deriving stock (Show, Eq, Ord, Enum, Bounded, Generic)
+    deriving anyclass (Hashable)
 
 -- Arbitrary instances for Input, Output, and State
 instance Arbitrary Input where
@@ -252,7 +257,7 @@ instance Arbitrary NonMinimalMealy where
                     , mealyLambda = lambda
                     , mealyInitialS = initialState
                     , mealyCurrentS = currentState
-                    , mealyStates = Set.fromList sts
+                    , mealyStates = HS.fromList sts
                     }
                 )
             )
@@ -260,7 +265,7 @@ instance Arbitrary NonMinimalMealy where
         generateDelta :: [State] -> Gen (State -> Input -> State)
         generateDelta sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton State Input Output)
+                ins = HS.toList $ inputs (undefined :: MealyAutomaton State Input Output)
                 (numS, numI) = Bif.bimap List.length List.length (sts, ins)
                 same = numS `div` 2
                 nonMinimal = [(st, inp) | st <- take same sts, inp <- ins]
@@ -276,8 +281,8 @@ instance Arbitrary NonMinimalMealy where
         generateLambda :: [State] -> Gen (State -> Input -> Output)
         generateLambda sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton State Input Output)
-                outs = Set.toList $ outputs (undefined :: MealyAutomaton State Input Output)
+                ins = HS.toList $ inputs (undefined :: MealyAutomaton State Input Output)
+                outs = HS.toList $ outputs (undefined :: MealyAutomaton State Input Output)
                 same = numS `div` 2
                 nonMinimal = [(st, inp) | st <- take same sts, inp <- ins]
                 rest = [(st, inp) | st <- drop same sts, inp <- ins]
@@ -311,11 +316,11 @@ statesAreEquivalent automaton s1 s2 =
 --             let mo = update automaton curr
 --                 nextStates = Set.map (current . fst . step mo) alphabet
 --                 newVisited = Set.foldr Set.insert visited nextStates
---                 newQueue = queue ++ [s | s <- Set.toList nextStates, s `notElem` visited]
+--                 newQueue = queue ++ [s | s <- HS.toList nextStates, s `notElem` visited]
 --              in bfs newVisited newQueue
 --      in bfs (Set.singleton initialState) [initialState]
 
-findReachable :: MealyAutomaton State Input Output -> Set.Set State
+findReachable :: MealyAutomaton State Input Output -> HS.HashSet State
 findReachable automaton =
     let initialState = mealyInitialS automaton
         alphabet = inputs automaton
@@ -324,9 +329,9 @@ findReachable automaton =
                 [] -> visited
                 (curr : queue') ->
                     let mo = update automaton curr
-                        nextStates = Set.map (current . fst . step mo) alphabet
-                        newVisited = Set.union visited nextStates
+                        nextStates = HS.map (current . fst . step mo) alphabet
+                        newVisited = HS.union visited nextStates
                         -- Efficient queue management with a Set for fast membership checking
-                        newQueue = Set.toList (Set.difference nextStates visited) ++ queue'
+                        newQueue = HS.toList (HS.difference nextStates visited) ++ queue'
                      in bfs newVisited newQueue
-     in bfs (Set.singleton initialState) [initialState]
+     in bfs (HS.singleton initialState) [initialState]

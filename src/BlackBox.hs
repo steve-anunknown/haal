@@ -21,9 +21,9 @@ where
 
 import qualified Data.Bifunctor as Bif
 import qualified Data.List as List
-import qualified Data.Set as Set
 
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.HashSet as HS
 import Data.Hashable (Hashable)
 
 {- | The 'StateID' type is an alias for an integer that represents the state of the automaton.
@@ -42,18 +42,18 @@ class SUL sul where
 walk :: (Ord i, SUL sul) => sul i o -> [i] -> (sul i o, [o])
 walk = List.mapAccumL step
 
-inputs :: (Ord i, Bounded i, Enum i) => sul i o -> Set.Set i
-inputs _ = Set.fromList [minBound .. maxBound]
+inputs :: (Ord i, Bounded i, Enum i, Hashable i) => sul i o -> HS.HashSet i
+inputs _ = HS.fromList [minBound .. maxBound]
 
-outputs :: (Ord o, Bounded o, Enum o) => sul i o -> Set.Set o
-outputs _ = Set.fromList [minBound .. maxBound]
+outputs :: (Ord o, Bounded o, Enum o, Hashable o) => sul i o -> HS.HashSet o
+outputs _ = HS.fromList [minBound .. maxBound]
 
 {- | The 'Automaton' type class extends the 'SUL' type class and adds
 support for automata operations.
 -}
 class (SUL aut) => Automaton aut st | aut -> st where
     transitions :: (Hashable st, Hashable i, Bounded st, Bounded i, Enum st, Enum i, Ord st, Ord i) => aut i o -> HMS.HashMap (st, i) (st, o)
-    states :: (Ord st, Bounded st, Enum st) => aut i o -> Set.Set st
+    states :: (Ord st, Bounded st, Enum st) => aut i o -> HS.HashSet st
     current :: aut i o -> st
     update :: aut i o -> st -> aut i o
 
@@ -63,15 +63,15 @@ initial = current . reset
 -- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::
     forall s i o aut.
-    (Ord i, Bounded i, Enum i, Ord s, Automaton aut s, Hashable s) =>
+    (Ord i, Bounded i, Enum i, Ord s, Automaton aut s, Hashable s, Hashable i) =>
     aut i o ->
     HMS.HashMap s [i]
-accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (HMS.singleton initialSt [])
+accessSequences aut = bfs [(initialSt, [])] (HS.singleton initialSt) (HMS.singleton initialSt [])
   where
-    alphabet = Set.toList (inputs aut)
+    alphabet = HS.toList (inputs aut)
     initialSt = initial aut
 
-    bfs :: [(s, [i])] -> Set.Set s -> HMS.HashMap s [i] -> HMS.HashMap s [i]
+    bfs :: [(s, [i])] -> HS.HashSet s -> HMS.HashMap s [i] -> HMS.HashMap s [i]
     bfs [] _ acc = HMS.map List.reverse acc
     bfs ((_, prefix) : rest) visited acc =
         bfs (rest ++ newQueue) newVisited newMap
@@ -81,7 +81,7 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (HMS.singl
             [ (nextState, input : prefix)
             | input <- alphabet
             , let nextState = current . fst $ step mo input
-            , nextState `Set.notMember` visited
+            , not $ nextState `HS.member` visited
             ]
         -- newMap = foldr (uncurry HMS.insert) acc successors
         -- newVisited = foldr (Set.insert . fst) visited successors
@@ -89,17 +89,17 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (HMS.singl
         (newVisited, newMap) =
             foldr
                 ( \(state, pref) (vs, mp) ->
-                    (Set.insert state vs, HMS.insert state pref mp)
+                    (HS.insert state vs, HMS.insert state pref mp)
                 )
                 (visited, acc)
                 successors
 
         newQueue = successors
 
-distinguish :: (Bounded i, Enum i, Ord i, Eq o, Ord s, Automaton aut s, Hashable s) => aut i o -> s -> s -> [i]
+distinguish :: (Bounded i, Enum i, Ord i, Eq o, Ord s, Automaton aut s, Hashable s, Hashable i) => aut i o -> s -> s -> [i]
 distinguish m s1 s2 = explore HMS.empty [(s1, s2, [])]
   where
-    alphabet = Set.toList (inputs m)
+    alphabet = HS.toList (inputs m)
 
     explore _ [] = []
     explore visited ((q1, q2, prefix) : queue)
@@ -127,11 +127,11 @@ distinguish m s1 s2 = explore HMS.empty [(s1, s2, [])]
  - any other state of the automaton.
 -}
 localCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s, Hashable s) =>
+    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s, Hashable s, Hashable i) =>
     aut i o ->
     s ->
-    Set.Set [i]
-localCharacterizingSet m s = Set.fromList [d sx | sx <- Set.toList $ states m, s /= sx]
+    HS.HashSet [i]
+localCharacterizingSet m s = HS.fromList [d sx | sx <- HS.toList $ states m, s /= sx]
   where
     d = distinguish m s
 
@@ -139,10 +139,10 @@ localCharacterizingSet m s = Set.fromList [d sx | sx <- Set.toList $ states m, s
 of the automaton.
 -}
 globalCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s, Hashable s) =>
+    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s, Hashable s, Hashable i) =>
     aut i o ->
-    Set.Set [i]
-globalCharacterizingSet m = Set.fromList [d s1 s2 | s1 <- sts, s2 <- sts, s1 < s2]
+    HS.HashSet [i]
+globalCharacterizingSet m = HS.fromList [d s1 s2 | s1 <- sts, s2 <- sts, s1 < s2]
   where
-    sts = Set.toList $ states m
+    sts = HS.toList $ states m
     d = distinguish m

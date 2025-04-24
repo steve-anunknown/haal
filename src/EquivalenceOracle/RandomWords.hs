@@ -8,7 +8,8 @@ where
 import BlackBox (inputs)
 import Control.Monad (replicateM)
 import Control.Monad.State
-import qualified Data.Set as Set
+import qualified Data.HashSet as HS
+import Data.Hashable (Hashable)
 import qualified Data.Vector as V
 import Experiment (EquivalenceOracle, testSuite)
 import System.Random
@@ -24,7 +25,7 @@ data RandomWordsConfig = RandomWordsConfig
 
 newtype RandomWords = RandomWords RandomWordsConfig deriving (Show, Eq)
 
-generateRandomWords :: (Ord a, Bounded a, Enum a) => RandomWords -> sul a o -> (RandomWords, [[a]])
+generateRandomWords :: (Ord a, Bounded a, Enum a, Hashable a) => RandomWords -> sul a o -> (RandomWords, [[a]])
 generateRandomWords
     ( RandomWords
             RandomWordsConfig
@@ -35,7 +36,7 @@ generateRandomWords
                 }
         )
     aut =
-        let alphaVec = V.fromList . Set.toList $ inputs aut
+        let alphaVec = V.fromList . HS.toList $ inputs aut
             (ranWords, finalGen) = runState (replicateM count (genWord alphaVec)) generator
             config = RandomWordsConfig{rwGen = finalGen, rwLimit = count, rwMinLength = minL, rwMaxLength = maxL}
          in (RandomWords config, ranWords)

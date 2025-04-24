@@ -10,8 +10,8 @@ module EquivalenceOracle.WpMethod (
 import BlackBox
 import Control.Monad (replicateM)
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.HashSet as HS
 import Data.Hashable (Hashable)
-import qualified Data.Set as Set
 import Experiment (EquivalenceOracle (..))
 
 newtype WpMethodConfig = WpMethodConfig
@@ -39,6 +39,7 @@ wpmethodSuite ::
     , Enum s
     , Eq o
     , Hashable s
+    , Hashable i
     ) =>
     WpMethod ->
     aut i o ->
@@ -49,37 +50,37 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
     stateCover = accessSequences aut
     localSuf =
         HMS.fromList
-            [ (st, localCharacterizingSet aut st) | st <- Set.toList $ states aut
+            [ (st, localCharacterizingSet aut st) | st <- HS.toList $ states aut
             ]
     globalSuf = globalCharacterizingSet aut
 
     transitionCover =
         [ acc ++ [a]
         | acc <- HMS.elems stateCover
-        , a <- Set.toList alphabet
+        , a <- HS.toList alphabet
         ]
     difference =
-        Set.fromList (HMS.elems stateCover)
-            `Set.difference` Set.fromList transitionCover
+        HS.fromList (HMS.elems stateCover)
+            `HS.difference` HS.fromList transitionCover
 
     firstPhase =
         concat
             [ [ acc ++ middle ++ suf
               | acc <- HMS.elems stateCover
-              , suf <- Set.toList globalSuf
+              , suf <- HS.toList globalSuf
               ]
             | fixed <- [0 .. d]
-            , middle <- replicateM fixed $ Set.toList alphabet
+            , middle <- replicateM fixed $ HS.toList alphabet
             ]
 
     secondPhase =
         concat
             [ [ acc ++ middle ++ suf
-              | acc <- Set.toList difference
-              , suf <- Set.toList $ localSuf HMS.! current (fst (walk aut (acc ++ middle)))
+              | acc <- HS.toList difference
+              , suf <- HS.toList $ localSuf HMS.! current (fst (walk aut (acc ++ middle)))
               ]
             | fixed <- [0 .. d]
-            , middle <- replicateM fixed $ Set.toList alphabet
+            , middle <- replicateM fixed $ HS.toList alphabet
             ]
 
     suite = firstPhase ++ secondPhase

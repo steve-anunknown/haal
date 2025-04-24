@@ -5,7 +5,8 @@ module EquivalenceOracle.RandomWalk (
 where
 
 import BlackBox
-import qualified Data.Set as Set
+import qualified Data.HashSet as HS
+import Data.Hashable (Hashable)
 import qualified Data.Vector as V
 import Experiment
 import System.Random (Random (randomR), RandomGen (split), StdGen, randomRs)
@@ -20,10 +21,10 @@ data RandomWalkConfig = RandomWalkConfig
 newtype RandomWalk = RandomWalk RandomWalkConfig deriving (Show, Eq)
 
 -- | Generates a random walk for the automaton.
-randomWalkSuite :: (Ord a, Bounded a, Enum a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
+randomWalkSuite :: (Ord a, Bounded a, Enum a, Hashable a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
 randomWalkSuite (RandomWalk (RandomWalkConfig{rwlGen = g, rwlMaxSteps = maxS, rwlRestart = restartP})) aut =
     let (g1, g2) = split g
-        alphabet = V.fromList . Set.toList $ inputs aut
+        alphabet = V.fromList . HS.toList $ inputs aut
         randomInputs = take maxS $ randomRs (0, V.length alphabet - 1) g1
         inputSequence = map (alphabet V.!) randomInputs
         (inputSequence', g3) = splitWithProbability g2 restartP inputSequence

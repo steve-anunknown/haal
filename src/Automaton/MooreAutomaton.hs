@@ -13,21 +13,21 @@ where
 
 import BlackBox
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.HashSet as HS
 import Data.Hashable (Hashable)
-import qualified Data.Set as Set
 
 data MooreAutomaton state input output = MooreAutomaton
     { mooreDelta :: state -> input -> state
     , mooreLambda :: state -> output
     , mooreInitialS :: state
     , mooreCurrentS :: state
-    , mooreStates :: Set.Set state
+    , mooreStates :: HS.HashSet state
     }
 
 {- | The 'mkMooreAutomaton' constructor returns a 'MooreAutomaton' by requiring the 'mooreDelta'
 function, the 'mooreLambda' function and the initial state 'mooreInitialS'.
 -}
-mkMooreAutomaton :: (s -> i -> s) -> (s -> o) -> Set.Set s -> s -> MooreAutomaton s i o
+mkMooreAutomaton :: (s -> i -> s) -> (s -> o) -> HS.HashSet s -> s -> MooreAutomaton s i o
 mkMooreAutomaton delta lambda sts initS =
     MooreAutomaton
         { mooreDelta = delta

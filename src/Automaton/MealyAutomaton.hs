@@ -15,8 +15,8 @@ where
 
 import BlackBox
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.HashSet as HS
 import Data.Hashable (Hashable)
-import qualified Data.Set as Set
 
 {- | The 'MealyAutomaton' data type is parameterised by the 'input', 'output' and 'state' types
  which play the role of the input alphabet, output alphabet and set of states respectively.
@@ -30,13 +30,13 @@ data MealyAutomaton state input output = MealyAutomaton
     , mealyLambda :: state -> input -> output
     , mealyInitialS :: state
     , mealyCurrentS :: state
-    , mealyStates :: Set.Set state
+    , mealyStates :: HS.HashSet state
     }
 
 {- | The 'mkMealyAutomaton' constructor returns a 'MealyAutomaton' by requiring the 'mealyDelta'
 function, the 'mealyLambda' function and the initial state 'mealyInitialS'.
 -}
-mkMealyAutomaton :: (s -> i -> s) -> (s -> i -> o) -> Set.Set s -> s -> MealyAutomaton s i o
+mkMealyAutomaton :: (s -> i -> s) -> (s -> i -> o) -> HS.HashSet s -> s -> MealyAutomaton s i o
 mkMealyAutomaton delta lambda sts initS =
     MealyAutomaton
         { mealyDelta = delta
@@ -50,7 +50,7 @@ mkMealyAutomaton delta lambda sts initS =
 function describing both the state transitions as well as the produced outputs, instead of two
 separate functions, and the initial state 'mealyInitialS'.
 -}
-mkMealyAutomaton2 :: (s -> i -> (s, o)) -> Set.Set s -> s -> MealyAutomaton s i o
+mkMealyAutomaton2 :: (s -> i -> (s, o)) -> HS.HashSet s -> s -> MealyAutomaton s i o
 mkMealyAutomaton2 transs sts initS =
     MealyAutomaton
         { mealyDelta = \s i -> fst (transs s i)
@@ -89,8 +89,8 @@ mealyTransitions m = HMS.fromList [((s, i), (delta s i, lambda s i)) | s <- doma
   where
     delta = mealyDelta m
     lambda = mealyLambda m
-    domainS = Set.toList $ mealyStates m
-    domainI = Set.toList $ inputs m
+    domainS = HS.toList $ mealyStates m
+    domainI = HS.toList $ inputs m
 
 instance Automaton (MealyAutomaton s) s where
     transitions = mealyTransitions
