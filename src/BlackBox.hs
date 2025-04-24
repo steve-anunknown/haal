@@ -81,9 +81,17 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
             , let nextState = current . fst $ step mo input
             , nextState `Set.notMember` visited
             ]
+        -- newMap = foldr (uncurry Map.insert) acc successors
+        -- newVisited = foldr (Set.insert . fst) visited successors
 
-        newMap = foldr (uncurry Map.insert) acc successors
-        newVisited = foldr (Set.insert . fst) visited successors
+        (newVisited, newMap) =
+            foldr
+                ( \(state, pref) (vs, mp) ->
+                    (Set.insert state vs, Map.insert state pref mp)
+                )
+                (visited, acc)
+                successors
+
         newQueue = successors
 
 distinguish :: (Bounded i, Enum i, Ord i, Eq o, Ord s, Automaton aut s) => aut i o -> s -> s -> [i]
@@ -121,9 +129,9 @@ localCharacterizingSet ::
     aut i o ->
     s ->
     Set.Set [i]
-localCharacterizingSet m s = Set.fromList [d s sx | sx <- Set.toList $ states m, s /= sx]
+localCharacterizingSet m s = Set.fromList [d sx | sx <- Set.toList $ states m, s /= sx]
   where
-    d = distinguish m
+    d = distinguish m s
 
 {- | Returns a set of lists of inputs that can be used to distinguish between any two different states
 of the automaton.
