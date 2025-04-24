@@ -107,14 +107,14 @@ randomWMethodSuite ::
     aut i o ->
     (RandomWMethod, [[i]])
 randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
-    let rorc = RandomWords g wpr 0 wl
+    let rorc = RandomWords (RandomWordsConfig{rwMaxLength = wl, rwMinLength = 1, rwLimit = wpr, rwGen = g})
         prefixes = Map.elems $ accessSequences aut
         vecSuffixes = Vec.fromList $ Set.toList $ globalCharacterizingSet aut
 
-        (roc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut i o))
+        (RandomWords roc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut i o))
         flatWords = concat wordBatches
 
-        (gen'', gen''') = split (gen roc')
+        (gen'', gen''') = split (rwGen roc')
         samples = length prefixes * wpr
         randomSuffixes = take samples $ randomRs (0, Vec.length vecSuffixes - 1) gen''
         suffixes = map (vecSuffixes Vec.!) randomSuffixes

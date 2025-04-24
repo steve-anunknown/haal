@@ -36,7 +36,7 @@ import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 import qualified Data.Set as Set
 import EquivalenceOracle.RandomWalk (RandomWalk (RandomWalk))
-import EquivalenceOracle.RandomWords (RandomWords (RandomWords))
+import EquivalenceOracle.RandomWords (RandomWords (RandomWords), RandomWordsConfig(RandomWordsConfig))
 import EquivalenceOracle.WMethod (RandomWMethod (RandomWMethod), RandomWMethodConfig (RandomWMethodConfig), WMethod (WMethod))
 import EquivalenceOracle.WpMethod (WpMethod (WpMethod))
 import Experiment (EquivalenceOracle)
@@ -44,7 +44,9 @@ import Experiment (EquivalenceOracle)
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
 newtype ArbWpMethod = ArbWpMethod WpMethod deriving (Show, Eq)
 
+newtype ArbRandomWordsConfig = ArbRandomWordsConfig RandomWordsConfig deriving (Show, Eq)
 newtype ArbRandomWords = ArbRandomWords RandomWords deriving (Show, Eq)
+
 newtype ArbRandomWalk = ArbRandomWalk RandomWalk deriving (Show, Eq)
 
 newtype ArbRandomWMethodConfig = ArbRandomWMethodConfig RandomWMethodConfig deriving (Show, Eq)
@@ -58,13 +60,20 @@ instance Arbitrary ArbWpMethod where
     arbitrary = do
         d <- choose (1, 5)
         return (ArbWpMethod (WpMethod d))
-instance Arbitrary ArbRandomWords where
+
+instance Arbitrary ArbRandomWordsConfig where
     arbitrary = do
         lim <- choose (100, 10000)
         minL <- choose (1, 10)
         maxL <- choose (minL, 11)
-        let randGen = mkStdGen 42
-        return (ArbRandomWords (RandomWords randGen lim minL maxL))
+        seed <- choose (17, 69)
+        let randGen = mkStdGen seed
+        return (ArbRandomWordsConfig (RandomWordsConfig randGen lim minL maxL))
+instance Arbitrary ArbRandomWords where
+    arbitrary = do
+        (ArbRandomWordsConfig config) <- arbitrary :: Gen ArbRandomWordsConfig
+        return (ArbRandomWords (RandomWords config))
+
 instance Arbitrary ArbRandomWalk where
     arbitrary = do
         lim <- choose (100, 10000)
@@ -72,10 +81,11 @@ instance Arbitrary ArbRandomWalk where
         seed <- choose (17, 69)
         let randGen = mkStdGen seed
         return (ArbRandomWalk (RandomWalk randGen lim restart))
+
 instance Arbitrary ArbRandomWMethodConfig where
     arbitrary = do
         seed <- choose (17, 69)
-        let randGen = mkStdGen seed 
+        let randGen = mkStdGen seed
         wpr <- choose (10, 20)
         wl <- choose (1, 5)
         return (ArbRandomWMethodConfig (RandomWMethodConfig randGen wpr wl))
@@ -99,7 +109,7 @@ instance OracleWrapper ArbRandomWords RandomWords where
 instance OracleWrapper ArbRandomWalk RandomWalk where
     unwrap (ArbRandomWalk o) = o
 
-instance OracleWrapper ArbRandomWMethod RandomWMethod where 
+instance OracleWrapper ArbRandomWMethod RandomWMethod where
     unwrap (ArbRandomWMethod o) = o
 
 newtype Mealy s i o = Mealy (MealyAutomaton s i o) deriving (Show)
