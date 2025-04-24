@@ -49,12 +49,16 @@ import EquivalenceOracle.WMethod (
     WMethod (WMethod),
     WMethodConfig (WMethodConfig),
  )
-import EquivalenceOracle.WpMethod (WpMethod (WpMethod))
+import EquivalenceOracle.WpMethod (
+    WpMethod (WpMethod),
+    WpMethodConfig (WpMethodConfig),
+ )
 import Experiment (EquivalenceOracle)
 
 newtype ArbWMethodConfig = ArbWMethodConfig WMethodConfig deriving (Show, Eq)
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
 
+newtype ArbWpMethodConfig = ArbWpMethodConfig WpMethodConfig deriving (Show, Eq)
 newtype ArbWpMethod = ArbWpMethod WpMethod deriving (Show, Eq)
 
 newtype ArbRandomWordsConfig = ArbRandomWordsConfig RandomWordsConfig deriving (Show, Eq)
@@ -75,10 +79,14 @@ instance Arbitrary ArbWMethod where
         (ArbWMethodConfig config) <- arbitrary :: Gen ArbWMethodConfig
         return (ArbWMethod (WMethod config))
 
-instance Arbitrary ArbWpMethod where
+instance Arbitrary ArbWpMethodConfig where
     arbitrary = do
         d <- choose (1, 5)
-        return (ArbWpMethod (WpMethod d))
+        return (ArbWpMethodConfig (WpMethodConfig d))
+instance Arbitrary ArbWpMethod where
+    arbitrary = do
+        (ArbWpMethodConfig config) <- arbitrary :: Gen ArbWpMethodConfig
+        return (ArbWpMethod (WpMethod config))
 
 instance Arbitrary ArbRandomWordsConfig where
     arbitrary = do

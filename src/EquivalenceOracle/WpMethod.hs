@@ -3,6 +3,7 @@
 -- | This module implements the WpMethod.
 module EquivalenceOracle.WpMethod (
     WpMethod (..),
+    WpMethodConfig (..),
     wpmethodSuiteSize,
 ) where
 
@@ -12,8 +13,14 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Experiment (EquivalenceOracle (..))
 
+newtype WpMethodConfig = WpMethodConfig
+    { wpDepth :: Int
+    -- ^ The maximum depth of the WpMethod.
+    }
+    deriving (Show, Eq)
+
 -- | Type for the WpMethod. It simply wraps the depth of the method.
-newtype WpMethod = WpMethod {depth :: Int} deriving (Eq, Show)
+newtype WpMethod = WpMethod WpMethodConfig deriving (Eq, Show)
 
 -- | The 'wpmethodSuiteSize' returns the nunmber of test cases in the test suite of WpMethod
 wpmethodSuiteSize :: a
@@ -34,7 +41,7 @@ wpmethodSuite ::
     WpMethod ->
     aut i o ->
     (WpMethod, [[i]])
-wpmethodSuite (WpMethod{depth = d}) aut = (WpMethod{depth = d}, suite)
+wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
   where
     alphabet = inputs aut
     stateCover = accessSequences aut
