@@ -3,6 +3,7 @@
 -- | This module implements the W-method equivalence oracle.
 module EquivalenceOracle.WMethod (
     WMethod (..),
+    WMethodConfig (..),
     wmethodSuiteSize,
     RandomWMethod (..),
     RandomWMethodConfig (..),
@@ -18,11 +19,17 @@ import EquivalenceOracle.RandomWords
 import Experiment
 import System.Random (Random (randomRs), RandomGen (split), StdGen)
 
+newtype WMethodConfig = WMethodConfig
+    { wmDepth :: Int
+    -- ^ The maximum depth of the W-method.
+    }
+    deriving (Show, Eq)
+
 {- | The 'WMethod' type represents the W-method equivalence oracle.
 It is just a wrapper around an integer, which is used for configuring
 the exploration depth of the method.
 -}
-newtype WMethod = WMethod {depth :: Int} deriving (Show, Eq)
+newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
@@ -38,7 +45,7 @@ wmethodSuiteSize ::
     WMethod ->
     aut i o ->
     Int
-wmethodSuiteSize (WMethod{depth = d}) aut = size
+wmethodSuiteSize (WMethod (WMethodConfig{wmDepth = d})) aut = size
   where
     alphabet = length $ inputs aut
     accessSeqs = length $ accessSequences aut
@@ -60,7 +67,7 @@ wmethodSuite ::
     WMethod ->
     aut i o ->
     (WMethod, [[i]])
-wmethodSuite (WMethod{depth = d}) aut = (WMethod{depth = d}, suite)
+wmethodSuite wm@(WMethod (WMethodConfig{wmDepth = d})) aut = (wm, suite)
   where
     alphabet = Set.toList $ inputs aut
     accessSeqs = accessSequences aut

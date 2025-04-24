@@ -36,12 +36,14 @@ import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 import qualified Data.Set as Set
 import EquivalenceOracle.RandomWalk (RandomWalk (RandomWalk), RandomWalkConfig (RandomWalkConfig))
-import EquivalenceOracle.RandomWords (RandomWords (RandomWords), RandomWordsConfig(RandomWordsConfig))
-import EquivalenceOracle.WMethod (RandomWMethod (RandomWMethod), RandomWMethodConfig (RandomWMethodConfig), WMethod (WMethod))
+import EquivalenceOracle.RandomWords (RandomWords (RandomWords), RandomWordsConfig (RandomWordsConfig))
+import EquivalenceOracle.WMethod (RandomWMethod (RandomWMethod), RandomWMethodConfig (RandomWMethodConfig), WMethod (WMethod), WMethodConfig (WMethodConfig))
 import EquivalenceOracle.WpMethod (WpMethod (WpMethod))
 import Experiment (EquivalenceOracle)
 
+newtype ArbWMethodConfig = ArbWMethodConfig WMethodConfig deriving (Show, Eq)
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
+
 newtype ArbWpMethod = ArbWpMethod WpMethod deriving (Show, Eq)
 
 newtype ArbRandomWordsConfig = ArbRandomWordsConfig RandomWordsConfig deriving (Show, Eq)
@@ -53,10 +55,15 @@ newtype ArbRandomWalk = ArbRandomWalk RandomWalk deriving (Show, Eq)
 newtype ArbRandomWMethodConfig = ArbRandomWMethodConfig RandomWMethodConfig deriving (Show, Eq)
 newtype ArbRandomWMethod = ArbRandomWMethod RandomWMethod deriving (Show, Eq)
 
-instance Arbitrary ArbWMethod where
+instance Arbitrary ArbWMethodConfig where
     arbitrary = do
         d <- choose (1, 5)
-        return (ArbWMethod (WMethod d))
+        return (ArbWMethodConfig (WMethodConfig d))
+instance Arbitrary ArbWMethod where
+    arbitrary = do
+        (ArbWMethodConfig config) <- arbitrary :: Gen ArbWMethodConfig
+        return (ArbWMethod (WMethod config))
+
 instance Arbitrary ArbWpMethod where
     arbitrary = do
         d <- choose (1, 5)
@@ -75,7 +82,7 @@ instance Arbitrary ArbRandomWords where
         (ArbRandomWordsConfig config) <- arbitrary :: Gen ArbRandomWordsConfig
         return (ArbRandomWords (RandomWords config))
 
-instance Arbitrary ArbRandomWalkConfig where 
+instance Arbitrary ArbRandomWalkConfig where
     arbitrary = do
         lim <- choose (100, 10000)
         restart <- choose (0.0, 1.0)
