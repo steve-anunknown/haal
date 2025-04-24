@@ -85,14 +85,14 @@ instance EquivalenceOracle WMethod where
     testSuite = wmethodSuite
 
 -- | The 'RandomWMethodConfig' type is used to configure the random W-method.
-data RandomWMethodConfig
-    = RandomWMethodConfig
-        -- | Random generator
-        StdGen
-        -- | Walks per state
-        Int
-        -- | Length of walk
-        Int
+data RandomWMethodConfig = RandomWMethodConfig
+    { rwmGen :: StdGen
+    -- ^ The random number generator.
+    , rwmLimit :: Int
+    -- ^ The maximum number of random words to generate.
+    , rwmLength :: Int
+    -- ^ The maximum length of the random words.
+    }
     deriving (Show, Eq)
 
 -- | The 'RandomWMethod' type represents a random W-method equivalence oracle.
