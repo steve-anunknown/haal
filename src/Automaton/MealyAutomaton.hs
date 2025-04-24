@@ -14,7 +14,8 @@ module Automaton.MealyAutomaton (
 where
 
 import BlackBox
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HMS
+import Data.Hashable (Hashable)
 import qualified Data.Set as Set
 
 {- | The 'MealyAutomaton' data type is parameterised by the 'input', 'output' and 'state' types
@@ -81,10 +82,10 @@ and 'mealyLambda' functions.
 -}
 mealyTransitions ::
     forall s i o.
-    (Bounded i, Ord s, Ord i, Enum i) =>
+    (Bounded i, Ord s, Ord i, Enum i, Hashable s, Hashable i) =>
     MealyAutomaton s i o ->
-    Map.Map (s, i) (s, o)
-mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- domainS, i <- domainI]
+    HMS.HashMap (s, i) (s, o)
+mealyTransitions m = HMS.fromList [((s, i), (delta s i, lambda s i)) | s <- domainS, i <- domainI]
   where
     delta = mealyDelta m
     lambda = mealyLambda m
@@ -103,6 +104,8 @@ instance
     , Show s
     , Bounded s
     , Bounded i
+    , Hashable s
+    , Hashable i
     , Enum s
     , Enum i
     , Ord s
@@ -129,6 +132,8 @@ instance
     , Eq o
     , Bounded s
     , Bounded i
+    , Hashable s
+    , Hashable i
     , Enum s
     , Enum i
     ) =>

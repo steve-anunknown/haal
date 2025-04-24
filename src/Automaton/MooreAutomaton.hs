@@ -12,7 +12,8 @@ module Automaton.MooreAutomaton (
 where
 
 import BlackBox
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HMS
+import Data.Hashable (Hashable)
 import qualified Data.Set as Set
 
 data MooreAutomaton state input output = MooreAutomaton
@@ -58,10 +59,10 @@ and 'mooreLambda' functions.
 -}
 mooreTransitions ::
     forall i o s.
-    (Bounded s, Enum s, Bounded i, Enum i, Ord s, Ord i) =>
+    (Bounded s, Enum s, Bounded i, Enum i, Ord s, Ord i, Hashable s, Hashable i) =>
     MooreAutomaton s i o ->
-    Map.Map (s, i) (s, o)
-mooreTransitions m = Map.fromList [((s, i), (delta s i, lambda s)) | s <- domainS, i <- domainI]
+    HMS.HashMap (s, i) (s, o)
+mooreTransitions m = HMS.fromList [((s, i), (delta s i, lambda s)) | s <- domainS, i <- domainI]
   where
     delta = mooreDelta m
     lambda = mooreLambda m
@@ -80,6 +81,8 @@ instance
     , Show s
     , Bounded s
     , Bounded i
+    , Hashable s
+    , Hashable i
     , Enum s
     , Enum i
     , Ord s

@@ -21,8 +21,10 @@ where
 
 import qualified Data.Bifunctor as Bif
 import qualified Data.List as List
-import qualified Data.Map as Map
 import qualified Data.Set as Set
+
+import qualified Data.HashMap.Strict as HMS
+import Data.Hashable (Hashable)
 
 {- | The 'StateID' type is an alias for an integer that represents the state of the automaton.
  - It is used as a default type for the state of learned automata.
@@ -50,7 +52,7 @@ outputs _ = Set.fromList [minBound .. maxBound]
 support for automata operations.
 -}
 class (SUL aut) => Automaton aut st | aut -> st where
-    transitions :: (Bounded st, Bounded i, Enum st, Enum i, Ord st, Ord i) => aut i o -> Map.Map (st, i) (st, o)
+    transitions :: (Hashable st, Hashable i, Bounded st, Bounded i, Enum st, Enum i, Ord st, Ord i) => aut i o -> HMS.HashMap (st, i) (st, o)
     states :: (Ord st, Bounded st, Enum st) => aut i o -> Set.Set st
     current :: aut i o -> st
     update :: aut i o -> st -> aut i o
@@ -61,16 +63,16 @@ initial = current . reset
 -- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::
     forall s i o aut.
-    (Ord i, Bounded i, Enum i, Ord s, Automaton aut s) =>
+    (Ord i, Bounded i, Enum i, Ord s, Automaton aut s, Hashable s) =>
     aut i o ->
-    Map.Map s [i]
-accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singleton initialSt [])
+    HMS.HashMap s [i]
+accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (HMS.singleton initialSt [])
   where
     alphabet = Set.toList (inputs aut)
     initialSt = initial aut
 
-    bfs :: [(s, [i])] -> Set.Set s -> Map.Map s [i] -> Map.Map s [i]
-    bfs [] _ acc = Map.map List.reverse acc
+    bfs :: [(s, [i])] -> Set.Set s -> HMS.HashMap s [i] -> HMS.HashMap s [i]
+    bfs [] _ acc = HMS.map List.reverse acc
     bfs ((_, prefix) : rest) visited acc =
         bfs (rest ++ newQueue) newVisited newMap
       where
@@ -81,21 +83,21 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
             , let nextState = current . fst $ step mo input
             , nextState `Set.notMember` visited
             ]
-        -- newMap = foldr (uncurry Map.insert) acc successors
+        -- newMap = foldr (uncurry HMS.insert) acc successors
         -- newVisited = foldr (Set.insert . fst) visited successors
 
         (newVisited, newMap) =
             foldr
                 ( \(state, pref) (vs, mp) ->
-                    (Set.insert state vs, Map.insert state pref mp)
+                    (Set.insert state vs, HMS.insert state pref mp)
                 )
                 (visited, acc)
                 successors
 
         newQueue = successors
 
-distinguish :: (Bounded i, Enum i, Ord i, Eq o, Ord s, Automaton aut s) => aut i o -> s -> s -> [i]
-distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
+distinguish :: (Bounded i, Enum i, Ord i, Eq o, Ord s, Automaton aut s, Hashable s) => aut i o -> s -> s -> [i]
+distinguish m s1 s2 = explore HMS.empty [(s1, s2, [])]
   where
     alphabet = Set.toList (inputs m)
 
@@ -104,7 +106,7 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
         | Just seqFound <- discrepancy = reverse (seqFound : prefix)
         | otherwise = explore newVisited (queue ++ newQueue)
       where
-        newVisited = Map.insert (q1, q2) prefix visited
+        newVisited = HMS.insert (q1, q2) prefix visited
         mo1 = update m q1
         mo2 = update m q2
 
@@ -115,9 +117,9 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
 
         appended = map (: prefix) alphabet
 
-        toBeVisited = Map.fromList $ zip (zip nextStates1 nextStates2) appended
+        toBeVisited = HMS.fromList $ zip (zip nextStates1 nextStates2) appended
 
-        newQueue = [(s1', s2', p) | ((s1', s2'), p) <- Map.toList toBeVisited, (s1', s2') `Map.notMember` visited]
+        newQueue = [(s1', s2', p) | ((s1', s2'), p) <- HMS.toList toBeVisited, (s1', s2') `HMS.member` visited]
 
     stepAndCurrent mo i = Bif.first current (step mo i)
 
@@ -125,7 +127,7 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
  - any other state of the automaton.
 -}
 localCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s) =>
+    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s, Hashable s) =>
     aut i o ->
     s ->
     Set.Set [i]
@@ -137,7 +139,7 @@ localCharacterizingSet m s = Set.fromList [d sx | sx <- Set.toList $ states m, s
 of the automaton.
 -}
 globalCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s) =>
+    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s, Hashable s) =>
     aut i o ->
     Set.Set [i]
 globalCharacterizingSet m = Set.fromList [d s1 s2 | s1 <- sts, s2 <- sts, s1 < s2]

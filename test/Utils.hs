@@ -1,4 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -28,9 +31,11 @@ import Automaton.MealyAutomaton (
 import BlackBox
 import qualified Data.Bifunctor as Bif
 import Data.Data (Data)
+import Data.Hashable (Hashable)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe
+import GHC.Generics
 import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
@@ -207,9 +212,17 @@ instance
             fallbackOutput <- arbitrary :: Gen o
             return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
 
-data Input = A | B | C | D deriving (Show, Eq, Ord, Data, Enum, Bounded)
-data Output = X | Y | Z | W deriving (Show, Eq, Ord, Data, Enum, Bounded)
-data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 deriving (Show, Eq, Ord, Data, Enum, Bounded)
+data Input = A | B | C | D 
+  deriving stock (Show, Eq, Ord, Enum, Bounded)
+  deriving anyclass (Hashable)
+  deriving stock (Generic)
+
+data Output = X | Y | Z | W 
+  deriving stock (Show, Eq, Ord, Enum, Bounded)
+
+data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 
+  deriving stock (Show, Eq, Ord, Enum, Bounded, Generic)
+  deriving anyclass (Hashable)
 
 -- Arbitrary instances for Input, Output, and State
 instance Arbitrary Input where

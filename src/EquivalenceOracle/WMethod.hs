@@ -11,8 +11,9 @@ module EquivalenceOracle.WMethod (
 
 import BlackBox (Automaton, accessSequences, globalCharacterizingSet, inputs)
 import Control.Monad (replicateM)
+import qualified Data.HashMap.Strict as HMS
+import Data.Hashable (Hashable)
 import qualified Data.List as List
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Vector as Vec
 import EquivalenceOracle.RandomWords
@@ -41,6 +42,7 @@ wmethodSuiteSize ::
     , Bounded s
     , Enum i
     , Enum s
+    , Hashable s
     ) =>
     WMethod ->
     aut i o ->
@@ -61,6 +63,7 @@ wmethodSuite ::
     , Eq o
     , Bounded i
     , Bounded s
+    , Hashable s
     , Enum i
     , Enum s
     ) =>
@@ -72,7 +75,7 @@ wmethodSuite wm@(WMethod (WMethodConfig{wmDepth = d})) aut = (wm, suite)
     alphabet = Set.toList $ inputs aut
     accessSeqs = accessSequences aut
     characterizingSet = Set.toList $ globalCharacterizingSet aut
-    transitionCover = [a ++ [inp] | a <- Map.elems accessSeqs, inp <- alphabet]
+    transitionCover = [a ++ [inp] | a <- HMS.elems accessSeqs, inp <- alphabet]
     middlesByDepth = [replicateM n alphabet | n <- [0 .. d]]
     suite =
         concat
@@ -109,13 +112,14 @@ randomWMethodSuite ::
     , Bounded s
     , Enum i
     , Enum s
+    , Hashable s
     ) =>
     RandomWMethod ->
     aut i o ->
     (RandomWMethod, [[i]])
 randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
     let rorc = RandomWords (RandomWordsConfig{rwMaxLength = wl, rwMinLength = 1, rwLimit = wpr, rwGen = g})
-        prefixes = Map.elems $ accessSequences aut
+        prefixes = HMS.elems $ accessSequences aut
         vecSuffixes = Vec.fromList $ Set.toList $ globalCharacterizingSet aut
 
         (RandomWords roc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut i o))

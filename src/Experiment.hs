@@ -21,6 +21,7 @@ import Control.Monad.Reader
 
 import BlackBox (Automaton, SUL, step, walk)
 import Control.Monad.Identity
+import Data.Hashable (Hashable)
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
 Instances of this class should provide methods to generate a test suite
@@ -32,6 +33,7 @@ class EquivalenceOracle or where
         , Bounded i
         , Enum i
         , Ord s
+        , Hashable s
         , Bounded s
         , Enum s
         , Eq o
@@ -119,6 +121,7 @@ experiment ::
     , Enum s
     , Bounded s
     , Eq o
+    , Hashable s
     ) =>
     learner i o ->
     oracle ->
@@ -169,6 +172,7 @@ findCex ::
     , Enum s
     , Eq o
     , EquivalenceOracle or
+    , Hashable s
     ) =>
     or ->
     aut i o ->

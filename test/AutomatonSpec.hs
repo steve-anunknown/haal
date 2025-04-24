@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module tests the Mealy automaton implementation.
-module MealyAutomatonSpec (
+module AutomatonSpec (
     spec,
 )
 where
@@ -13,7 +13,7 @@ import Automaton.MealyAutomaton (
  )
 import BlackBox
 import qualified Data.List as List
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HMS
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import Test.Hspec (Spec, context, describe, it)
@@ -35,10 +35,7 @@ prop_emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
 prop_existsDistinguishingSequence :: Mealy State Input Output -> State -> State -> Property
 prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
     not (statesAreEquivalent automaton s1 s2)
-        ==> output1
-        /= output2
-        && output1 /= []
-        && output2 /= []
+        ==> not $ null dist && output1 /= output2
   where
     dist = distinguish automaton s1 s2
     (_, output1) = walk (update automaton s1) dist
@@ -53,7 +50,7 @@ prop_mappingEquivalentToFunctions (Mealy automaton) =
         sts = Set.toList $ states automaton
         -- Calculate outputs using mealyDelta and mealyLambda
         mapOutputs =
-            [ Maybe.fromJust (Map.lookup (s, a) transs)
+            [ Maybe.fromJust (HMS.lookup (s, a) transs)
             | s <- sts
             , a <- alphabet
             ]
@@ -67,7 +64,7 @@ prop_completeAccessSequences (Mealy automaton) = sts == reachable ==> allin
     seqs = accessSequences automaton
     sts = states automaton
     reachable = findReachable automaton
-    allin = all (`Map.member` seqs) reachable
+    allin = all (`HMS.member` seqs) reachable
 
 -- The access sequences returned by 'mealyAccessSequences' are the shortest
 prop_shortestAccessSequences :: Mealy State Input Output -> State -> State -> Property
@@ -79,12 +76,12 @@ prop_shortestAccessSequences (Mealy automaton) s1 s2 =
     reachable = findReachable automaton
     transs = transitions automaton
     accessSeqs = accessSequences automaton
-    seq1 = accessSeqs Map.! s1
-    seq2 = accessSeqs Map.! s2
+    seq1 = accessSeqs HMS.! s1
+    seq2 = accessSeqs HMS.! s2
     -- find transition in map (s, i) -> (s, o)
     -- that leads from s1 to s2
-    listed = Map.toList transs
-    filtering (s, i) = s == s1 && fst (transs Map.! (s, i)) == s2
+    listed = HMS.toList transs
+    filtering (s, i) = s == s1 && fst (transs HMS.! (s, i)) == s2
     maybeTransition = List.find filtering $ List.map fst listed
     existsS1toS2 = case maybeTransition of
         Nothing -> False

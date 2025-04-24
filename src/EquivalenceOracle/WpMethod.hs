@@ -9,7 +9,8 @@ module EquivalenceOracle.WpMethod (
 
 import BlackBox
 import Control.Monad (replicateM)
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HMS
+import Data.Hashable (Hashable)
 import qualified Data.Set as Set
 import Experiment (EquivalenceOracle (..))
 
@@ -37,6 +38,7 @@ wpmethodSuite ::
     , Bounded s
     , Enum s
     , Eq o
+    , Hashable s
     ) =>
     WpMethod ->
     aut i o ->
@@ -46,24 +48,24 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
     alphabet = inputs aut
     stateCover = accessSequences aut
     localSuf =
-        Map.fromList
+        HMS.fromList
             [ (st, localCharacterizingSet aut st) | st <- Set.toList $ states aut
             ]
     globalSuf = globalCharacterizingSet aut
 
     transitionCover =
         [ acc ++ [a]
-        | acc <- Map.elems stateCover
+        | acc <- HMS.elems stateCover
         , a <- Set.toList alphabet
         ]
     difference =
-        Set.fromList (Map.elems stateCover)
+        Set.fromList (HMS.elems stateCover)
             `Set.difference` Set.fromList transitionCover
 
     firstPhase =
         concat
             [ [ acc ++ middle ++ suf
-              | acc <- Map.elems stateCover
+              | acc <- HMS.elems stateCover
               , suf <- Set.toList globalSuf
               ]
             | fixed <- [0 .. d]
@@ -74,7 +76,7 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
         concat
             [ [ acc ++ middle ++ suf
               | acc <- Set.toList difference
-              , suf <- Set.toList $ localSuf Map.! current (fst (walk aut (acc ++ middle)))
+              , suf <- Set.toList $ localSuf HMS.! current (fst (walk aut (acc ++ middle)))
               ]
             | fixed <- [0 .. d]
             , middle <- replicateM fixed $ Set.toList alphabet
