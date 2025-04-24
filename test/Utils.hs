@@ -35,9 +35,20 @@ import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 import qualified Data.Set as Set
-import EquivalenceOracle.RandomWalk (RandomWalk (RandomWalk), RandomWalkConfig (RandomWalkConfig))
-import EquivalenceOracle.RandomWords (RandomWords (RandomWords), RandomWordsConfig (RandomWordsConfig))
-import EquivalenceOracle.WMethod (RandomWMethod (RandomWMethod), RandomWMethodConfig (RandomWMethodConfig), WMethod (WMethod), WMethodConfig (WMethodConfig))
+import EquivalenceOracle.RandomWalk (
+    RandomWalk (RandomWalk),
+    RandomWalkConfig (RandomWalkConfig),
+ )
+import EquivalenceOracle.RandomWords (
+    RandomWords (RandomWords),
+    RandomWordsConfig (RandomWordsConfig),
+ )
+import EquivalenceOracle.WMethod (
+    RandomWMethod (RandomWMethod),
+    RandomWMethodConfig (RandomWMethodConfig),
+    WMethod (WMethod),
+    WMethodConfig (WMethodConfig),
+ )
 import EquivalenceOracle.WpMethod (WpMethod (WpMethod))
 import Experiment (EquivalenceOracle)
 
