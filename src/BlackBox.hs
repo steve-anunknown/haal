@@ -58,31 +58,33 @@ class (SUL aut) => Automaton aut st | aut -> st where
 initial :: (Automaton aut st) => aut i o -> st
 initial = current . reset
 
--- | Returns a map containing the shortest sequence to access a given state from the initial state.
+-- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::
     forall s i o aut.
     (Ord i, Bounded i, Enum i, Ord s, Automaton aut s) =>
     aut i o ->
     Map.Map s [i]
-accessSequences m = explore [(initialState, [])] (Set.singleton initialState) (Map.singleton initialState [])
+accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singleton initialSt [])
   where
-    alphabet = Set.toList (inputs m)
-    initialState = initial m
+    alphabet = Set.toList (inputs aut)
+    initialSt = initial aut
 
-    explore :: [(s, [i])] -> Set.Set s -> Map.Map s [i] -> Map.Map s [i]
-    explore [] _ theMap = Map.map List.reverse theMap
-    explore ((q, pre) : qs) visited theMap = if q == current mo then explore newQueue newVisited newMap else error "what the fuck"
+    bfs :: [(s, [i])] -> Set.Set s -> Map.Map s [i] -> Map.Map s [i]
+    bfs [] _ acc = Map.map List.reverse acc
+    bfs ((_, prefix) : rest) visited acc =
+        bfs (rest ++ newQueue) newVisited newMap
       where
-        mo = fst $ walk (reset m) (List.reverse pre)
-        nextStates =
-            List.map
-                (Bif.second (: pre))
-                ( List.filter ((`Set.notMember` visited) . fst) $
-                    List.zip (List.map (current . fst . step mo) alphabet) alphabet
-                )
-        newMap = List.foldr (uncurry Map.insert) theMap nextStates
-        newVisited = List.foldr (Set.insert . fst) visited nextStates
-        newQueue = qs ++ nextStates
+        mo = fst $ walk (reset aut) (reverse prefix)
+        successors =
+            [ (nextState, input : prefix)
+            | input <- alphabet
+            , let nextState = current . fst $ step mo input
+            , nextState `Set.notMember` visited
+            ]
+
+        newMap = foldr (uncurry Map.insert) acc successors
+        newVisited = foldr (Set.insert . fst) visited successors
+        newQueue = successors
 
 distinguish :: (Bounded i, Enum i, Ord i, Eq o, Ord s, Automaton aut s) => aut i o -> s -> s -> [i]
 distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
@@ -95,16 +97,21 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
         | otherwise = explore newVisited (queue ++ newQueue)
       where
         newVisited = Map.insert (q1, q2) prefix visited
+        mo1 = update m q1
+        mo2 = update m q2
 
-        (nextStates1, outputs1) = List.unzip $ List.map (updateAndStep m q1) alphabet
-        (nextStates2, outputs2) = List.unzip $ List.map (updateAndStep m q2) alphabet
+        (nextStates1, outputs1) = unzip $ map (stepAndCurrent mo1) alphabet
+        (nextStates2, outputs2) = unzip $ map (stepAndCurrent mo2) alphabet
 
-        discrepancy = List.elemIndex False (List.zipWith (==) outputs1 outputs2) >>= \idx -> Just (alphabet !! idx)
+        discrepancy = List.elemIndex False (zipWith (==) outputs1 outputs2) >>= \idx -> Just (alphabet !! idx)
 
-        toBeVisited = Map.fromList [((s1', s2'), i : prefix) | (s1', s2', i) <- zip3 nextStates1 nextStates2 alphabet]
+        appended = map (: prefix) alphabet
+
+        toBeVisited = Map.fromList $ zip (zip nextStates1 nextStates2) appended
+
         newQueue = [(s1', s2', p) | ((s1', s2'), p) <- Map.toList toBeVisited, (s1', s2') `Map.notMember` visited]
 
-    updateAndStep mo s i = Bif.first current (step (update mo s) i)
+    stepAndCurrent mo i = Bif.first current (step mo i)
 
 {- | Returns a set of lists of inputs that can be used to distinguish between the given state and
  - any other state of the automaton.
