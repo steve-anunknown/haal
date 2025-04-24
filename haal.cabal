@@ -49,8 +49,10 @@ library
   build-depends:
       base >=4.7 && <5
     , containers >=0.6.7 && <0.7
+    , hashable
     , mtl >=2.2.2 && <=2.3.1
     , random
+    , unordered-containers
     , vector
   default-language: Haskell2010
 
@@ -58,8 +60,8 @@ test-suite haal-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AutomatonSpec
       EquivalenceOracleSpec
-      MealyAutomatonSpec
       Utils
       Paths_haal
   autogen-modules:
@@ -72,7 +74,9 @@ test-suite haal-test
     , base >=4.7 && <5
     , containers
     , haal
+    , hashable
     , hspec
     , mtl
     , random
+    , unordered-containers
   default-language: Haskell2010

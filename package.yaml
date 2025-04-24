@@ -43,6 +43,8 @@ library:
     - mtl >= 2.2.2 && <= 2.3.1
     - random
     - vector
+    - unordered-containers
+    - hashable
 
 tests:
   haal-test:
@@ -59,3 +61,5 @@ tests:
     - QuickCheck
     - mtl
     - random
+    - hashable
+    - unordered-containers
