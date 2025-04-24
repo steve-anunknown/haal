@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module tests the Mealy automaton implementation.
-module MealyAutomatonSpec (
+module AutomatonSpec (
     spec,
 )
 where
