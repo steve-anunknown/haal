@@ -58,8 +58,8 @@ test-suite haal-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AutomatonSpec
       EquivalenceOracleSpec
-      MealyAutomatonSpec
       Utils
       Paths_haal
   autogen-modules:
