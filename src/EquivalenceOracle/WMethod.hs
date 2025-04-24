@@ -4,6 +4,8 @@
 module EquivalenceOracle.WMethod (
     WMethod (..),
     wmethodSuiteSize,
+    RandomWMethod (..),
+    RandomWMethodConfig (..),
 ) where
 
 import BlackBox (Automaton, accessSequences, globalCharacterizingSet, inputs)
@@ -13,7 +15,8 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import EquivalenceOracle.RandomWords
 import Experiment
-import System.Random (Random (randomR), RandomGen (split), StdGen)
+import System.Random (Random (randomR, randomRs), RandomGen (split), StdGen)
+import qualified Data.Vector as Vec
 
 {- | The 'WMethod' type represents the W-method equivalence oracle.
 It is just a wrapper around an integer, which is used for configuring
@@ -108,6 +111,7 @@ randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut = (RandomW
     rorc = RandomWords g wpr 0 wl
     prefixes = accessSequences aut
     globalCharSet = globalCharacterizingSet aut
+    vecSuffixes = Vec.fromList $ Set.toList globalCharSet
 
     (RandomWords gen' _ _ _, randomwords) = List.mapAccumL testSuite rorc (replicate (length prefixes) shorthand)
     randomWords = concat randomwords
@@ -115,8 +119,9 @@ randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut = (RandomW
     (gen'', gen''') = split gen'
 
     -- make a random choice from globalCharSet (length prefix) times (wpr)
-    randomSuffixes = take (length prefixes * wpr) $ List.unfoldr (Just . randomR (0, length globalCharSet - 1)) gen''
-    suffixes = map (Set.toList globalCharSet !!) randomSuffixes
+    samples = length prefixes * wpr
+    randomSuffixes = take samples $ randomRs (0, Vec.length vecSuffixes - 1) gen''
+    suffixes = map (vecSuffixes Vec.!) randomSuffixes
 
     suite = [prefix ++ rand ++ suffix | prefix <- Map.elems prefixes, rand <- randomWords, suffix <- suffixes]
 
