@@ -34,35 +34,35 @@ newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
     ( Automaton aut s
-    , Ord i
-    , Ord s
     , Eq o
-    , Bounded i
-    , Bounded s
+    , Ord i
     , Enum i
+    , Bounded i
+    , Ord s
     , Enum s
+    , Bounded s
     ) =>
     WMethod ->
     aut i o ->
     Int
 wmethodSuiteSize (WMethod (WMethodConfig{wmDepth = d})) aut = size
   where
-    alphabet = length $ inputs aut
-    accessSeqs = length $ accessSequences aut
-    characterizingSet = length $ globalCharacterizingSet aut
+    alphabet = Set.size $ inputs aut
+    accessSeqs = Map.size $ accessSequences aut
+    characterizingSet = Set.size $ globalCharacterizingSet aut
     transitionCover = accessSeqs * alphabet
     size = sum [transitionCover * (alphabet ^ n) * characterizingSet | n <- [0 .. d]]
 
 -- | The 'wmethodSuite' function generates the test suite for the W-method and a new oracle.
 wmethodSuite ::
     ( Automaton aut s
-    , Ord i
-    , Ord s
     , Eq o
-    , Bounded i
-    , Bounded s
+    , Ord i
     , Enum i
+    , Bounded i
+    , Ord s
     , Enum s
+    , Bounded s
     ) =>
     WMethod ->
     aut i o ->
@@ -102,13 +102,13 @@ newtype RandomWMethod = RandomWMethod RandomWMethodConfig deriving (Show, Eq)
 randomWMethodSuite ::
     forall i o s aut.
     ( Automaton aut s
-    , Ord i
-    , Ord s
     , Eq o
-    , Bounded i
-    , Bounded s
+    , Ord i
     , Enum i
+    , Bounded i
+    , Ord s
     , Enum s
+    , Bounded s
     ) =>
     RandomWMethod ->
     aut i o ->
