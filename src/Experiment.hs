@@ -21,6 +21,7 @@ import Control.Monad.Reader
 
 import BlackBox (Automaton, SUL, step, walk)
 import Control.Monad.Identity
+import Control.Monad.State
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
 Instances of this class should provide methods to generate a test suite
@@ -28,13 +29,13 @@ Instances of this class should provide methods to generate a test suite
 class EquivalenceOracle or where
     testSuite ::
         ( Automaton aut s
-        , Ord i
-        , Bounded i
-        , Enum i
-        , Ord s
-        , Bounded s
-        , Enum s
         , Eq o
+        , Ord i
+        , Enum i
+        , Bounded i
+        , Ord s
+        , Enum s
+        , Bounded s
         ) =>
         or ->
         aut i o ->
@@ -49,21 +50,21 @@ class Learner l aut | l -> aut where
     initialize ::
         ( SUL sul
         , Automaton aut s
-        , Bounded i
-        , Enum i
         , Ord i
-        , Bounded o
+        , Enum i
+        , Bounded i
         , Enum o
+        , Bounded o
         ) =>
         l i o ->
         Experiment (sul i o) (l i o)
     refine ::
         ( SUL sul
-        , Bounded i
-        , Enum i
         , Ord i
-        , Bounded o
+        , Enum i
+        , Bounded i
         , Enum o
+        , Bounded o
         ) =>
         l i o ->
         [i] ->
@@ -71,15 +72,15 @@ class Learner l aut | l -> aut where
     learn ::
         ( SUL sul
         , Automaton aut s
-        , Bounded i
-        , Enum i
         , Ord i
-        , Bounded o
-        , Enum o
+        , Enum i
+        , Bounded i
         , Eq o
-        , Bounded s
-        , Enum s
+        , Enum o
+        , Bounded o
         , Ord s
+        , Enum s
+        , Bounded s
         ) =>
         l i o ->
         Experiment (sul i o) (l i o, aut i o)
@@ -112,13 +113,13 @@ experiment ::
     , EquivalenceOracle oracle
     , Ord i
     , Enum i
-    , Enum o
     , Bounded i
+    , Eq o
+    , Enum o
     , Bounded o
     , Ord s
     , Enum s
     , Bounded s
-    , Eq o
     ) =>
     learner i o ->
     oracle ->
