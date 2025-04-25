@@ -28,6 +28,8 @@
 |                    | ✅ L\+                      | ✅ Wp-method Oracle    |
 |                    |                             | ✅ Random Words Oracle |
 |                    |                             | ✅ Random Walk Oracle  |
+|                    |                             | ✅ Random W-method Oracle |
+|                    |                             | ✅ Random Wp-method Oracle  |
 
 
 ## Table of Contents
