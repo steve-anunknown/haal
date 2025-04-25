@@ -72,3 +72,12 @@ spec = do
         context "when two automatons are the same" $
             it "RandomWMethod returns Nothing" $
                 property (prop_identity :: Mealy State Input Output -> ArbRandomWMethod -> Bool)
+
+    describe "RandomWpMethod Equivalence Oracle" $ do
+        context "when two automatons differ" $
+            it "RandomWpMethod returns Just" $
+                property (prop_difference :: Mealy State Input Output -> Mealy State Input Output -> ArbRandomWpMethod -> Property)
+
+        context "when two automatons are the same" $
+            it "RandomWpMethod returns Nothing" $
+                property (prop_identity :: Mealy State Input Output -> ArbRandomWpMethod -> Bool)

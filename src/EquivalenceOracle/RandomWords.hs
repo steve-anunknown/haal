@@ -35,14 +35,15 @@ generateRandomWords
                 }
         )
     aut =
-        let alphaVec = V.fromList . Set.toList $ inputs aut
-            (ranWords, finalGen) = runState (replicateM count (genWord alphaVec)) generator
+        let (ranWords, finalGen) = runState (replicateM count genWord) generator
             config = RandomWordsConfig{rwGen = finalGen, rwLimit = count, rwMinLength = minL, rwMaxLength = maxL}
          in (RandomWords config, ranWords)
       where
-        genWord alphaVec = do
+        alphaVec = V.fromList . Set.toList $ inputs aut
+        alphaLen = V.length alphaVec - 1
+        genWord = do
             len <- state $ randomR (minL, maxL)
-            replicateM len (state $ \g -> let (ix, g') = randomR (0, V.length alphaVec - 1) g in (alphaVec V.! ix, g'))
+            replicateM len (state $ \g -> let (ix, g') = randomR (0, alphaLen) g in (alphaVec V.! ix, g'))
 
 instance EquivalenceOracle RandomWords where
     testSuite = generateRandomWords

@@ -15,6 +15,7 @@ module Utils (
     ArbRandomWords (..),
     ArbRandomWalk (..),
     ArbRandomWMethod (..),
+    ArbRandomWpMethod (..),
     OracleWrapper (..),
 )
 where
@@ -50,6 +51,8 @@ import EquivalenceOracle.WMethod (
     WMethodConfig (WMethodConfig),
  )
 import EquivalenceOracle.WpMethod (
+    RandomWpMethod (RandomWpMethod),
+    RandomWpMethodConfig (RandomWpMethodConfig),
     WpMethod (WpMethod),
     WpMethodConfig (WpMethodConfig),
  )
@@ -69,6 +72,9 @@ newtype ArbRandomWalk = ArbRandomWalk RandomWalk deriving (Show, Eq)
 
 newtype ArbRandomWMethodConfig = ArbRandomWMethodConfig RandomWMethodConfig deriving (Show, Eq)
 newtype ArbRandomWMethod = ArbRandomWMethod RandomWMethod deriving (Show, Eq)
+
+newtype ArbRandomWpMethodConfig = ArbRandomWpMethodConfig RandomWpMethodConfig deriving (Show, Eq)
+newtype ArbRandomWpMethod = ArbRandomWpMethod RandomWpMethod deriving (Show, Eq)
 
 instance Arbitrary ArbWMethodConfig where
     arbitrary = do
@@ -125,6 +131,20 @@ instance Arbitrary ArbRandomWMethod where
         (ArbRandomWMethodConfig config) <- arbitrary :: Gen ArbRandomWMethodConfig
         return (ArbRandomWMethod (RandomWMethod config))
 
+instance Arbitrary ArbRandomWpMethodConfig where
+    arbitrary = do
+        seed <- choose (17, 69)
+        let randGen = mkStdGen seed
+        e <- choose (1, 10)
+        m <- choose (1, e)
+        l <- choose (1, 10000)
+        return (ArbRandomWpMethodConfig (RandomWpMethodConfig randGen e m l))
+
+instance Arbitrary ArbRandomWpMethod where
+    arbitrary = do
+        (ArbRandomWpMethodConfig config) <- arbitrary :: Gen ArbRandomWpMethodConfig
+        return (ArbRandomWpMethod (RandomWpMethod config))
+
 class (EquivalenceOracle oracle) => OracleWrapper w oracle | w -> oracle where
     unwrap :: w -> oracle
 
@@ -142,6 +162,9 @@ instance OracleWrapper ArbRandomWalk RandomWalk where
 
 instance OracleWrapper ArbRandomWMethod RandomWMethod where
     unwrap (ArbRandomWMethod o) = o
+
+instance OracleWrapper ArbRandomWpMethod RandomWpMethod where
+    unwrap (ArbRandomWpMethod o) = o
 
 newtype Mealy s i o = Mealy (MealyAutomaton s i o) deriving (Show)
 

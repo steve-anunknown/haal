@@ -4,14 +4,19 @@
 module EquivalenceOracle.WpMethod (
     WpMethod (..),
     WpMethodConfig (..),
+    RandomWpMethod (..),
+    RandomWpMethodConfig (..),
     wpmethodSuiteSize,
+    randomWpMethodSuite,
 ) where
 
 import BlackBox
 import Control.Monad (replicateM)
+import Control.Monad.State
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Experiment (EquivalenceOracle (..))
+import System.Random
 
 newtype WpMethodConfig = WpMethodConfig
     { wpDepth :: Int
@@ -30,13 +35,13 @@ wpmethodSuiteSize = error "todo"
 wpmethodSuite ::
     forall aut i o s.
     ( Automaton aut s
-    , Ord i
-    , Bounded i
-    , Enum i
-    , Ord s
-    , Bounded s
-    , Enum s
     , Eq o
+    , Ord i
+    , Enum i
+    , Bounded i
+    , Ord s
+    , Enum s
+    , Bounded s
     ) =>
     WpMethod ->
     aut i o ->
@@ -46,8 +51,8 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
     alphabet = inputs aut
     stateCover = accessSequences aut
     localSuf =
-        Map.fromList
-            [ (st, localCharacterizingSet aut st) | st <- Set.toList $ states aut
+        Map.fromAscList
+            [ (st, localCharacterizingSet aut st) | st <- Set.toAscList $ states aut
             ]
     globalSuf = globalCharacterizingSet aut
 
@@ -82,5 +87,88 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
 
     suite = firstPhase ++ secondPhase
 
+data RandomWpMethodConfig = RandomWpMethodConfig
+    { rwpGen :: StdGen
+    -- ^ Random generator.
+    , rwpExpected :: Int
+    -- ^ Expected depth of random walk.
+    , rwpMin :: Int
+    -- ^ Minimum depth of random walk.
+    , rwpLimit :: Int
+    -- ^ Maximum number of queries.
+    }
+    deriving (Show, Eq)
+
+newtype RandomWpMethod = RandomWpMethod RandomWpMethodConfig deriving (Show, Eq)
+
+randomWpMethodSuite ::
+    forall aut i o s.
+    ( Automaton aut s
+    , Eq o
+    , Ord i
+    , Enum i
+    , Bounded i
+    , Ord s
+    , Enum s
+    , Bounded s
+    ) =>
+    RandomWpMethod ->
+    aut i o ->
+    (RandomWpMethod, [[i]])
+randomWpMethodSuite
+    ( RandomWpMethod
+            conf@RandomWpMethodConfig
+                { rwpGen = g
+                , rwpExpected = e
+                , rwpMin = mi
+                , rwpLimit = lim
+                }
+        )
+    aut = (RandomWpMethod (conf{rwpGen = genfinal}), suite)
+      where
+        alphabet = inputs aut
+        prefixes = accessSequences aut
+        localSuf =
+            Map.fromAscList
+                [ (st, localCharacterizingSet aut st) | st <- Set.toAscList $ states aut
+                ]
+        globalSuf = globalCharacterizingSet aut
+
+        (suite, genfinal) = runState (replicateM lim genTestCase) g
+
+        genTestCase :: State StdGen [i]
+        genTestCase = do
+            prefixIdx <- state $ randomR (0, Map.size prefixes - 1)
+            let (_, prefix) = prefixIdx `Map.elemAt` prefixes
+            middle <- genExpectedLength
+            local <- state $ randomR (False, True)
+            if local
+                then do
+                    let curr = current $ fst (walk aut (prefix ++ middle))
+                        suffixSet = localSuf Map.! curr
+                    suffixIdx <- state $ randomR (0, Set.size suffixSet - 1)
+                    let suffix = suffixIdx `Set.elemAt` suffixSet
+                    return $ prefix ++ middle ++ suffix
+                else do
+                    globalIdx <- state $ randomR (0, Set.size globalSuf - 1)
+                    let suffix = globalIdx `Set.elemAt` globalSuf
+                    return $ prefix ++ middle ++ suffix
+
+        genExpectedLength :: State StdGen [i]
+        genExpectedLength = state $ go [] mi
+          where
+            go :: [i] -> Int -> StdGen -> ([i], StdGen)
+            go acc minim gen =
+                let (continue, gen') = randomR (0.0 :: Double, 1.0) gen
+                 in if minim > 0 || continue > 1 / (fromIntegral e + 1)
+                        then
+                            let (idx, gen'') = randomR (0, Set.size alphabet - 1) gen'
+                                nextChar = idx `Set.elemAt` alphabet
+                             in go (nextChar : acc) (minim - 1) gen''
+                        else (acc, gen)
+
 instance EquivalenceOracle WpMethod where
     testSuite = wpmethodSuite
+
+instance EquivalenceOracle RandomWpMethod where
+    testSuite = randomWpMethodSuite
