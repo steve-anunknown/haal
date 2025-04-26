@@ -21,7 +21,6 @@ import Control.Monad.Reader
 
 import BlackBox (Automaton, SUL, step, walk)
 import Control.Monad.Identity
-import Control.Monad.State
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
 Instances of this class should provide methods to generate a test suite
