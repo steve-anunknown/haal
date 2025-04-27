@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
--- | This module implements the L* algorithm for learning Mealy automata.
+-- | This module implements the LM* algorithm for learning Mealy automata.
 module Learning.LMstar (
     lmstar,
     LMstar (..),
@@ -21,7 +21,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import Experiment
 
--- | The 'ObservationTable' type is a data type for storing the observation table of the L* algorithm.
+-- | The 'ObservationTable' type is a data type for storing the observation table of the LM* algorithm.
 data ObservationTable i o = ObservationTable
     { prefixSetS :: Set.Set [i]
     , suffixSetE :: Set.Set [i]
@@ -31,15 +31,15 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
-{- | The 'LstarConfig' type is a configuration type for the L* algorithm.
-It allows the user to choose between the original L* algorithm and the L+ algorithm.
+{- | The 'LMstarConfig' type is a configuration type for the LM* algorithm.
+It allows the user to choose between the original LM* algorithm and the LM+ algorithm.
 -}
 data LMstarConfig = Star | Plus
 
--- | The 'Lstar' type is a wrapper around the 'ObservationTable' type and represents the L* algorithm.
+-- | The 'LMstar' type is a wrapper around the 'ObservationTable' type and represents the LM* algorithm.
 data LMstar i o = LMstar (ObservationTable i o) | LMplus (ObservationTable i o)
 
-{- | The 'mkLstar' function creates a new instance of the 'Lstar' type. It holds a dummy value
+{- | The 'mkLMstar' function creates a new instance of the 'LMstar' type. It holds a dummy value
 so that the user does not have to provide an initial observation table.
 -}
 mkLMstar :: LMstarConfig -> LMstar i o
@@ -53,7 +53,7 @@ equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e
     mapping = flip Map.lookup (mappingT ot)
     em = suffixSetE ot
 
-{- | The 'initializeOT' function initializes the observation table for the L* algorithm.
+{- | The 'initializeOT' function initializes the observation table for the LM* algorithm.
 It must be in the 'Experiment' monad to allow queries to the SUL.
 -}
 initializeOT ::
@@ -101,7 +101,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
                 classMembers = x : Set.toList equivClass
              in go (Map.insert x classMembers acc) remainder
 
--- | The 'lstar' function implements one iteration of the L* algorithm.
+-- | The 'lmstar' function implements one iteration of the LM* algorithm.
 lmstar ::
     (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
     LMstar i o ->
@@ -272,7 +272,7 @@ instance Learner LMstar (MealyAutomaton StateID) where
     learn (LMstar ot) = lmstar (LMstar ot)
     learn (LMplus ot) = lmstar (LMplus ot)
 
-{- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the L+ algorithm,
+{- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the LM+ algorithm,
 which is an improvement over Angluin's algorithm.
 -}
 otRefinePlus ::

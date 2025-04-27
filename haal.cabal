@@ -39,6 +39,7 @@ library
       EquivalenceOracle.WpMethod
       Experiment
       Learning.LMstar
+      Learning.LStar
   other-modules:
       Paths_haal
   autogen-modules:

@@ -24,8 +24,8 @@
 
 | Automaton Type     | Learning Algorithms         | Equivalence Oracles    |
 |--------------------|-----------------------------|------------------------|
-| Mealy Machines     | ✅ L\*                      | ✅ W-method Oracle     |
-|                    | ✅ L\+                      | ✅ Wp-method Oracle    |
+| Mealy Machines     | ✅ LM\*                     | ✅ W-method Oracle     |
+|                    | ✅ LM\+                     | ✅ Wp-method Oracle    |
 |                    |                             | ✅ Random Words Oracle |
 |                    |                             | ✅ Random Walk Oracle  |
 |                    |                             | ✅ Random W-method Oracle |
