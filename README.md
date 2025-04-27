@@ -106,7 +106,7 @@ ghci|     sulTransitions S2 A = (S0, X)
 ghci|     sulTransitions S2 B = (S0, Y)
 
 -- Set up the experiment.
-ghci> myexperiment = experiment (mkLstar Star) (WMethod 2)
+ghci> myexperiment = experiment (mkLMstar Star) (WMethod 2)
 
 -- Define the Mealy system under learning. Remember that automata can act as suls.
 ghci> mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
@@ -130,7 +130,7 @@ ghci> learnedmodel
 }
 ```
 
-This shows how a simple Mealy machine can be learned using the `L*` algorithm and a `W`-method equivalence oracle.
+This shows how a simple Mealy machine can be learned using the `LM*` algorithm and a `W`-method equivalence oracle.
 
 This also showcases some strong points of using a functional programming language like haskell for the task of active automata learning:
 

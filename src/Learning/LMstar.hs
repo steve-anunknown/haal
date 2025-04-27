@@ -4,12 +4,11 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 -- | This module implements the L* algorithm for learning Mealy automata.
-module Learning.Lstar (
-    lstar,
-    Lstar (..),
-    LstarConfig (..),
-    ObservationTable (..),
-    mkLstar,
+module Learning.LMstar (
+    lmstar,
+    LMstar (..),
+    LMstarConfig (..),
+    mkLMstar,
 )
 where
 
@@ -35,17 +34,17 @@ data ObservationTable i o = ObservationTable
 {- | The 'LstarConfig' type is a configuration type for the L* algorithm.
 It allows the user to choose between the original L* algorithm and the L+ algorithm.
 -}
-data LstarConfig = Star | Plus
+data LMstarConfig = Star | Plus
 
 -- | The 'Lstar' type is a wrapper around the 'ObservationTable' type and represents the L* algorithm.
-data Lstar i o = Lstar (ObservationTable i o) | Lplus (ObservationTable i o)
+data LMstar i o = LMstar (ObservationTable i o) | LMplus (ObservationTable i o)
 
 {- | The 'mkLstar' function creates a new instance of the 'Lstar' type. It holds a dummy value
 so that the user does not have to provide an initial observation table.
 -}
-mkLstar :: LstarConfig -> Lstar i o
-mkLstar Star = Lstar (error "this is invisible")
-mkLstar Plus = Lplus (error "this is invisible")
+mkLMstar :: LMstarConfig -> LMstar i o
+mkLMstar Star = LMstar (error "this is invisible")
+mkLMstar Plus = LMplus (error "this is invisible")
 
 -- | The 'equivalentRows' function checks if two rows in the observation table are equivalent.
 equivalentRows :: forall i o. (Ord i, Eq o) => ObservationTable i o -> [i] -> [i] -> Bool
@@ -103,24 +102,24 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
              in go (Map.insert x classMembers acc) remainder
 
 -- | The 'lstar' function implements one iteration of the L* algorithm.
-lstar ::
+lmstar ::
     (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
-    Lstar i o ->
-    Experiment (sul i o) (Lstar i o, MealyAutomaton StateID i o)
-lstar (Lstar ot) = case otIsClosed ot of
+    LMstar i o ->
+    Experiment (sul i o) (LMstar i o, MealyAutomaton StateID i o)
+lmstar (LMstar ot) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
-        ([], []) -> return (Lstar ot, makeHypothesis ot)
+        ([], []) -> return (LMstar ot, makeHypothesis ot)
         inc' -> do
             ot' <- makeConsistent ot inc'
-            lstar (Lstar ot')
+            lmstar (LMstar ot')
     inc -> do
         ot' <- makeClosed ot inc
-        lstar (Lstar ot')
-lstar (Lplus ot) = case otIsClosed ot of
-    [] -> return (Lplus ot, makeHypothesis ot)
+        lmstar (LMstar ot')
+lmstar (LMplus ot) = case otIsClosed ot of
+    [] -> return (LMplus ot, makeHypothesis ot)
     inc -> do
         ot' <- makeClosed ot inc
-        lstar (Lplus ot')
+        lmstar (LMplus ot')
 
 -- | The 'otIsClosed' function checks if the observation table is closed.
 otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
@@ -257,21 +256,21 @@ makeClosed ot inc = do
         tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), last $ snd $ walk sul e) | s <- alph, e <- Set.toList em]
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
-instance Learner Lstar (MealyAutomaton StateID) where
-    initialize (Lstar _) = do
-        Lstar <$> initializeOT
-    initialize (Lplus _) = do
-        Lplus <$> initializeOT
+instance Learner LMstar (MealyAutomaton StateID) where
+    initialize (LMstar _) = do
+        LMstar <$> initializeOT
+    initialize (LMplus _) = do
+        LMplus <$> initializeOT
 
-    refine (Lstar ot) cex = do
+    refine (LMstar ot) cex = do
         ot' <- otRefineAngluin ot cex
-        return (Lstar ot')
-    refine (Lplus ot) cex = do
+        return (LMstar ot')
+    refine (LMplus ot) cex = do
         ot' <- otRefinePlus ot cex
-        return (Lplus ot')
+        return (LMplus ot')
 
-    learn (Lstar ot) = lstar (Lstar ot)
-    learn (Lplus ot) = lstar (Lplus ot)
+    learn (LMstar ot) = lmstar (LMstar ot)
+    learn (LMplus ot) = lmstar (LMplus ot)
 
 {- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the L+ algorithm,
 which is an improvement over Angluin's algorithm.
