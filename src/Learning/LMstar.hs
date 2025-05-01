@@ -58,7 +58,7 @@ It must be in the 'Experiment' monad to allow queries to the SUL.
 -}
 initializeOT ::
     forall i o sul.
-    (Bounded i, Enum i, Ord i, SUL sul) =>
+    (FiniteOrd i, SUL sul) =>
     Experiment (sul i o) (ObservationTable i o)
 initializeOT = do
     sul <- ask
@@ -86,7 +86,7 @@ initializeOT = do
 -- | The 'equivalenceClasses' function computes the equivalence classes of the observation table.
 equivalenceClasses ::
     forall i o.
-    (Ord i, Eq o, Bounded i, Enum i) =>
+    (FiniteOrd i, Eq o) =>
     ObservationTable i o ->
     Map.Map [i] [[i]]
 equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
@@ -103,7 +103,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 
 -- | The 'lmstar' function implements one iteration of the LM* algorithm.
 lmstar ::
-    (SUL sul, Bounded i, Enum i, Ord i, Eq o) =>
+    (SUL sul, FiniteOrd i, Eq o) =>
     LMstar i o ->
     Experiment (sul i o) (LMstar i o, MealyAutomaton StateID i o)
 lmstar (LMstar ot) = case otIsClosed ot of
@@ -122,7 +122,7 @@ lmstar (LMplus ot) = case otIsClosed ot of
         lmstar (LMplus ot')
 
 -- | The 'otIsClosed' function checks if the observation table is closed.
-otIsClosed :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> [i]
+otIsClosed :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
   where
     sm = prefixSetS ot
@@ -131,7 +131,7 @@ otIsClosed ot = Maybe.fromMaybe [] exists
     exists = List.find (\x -> not $ any (equivalentRows ot x) sm) sm_I
 
 -- | The 'otIsConsistent' function checks if the observation table is consistent.
-otIsConsistent :: forall i o. (Bounded i, Enum i, Ord i, Eq o) => ObservationTable i o -> ([i], [i])
+otIsConsistent :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> ([i], [i])
 otIsConsistent ot = Maybe.fromMaybe ([], []) condition
   where
     alph = [minBound .. maxBound] :: [i]
@@ -151,7 +151,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
 -- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
 otRefineAngluin ::
     forall sul i o.
-    (Ord i, SUL sul, Bounded i, Enum i) =>
+    (FiniteOrd i, SUL sul) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)
@@ -174,7 +174,7 @@ otRefineAngluin ot cex = do
 {- | The 'makeHypothesis' function constructs a Mealy automaton from the observation table. It uses
 the default 'StateID' type defined in the 'Experiment' module for representing the automaton states.
 -}
-makeHypothesis :: forall i o. (Ord i, Eq o, Bounded i, Enum i) => ObservationTable i o -> MealyAutomaton StateID i o
+makeHypothesis :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> MealyAutomaton StateID i o
 makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length repList - 1]) starting
   where
     -- Equivalence classes: Map from representative prefix to class members
@@ -210,7 +210,7 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length r
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
     forall i o sul.
-    (Ord i, SUL sul, Bounded i, Enum i) =>
+    (FiniteOrd i, SUL sul) =>
     ObservationTable i o ->
     ([i], [i]) ->
     Experiment (sul i o) (ObservationTable i o)
@@ -239,7 +239,7 @@ makeConsistent ot (column, symbol) = do
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
 makeClosed ::
     forall sul i o.
-    (Ord i, Bounded i, Enum i, SUL sul) =>
+    (FiniteOrd i, SUL sul) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)
@@ -277,7 +277,7 @@ which is an improvement over Angluin's algorithm.
 -}
 otRefinePlus ::
     forall sul i o.
-    (Ord i, SUL sul, Bounded i, Enum i) =>
+    (FiniteOrd i, SUL sul) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)

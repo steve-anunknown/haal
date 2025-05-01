@@ -35,13 +35,9 @@ wpmethodSuiteSize = error "todo"
 wpmethodSuite ::
     forall aut i o s.
     ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
     , Eq o
-    , Ord i
-    , Enum i
-    , Bounded i
-    , Ord s
-    , Enum s
-    , Bounded s
     ) =>
     WpMethod ->
     aut i o ->
@@ -104,13 +100,9 @@ newtype RandomWpMethod = RandomWpMethod RandomWpMethodConfig deriving (Show, Eq)
 randomWpMethodSuite ::
     forall aut i o s.
     ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
     , Eq o
-    , Ord i
-    , Enum i
-    , Bounded i
-    , Ord s
-    , Enum s
-    , Bounded s
     ) =>
     RandomWpMethod ->
     aut i o ->

@@ -19,7 +19,7 @@ module Experiment (
 
 import Control.Monad.Reader
 
-import BlackBox (Automaton, SUL, step, walk)
+import BlackBox (Automaton, Finite, FiniteEq, FiniteOrd, SUL, step, walk)
 import Control.Monad.Identity
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
@@ -28,13 +28,9 @@ Instances of this class should provide methods to generate a test suite
 class EquivalenceOracle or where
     testSuite ::
         ( Automaton aut s
+        , FiniteOrd i
+        , FiniteOrd s
         , Eq o
-        , Ord i
-        , Enum i
-        , Bounded i
-        , Ord s
-        , Enum s
-        , Bounded s
         ) =>
         or ->
         aut i o ->
@@ -49,21 +45,15 @@ class Learner l aut | l -> aut where
     initialize ::
         ( SUL sul
         , Automaton aut s
-        , Ord i
-        , Enum i
-        , Bounded i
-        , Enum o
-        , Bounded o
+        , FiniteOrd i
+        , Finite o
         ) =>
         l i o ->
         Experiment (sul i o) (l i o)
     refine ::
         ( SUL sul
-        , Ord i
-        , Enum i
-        , Bounded i
-        , Enum o
-        , Bounded o
+        , FiniteOrd i
+        , Finite o
         ) =>
         l i o ->
         [i] ->
@@ -71,15 +61,9 @@ class Learner l aut | l -> aut where
     learn ::
         ( SUL sul
         , Automaton aut s
-        , Ord i
-        , Enum i
-        , Bounded i
-        , Eq o
-        , Enum o
-        , Bounded o
-        , Ord s
-        , Enum s
-        , Bounded s
+        , FiniteOrd i
+        , FiniteOrd s
+        , FiniteEq o
         ) =>
         l i o ->
         Experiment (sul i o) (l i o, aut i o)
@@ -110,15 +94,9 @@ experiment ::
     , Automaton aut s
     , Learner learner aut
     , EquivalenceOracle oracle
-    , Ord i
-    , Enum i
-    , Bounded i
-    , Eq o
-    , Enum o
-    , Bounded o
-    , Ord s
-    , Enum s
-    , Bounded s
+    , FiniteOrd i
+    , FiniteOrd s
+    , FiniteEq o
     ) =>
     learner i o ->
     oracle ->
@@ -177,16 +155,12 @@ pairwiseWalk theSul theAut (s : ss) = (out1 == out2) && pairwiseWalk sul' aut' s
 and SUL.
 -}
 findCex ::
-    ( Automaton aut s
-    , SUL sul
-    , Ord i
-    , Bounded i
-    , Enum i
-    , Ord s
-    , Bounded s
-    , Enum s
-    , Eq o
+    ( SUL sul
+    , Automaton aut s
     , EquivalenceOracle or
+    , FiniteOrd i
+    , FiniteOrd s
+    , Eq o
     ) =>
     or ->
     aut i o ->

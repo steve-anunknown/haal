@@ -20,7 +20,7 @@ data RandomWalkConfig = RandomWalkConfig
 newtype RandomWalk = RandomWalk RandomWalkConfig deriving (Show, Eq)
 
 -- | Generates a random walk for the automaton.
-randomWalkSuite :: (Ord a, Bounded a, Enum a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
+randomWalkSuite :: (FiniteOrd a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
 randomWalkSuite (RandomWalk (RandomWalkConfig{rwlGen = g, rwlMaxSteps = maxS, rwlRestart = restartP})) aut =
     let (g1, g2) = split g
         alphabet = V.fromList . Set.toList $ inputs aut

@@ -81,7 +81,7 @@ and 'mealyLambda' functions.
 -}
 mealyTransitions ::
     forall s i o.
-    (Bounded i, Ord s, Ord i, Enum i) =>
+    (Ord s, FiniteOrd i) =>
     MealyAutomaton s i o ->
     Map.Map (s, i) (s, o)
 mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- domainS, i <- domainI]
@@ -101,12 +101,8 @@ instance
     ( Show i
     , Show o
     , Show s
-    , Bounded s
-    , Bounded i
-    , Enum s
-    , Enum i
-    , Ord s
-    , Ord i
+    , FiniteOrd s
+    , FiniteOrd i
     ) =>
     Show (MealyAutomaton s i o)
     where
@@ -124,13 +120,9 @@ instance
         currentS = current m
 
 instance
-    ( Ord s
-    , Ord i
+    ( FiniteOrd s
+    , FiniteOrd i
     , Eq o
-    , Bounded s
-    , Bounded i
-    , Enum s
-    , Enum i
     ) =>
     Eq (MealyAutomaton s i o)
     where

@@ -5,7 +5,7 @@ module EquivalenceOracle.RandomWords (
 )
 where
 
-import BlackBox (inputs)
+import BlackBox (FiniteOrd, inputs)
 import Control.Monad (replicateM)
 import Control.Monad.State
 import qualified Data.Set as Set
@@ -24,7 +24,7 @@ data RandomWordsConfig = RandomWordsConfig
 
 newtype RandomWords = RandomWords RandomWordsConfig deriving (Show, Eq)
 
-generateRandomWords :: (Ord a, Bounded a, Enum a) => RandomWords -> sul a o -> (RandomWords, [[a]])
+generateRandomWords :: (FiniteOrd a) => RandomWords -> sul a o -> (RandomWords, [[a]])
 generateRandomWords
     ( RandomWords
             RandomWordsConfig

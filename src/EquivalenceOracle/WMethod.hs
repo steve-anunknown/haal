@@ -9,7 +9,7 @@ module EquivalenceOracle.WMethod (
     RandomWMethodConfig (..),
 ) where
 
-import BlackBox (Automaton, accessSequences, globalCharacterizingSet, inputs)
+import BlackBox (Automaton, FiniteOrd, accessSequences, globalCharacterizingSet, inputs)
 import Control.Monad (replicateM)
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -34,13 +34,9 @@ newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
     ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
     , Eq o
-    , Ord i
-    , Enum i
-    , Bounded i
-    , Ord s
-    , Enum s
-    , Bounded s
     ) =>
     WMethod ->
     aut i o ->
@@ -56,13 +52,9 @@ wmethodSuiteSize (WMethod (WMethodConfig{wmDepth = d})) aut = size
 -- | The 'wmethodSuite' function generates the test suite for the W-method and a new oracle.
 wmethodSuite ::
     ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
     , Eq o
-    , Ord i
-    , Enum i
-    , Bounded i
-    , Ord s
-    , Enum s
-    , Bounded s
     ) =>
     WMethod ->
     aut i o ->
@@ -102,13 +94,9 @@ newtype RandomWMethod = RandomWMethod RandomWMethodConfig deriving (Show, Eq)
 randomWMethodSuite ::
     forall i o s aut.
     ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
     , Eq o
-    , Ord i
-    , Enum i
-    , Bounded i
-    , Ord s
-    , Enum s
-    , Bounded s
     ) =>
     RandomWMethod ->
     aut i o ->

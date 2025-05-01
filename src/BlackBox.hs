@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -8,6 +9,9 @@ module BlackBox (
     Automaton (..),
     SUL (..),
     StateID,
+    Finite,
+    FiniteEq,
+    FiniteOrd,
     inputs,
     outputs,
     walk,
@@ -37,21 +41,28 @@ class SUL sul where
     step :: (Ord i) => sul i o -> i -> (sul i o, o)
     reset :: sul i o -> sul i o
 
+type Finite i = (Enum i, Bounded i)
+type FiniteEq i = (Eq i, Finite i)
+type FiniteOrd i = (Ord i, Finite i)
+
 walk :: (Ord i, SUL sul) => sul i o -> [i] -> (sul i o, [o])
 walk = List.mapAccumL step
 
-inputs :: (Ord i, Bounded i, Enum i) => sul i o -> Set.Set i
+inputs :: (FiniteOrd i) => sul i o -> Set.Set i
 inputs _ = Set.fromList [minBound .. maxBound]
 
-outputs :: (Ord o, Bounded o, Enum o) => sul i o -> Set.Set o
+outputs :: (FiniteOrd o) => sul i o -> Set.Set o
 outputs _ = Set.fromList [minBound .. maxBound]
 
 {- | The 'Automaton' type class extends the 'SUL' type class and adds
 support for automata operations.
 -}
 class (SUL aut) => Automaton aut st | aut -> st where
-    transitions :: (Bounded st, Bounded i, Enum st, Enum i, Ord st, Ord i) => aut i o -> Map.Map (st, i) (st, o)
-    states :: (Ord st, Bounded st, Enum st) => aut i o -> Set.Set st
+    transitions ::
+        (FiniteOrd i, FiniteOrd st) =>
+        aut i o ->
+        Map.Map (st, i) (st, o)
+    states :: (FiniteOrd st) => aut i o -> Set.Set st
     current :: aut i o -> st
     update :: aut i o -> st -> aut i o
 
@@ -61,7 +72,7 @@ initial = current . reset
 -- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::
     forall s i o aut.
-    (Ord i, Bounded i, Enum i, Ord s, Automaton aut s) =>
+    (Automaton aut s, FiniteOrd i, Ord s) =>
     aut i o ->
     Map.Map s [i]
 accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singleton initialSt [])
@@ -86,7 +97,16 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
         newVisited = foldr (Set.insert . fst) visited successors
         newQueue = successors
 
-distinguish :: (Bounded i, Enum i, Ord i, Eq o, Ord s, Automaton aut s) => aut i o -> s -> s -> [i]
+distinguish ::
+    ( Automaton aut s
+    , FiniteOrd i
+    , Ord s
+    , Eq o
+    ) =>
+    aut i o ->
+    s ->
+    s ->
+    [i]
 distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
   where
     alphabet = Set.toList (inputs m)
@@ -117,7 +137,11 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
  - any other state of the automaton.
 -}
 localCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s) =>
+    ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
+    , Eq o
+    ) =>
     aut i o ->
     s ->
     Set.Set [i]
@@ -129,7 +153,11 @@ localCharacterizingSet m s = Set.fromList [d s sx | sx <- Set.toList $ states m,
 of the automaton.
 -}
 globalCharacterizingSet ::
-    (Ord i, Ord s, Eq o, Bounded i, Enum i, Automaton aut s, Bounded s, Enum s) =>
+    ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
+    , Eq o
+    ) =>
     aut i o ->
     Set.Set [i]
 globalCharacterizingSet m = Set.fromList [d s1 s2 | s1 <- sts, s2 <- sts, s1 < s2]

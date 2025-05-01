@@ -58,15 +58,15 @@ and 'mooreLambda' functions.
 -}
 mooreTransitions ::
     forall i o s.
-    (Bounded s, Enum s, Bounded i, Enum i, Ord s, Ord i) =>
+    (FiniteOrd s, FiniteOrd i) =>
     MooreAutomaton s i o ->
     Map.Map (s, i) (s, o)
 mooreTransitions m = Map.fromList [((s, i), (delta s i, lambda s)) | s <- domainS, i <- domainI]
   where
     delta = mooreDelta m
     lambda = mooreLambda m
-    domainS = [minBound .. maxBound] :: [s]
-    domainI = [minBound .. maxBound] :: [i]
+    domainS = Set.toList $ mooreStates m
+    domainI = Set.toList $ inputs m
 
 instance Automaton (MooreAutomaton s) s where
     transitions = mooreTransitions
@@ -78,12 +78,8 @@ instance
     ( Show i
     , Show o
     , Show s
-    , Bounded s
-    , Bounded i
-    , Enum s
-    , Enum i
-    , Ord s
-    , Ord i
+    , FiniteOrd s
+    , FiniteOrd i
     ) =>
     Show (MooreAutomaton s i o)
     where
