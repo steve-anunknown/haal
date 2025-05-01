@@ -107,8 +107,8 @@ experiment learner oracle = do
             (learner', aut) <- learn le
             (oracle', cex) <- findCex orc aut
             case cex of
-                Nothing -> return aut
-                Just (ce, _) -> do
+                ([], []) -> return aut
+                (ce, _) -> do
                     refinedLearner <- refine learner' ce
                     inner refinedLearner oracle'
     inner initializedLearner oracle
@@ -123,12 +123,12 @@ execute ::
     sul i o ->
     aut i o ->
     [[i]] ->
-    Maybe ([i], [o])
-execute _ _ [] = Nothing
+    ([i], [o])
+execute _ _ [] = ([], [])
 execute theSul theAut (s : ss) =
     if continue
         then execute theSul theAut ss
-        else Just (s, snd $ walk theSul s)
+        else (s, snd $ walk theSul s)
   where
     continue = pairwiseWalk theSul theAut s
 
@@ -164,7 +164,7 @@ findCex ::
     ) =>
     or ->
     aut i o ->
-    Experiment (sul i o) (or, Maybe ([i], [o]))
+    Experiment (sul i o) (or, ([i], [o]))
 findCex oracle aut = do
     sul <- ask
     let (oracle', theSuite) = testSuite oracle aut
