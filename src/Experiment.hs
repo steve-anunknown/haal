@@ -89,7 +89,7 @@ data Statistics aut i o = Statistics
     { statsRounds :: Int
     , statsCexs :: [[i]]
     , statsHyps :: [aut i o]
-    }
+    } deriving(Show)
 
 statsEmpty :: Statistics aut i o
 statsEmpty = Statistics 0 [] []
