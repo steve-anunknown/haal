@@ -172,15 +172,9 @@ instance
     ( Arbitrary i
     , Arbitrary o
     , Arbitrary s
-    , Ord i
-    , Enum i
-    , Bounded i
-    , Ord o
-    , Enum o
-    , Bounded o
-    , Ord s
-    , Enum s
-    , Bounded s
+    , FiniteOrd i
+    , FiniteOrd o
+    , FiniteOrd s
     ) =>
     Arbitrary (Mealy s i o)
     where
