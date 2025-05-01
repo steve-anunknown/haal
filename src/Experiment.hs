@@ -85,6 +85,15 @@ It is just an alias for 'runReader'.
 runExperiment :: Experiment r a -> r -> a
 runExperiment = runReader
 
+data Statistics aut i o = Statistics
+    { statsRounds :: Int
+    , statsCexs :: [[i]]
+    , statsHyps :: [aut i o]
+    }
+
+statsEmpty :: Statistics aut i o
+statsEmpty = Statistics 0 [] []
+
 {- | The 'experiment' function returns an 'Experiment' that can be run with
 the 'runExperiment' function. It takes a learner and an equivalence oracle
 and then requires a system under learning (SUL) to run the experiment.
@@ -100,18 +109,22 @@ experiment ::
     ) =>
     learner i o ->
     oracle ->
-    Experiment (sul i o) (aut i o)
+    Experiment (sul i o) (aut i o, Statistics aut i o)
 experiment learner oracle = do
     initializedLearner <- initialize learner
-    let inner le orc = do
+    let inner le orc stats = do
             (learner', aut) <- learn le
             (oracle', cex) <- findCex orc aut
             case cex of
-                ([], []) -> return aut
+                ([], []) -> return (aut, stats)
                 (ce, _) -> do
                     refinedLearner <- refine learner' ce
-                    inner refinedLearner oracle'
-    inner initializedLearner oracle
+                    let rounds = statsRounds stats
+                        cexs = statsCexs stats
+                        hyps = statsHyps stats
+                        stats' = Statistics (rounds + 1) (ce : cexs) (aut : hyps)
+                    inner refinedLearner oracle' stats'
+    inner initializedLearner oracle statsEmpty
 
 -- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
 execute ::
