@@ -8,7 +8,11 @@ import qualified Data.Set as Set
 import qualified Data.Vector as V
 import Haal.BlackBox
 import Haal.Experiment
-import System.Random (Random (randomR), RandomGen (split), StdGen, randomRs)
+import System.Random (
+    Random (randomR, randomRs),
+    RandomGen (split),
+    StdGen,
+ )
 
 data RandomWalkConfig = RandomWalkConfig
     { rwlGen :: StdGen

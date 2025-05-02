@@ -11,12 +11,12 @@ module Haal.EquivalenceOracle.WpMethod (
 ) where
 
 import Control.Monad (replicateM)
-import Control.Monad.State
+import Control.Monad.State (MonadState (state), State, runState)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Haal.BlackBox
-import Haal.Experiment (EquivalenceOracle (..))
-import System.Random
+import Haal.Experiment
+import System.Random (Random (randomR), StdGen)
 
 newtype WpMethodConfig = WpMethodConfig
     { wpDepth :: Int

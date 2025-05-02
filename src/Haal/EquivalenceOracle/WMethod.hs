@@ -14,7 +14,7 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Vector as Vec
-import Haal.BlackBox (Automaton, FiniteOrd, accessSequences, globalCharacterizingSet, inputs)
+import Haal.BlackBox
 import Haal.EquivalenceOracle.RandomWords
 import Haal.Experiment
 import System.Random (Random (randomRs), RandomGen (split), StdGen)

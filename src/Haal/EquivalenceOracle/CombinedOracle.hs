@@ -3,7 +3,7 @@ module Haal.EquivalenceOracle.CombinedOracle (
     CombinedOracle (..),
 ) where
 
-import Haal.Experiment (EquivalenceOracle (..))
+import Haal.Experiment
 
 {- | The 'CombinedOracle' type is a data type for combining two equivalence oracles.
 It is used to chain multiple oracles together by first exhausting the test suite

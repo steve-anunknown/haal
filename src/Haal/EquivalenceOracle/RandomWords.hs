@@ -6,12 +6,12 @@ module Haal.EquivalenceOracle.RandomWords (
 where
 
 import Control.Monad (replicateM)
-import Control.Monad.State
+import Control.Monad.State (MonadState (state), runState)
 import qualified Data.Set as Set
 import qualified Data.Vector as V
-import Haal.BlackBox (FiniteOrd, inputs)
-import Haal.Experiment (EquivalenceOracle, testSuite)
-import System.Random
+import Haal.BlackBox
+import Haal.Experiment
+import System.Random (Random (randomR), StdGen)
 
 -- RandomWords.hs or a shared Configs.hs if you prefer
 data RandomWordsConfig = RandomWordsConfig

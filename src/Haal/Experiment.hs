@@ -17,10 +17,14 @@ module Haal.Experiment (
     findCex,
 ) where
 
-import Control.Monad.Reader
+import Control.Monad.Reader (
+    MonadReader (ask),
+    ReaderT,
+    runReader,
+ )
 
 import Control.Monad.Identity
-import Haal.BlackBox (Automaton, Finite, FiniteEq, FiniteOrd, SUL, step, walk)
+import Haal.BlackBox
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
 Instances of this class should provide methods to generate a test suite

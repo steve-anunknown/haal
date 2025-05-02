@@ -12,7 +12,7 @@ module Haal.Learning.LMstar (
 )
 where
 
-import Control.Monad.Reader
+import Control.Monad.Reader (MonadReader (ask))
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
