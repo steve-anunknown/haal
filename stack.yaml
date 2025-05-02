@@ -8,66 +8,9 @@
 # A snapshot resolver dictates the compiler version and the set of packages
 # to be used for project dependencies. For example:
 #
-# snapshot: lts-23.0
 snapshot: nightly-2024-10-21
-# snapshot: ghc-9.8.2
-#
-# The location of a snapshot can be provided as a file or url. Stack assumes
-# a snapshot provided as a file might change, whereas a url resource does not.
-#
-# snapshot: ./custom-snapshot.yaml
-# snapshot: https://example.com/snapshots/2024-01-01.yaml
-# snapshot:
-#   url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/23/16.yaml
 
 notify-if-nix-on-path: false
 
-# User packages to be built.
-# Various formats can be used as shown in the example below.
-#
-# packages:
-# - some-directory
-# - https://example.com/foo/bar/baz-0.0.2.tar.gz
-#   subdirs:
-#   - auto-update
-#   - wai
 packages:
 - .
-# Dependency packages to be pulled from upstream that are not in the snapshot.
-# These entries can reference officially published versions as well as
-# forks / in-progress versions pinned to a git hash. For example:
-#
-# extra-deps:
-#   - auto-split-0.1.0.2
-#   - ghc-exactprint-1.12.0.0@sha256:9d7f692f4c5b56089182e387f3ca18df9968ecff430944969843a9742d86dd7c,5345
-#   - ghc-paths-0.1.0.12@sha256:6214f13c955993eb716c594b166c17914391c66da375f2826ae397bf82443847,699
-#   - syb-0.7.2.4@sha256:936d5a92084ad9d88c5a9dd2e622deab57ce48ce85be93e6273b3f8eb64c12ca,3872
-# - acme-missiles-0.3
-# - git: https://github.com/commercialhaskell/stack.git
-#   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
-#
-# extra-deps: []
-
-# Override default flag values for project packages and extra-deps
-# flags: {}
-
-# Extra package databases containing global packages
-# extra-package-dbs: []
-
-# Control whether we use the GHC we find on the path
-# system-ghc: true
-#
-# Require a specific version of Stack, using version ranges
-# require-stack-version: -any # Default
-# require-stack-version: ">=3.3"
-#
-# Override the architecture used by Stack, especially useful on Windows
-# arch: i386
-# arch: x86_64
-#
-# Extra directories used by Stack for building
-# extra-include-dirs: [/path/to/dir]
-# extra-lib-dirs: [/path/to/dir]
-#
-# Allow a newer minor version of GHC than the snapshot specifies
-# compiler-check: newer-minor

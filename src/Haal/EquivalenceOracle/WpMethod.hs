@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements the WpMethod.
-module EquivalenceOracle.WpMethod (
+module Haal.EquivalenceOracle.WpMethod (
     WpMethod (..),
     WpMethodConfig (..),
     RandomWpMethod (..),
@@ -10,12 +10,12 @@ module EquivalenceOracle.WpMethod (
     randomWpMethodSuite,
 ) where
 
-import BlackBox
 import Control.Monad (replicateM)
 import Control.Monad.State
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Experiment (EquivalenceOracle (..))
+import Haal.BlackBox
+import Haal.Experiment (EquivalenceOracle (..))
 import System.Random
 
 newtype WpMethodConfig = WpMethodConfig

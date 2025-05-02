@@ -5,7 +5,7 @@
 {- | This module defines the BlackBox type class as well as the Automaton and SUL
 sub classes.
 -}
-module BlackBox (
+module Haal.BlackBox (
     Automaton (..),
     SUL (..),
     StateID,

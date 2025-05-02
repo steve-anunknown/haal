@@ -20,43 +20,40 @@ module Utils (
 )
 where
 
-import Automaton.MealyAutomaton (
+import qualified Data.Bifunctor as Bif
+import qualified Data.List as List
+import qualified Data.Map as Map
+import qualified Data.Maybe
+import qualified Data.Set as Set
+import Haal.Automaton.MealyAutomaton (
     MealyAutomaton (..),
     mealyDelta,
     mealyLambda,
  )
-
-import BlackBox
-import qualified Data.Bifunctor as Bif
-import Data.Data (Data)
-import qualified Data.List as List
-import qualified Data.Map as Map
-import qualified Data.Maybe
-import System.Random
-import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
-
-import qualified Data.Set as Set
-import EquivalenceOracle.RandomWalk (
+import Haal.BlackBox
+import Haal.EquivalenceOracle.RandomWalk (
     RandomWalk (RandomWalk),
     RandomWalkConfig (RandomWalkConfig),
  )
-import EquivalenceOracle.RandomWords (
+import Haal.EquivalenceOracle.RandomWords (
     RandomWords (RandomWords),
     RandomWordsConfig (RandomWordsConfig),
  )
-import EquivalenceOracle.WMethod (
+import Haal.EquivalenceOracle.WMethod (
     RandomWMethod (RandomWMethod),
     RandomWMethodConfig (RandomWMethodConfig),
     WMethod (WMethod),
     WMethodConfig (WMethodConfig),
  )
-import EquivalenceOracle.WpMethod (
+import Haal.EquivalenceOracle.WpMethod (
     RandomWpMethod (RandomWpMethod),
     RandomWpMethodConfig (RandomWpMethodConfig),
     WpMethod (WpMethod),
     WpMethodConfig (WpMethodConfig),
  )
-import Experiment (EquivalenceOracle)
+import Haal.Experiment (EquivalenceOracle)
+import System.Random
+import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
 newtype ArbWMethodConfig = ArbWMethodConfig WMethodConfig deriving (Show, Eq)
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
@@ -224,9 +221,9 @@ instance
             fallbackOutput <- arbitrary :: Gen o
             return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
 
-data Input = A | B | C | D deriving (Show, Eq, Ord, Data, Enum, Bounded)
-data Output = X | Y | Z | W deriving (Show, Eq, Ord, Data, Enum, Bounded)
-data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 deriving (Show, Eq, Ord, Data, Enum, Bounded)
+data Input = A | B | C | D deriving (Show, Eq, Ord, Enum, Bounded)
+data Output = X | Y | Z | W deriving (Show, Eq, Ord, Enum, Bounded)
+data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- Arbitrary instances for Input, Output, and State
 instance Arbitrary Input where

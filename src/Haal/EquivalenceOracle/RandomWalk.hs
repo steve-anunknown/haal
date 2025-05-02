@@ -1,13 +1,13 @@
-module EquivalenceOracle.RandomWalk (
+module Haal.EquivalenceOracle.RandomWalk (
     RandomWalk (..),
     RandomWalkConfig (..),
 )
 where
 
-import BlackBox
 import qualified Data.Set as Set
 import qualified Data.Vector as V
-import Experiment
+import Haal.BlackBox
+import Haal.Experiment
 import System.Random (Random (randomR), RandomGen (split), StdGen, randomRs)
 
 data RandomWalkConfig = RandomWalkConfig

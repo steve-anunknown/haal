@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Moore automaton.
-module Automaton.MooreAutomaton (
+module Haal.Automaton.MooreAutomaton (
     MooreAutomaton,
     mkMooreAutomaton,
     mooreStep,
@@ -11,9 +11,9 @@ module Automaton.MooreAutomaton (
 )
 where
 
-import BlackBox
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import Haal.BlackBox
 
 data MooreAutomaton state input output = MooreAutomaton
     { mooreDelta :: state -> input -> state

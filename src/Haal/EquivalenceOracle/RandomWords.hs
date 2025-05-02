@@ -1,16 +1,16 @@
 -- | This module implements a simple random words equivalence oracle.
-module EquivalenceOracle.RandomWords (
+module Haal.EquivalenceOracle.RandomWords (
     RandomWords (..),
     RandomWordsConfig (..),
 )
 where
 
-import BlackBox (FiniteOrd, inputs)
 import Control.Monad (replicateM)
 import Control.Monad.State
 import qualified Data.Set as Set
 import qualified Data.Vector as V
-import Experiment (EquivalenceOracle, testSuite)
+import Haal.BlackBox (FiniteOrd, inputs)
+import Haal.Experiment (EquivalenceOracle, testSuite)
 import System.Random
 
 -- RandomWords.hs or a shared Configs.hs if you prefer

@@ -6,16 +6,16 @@ module AutomatonSpec (
 )
 where
 
-import Automaton.MealyAutomaton (
-    MealyAutomaton (..),
-    mealyDelta,
-    mealyLambda,
- )
-import BlackBox
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import Haal.Automaton.MealyAutomaton (
+    MealyAutomaton (..),
+    mealyDelta,
+    mealyLambda,
+ )
+import Haal.BlackBox
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
 import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, findReachable, statesAreEquivalent)

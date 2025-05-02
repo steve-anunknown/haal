@@ -1,9 +1,9 @@
 -- | This module implements a combined equivalence oracle for two oracles.
-module EquivalenceOracle.CombinedOracle (
+module Haal.EquivalenceOracle.CombinedOracle (
     CombinedOracle (..),
 ) where
 
-import Experiment (EquivalenceOracle (..))
+import Haal.Experiment (EquivalenceOracle (..))
 
 {- | The 'CombinedOracle' type is a data type for combining two equivalence oracles.
 It is used to chain multiple oracles together by first exhausting the test suite

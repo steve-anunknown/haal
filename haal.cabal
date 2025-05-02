@@ -28,17 +28,17 @@ source-repository head
 
 library
   exposed-modules:
-      Automaton.DFA
-      Automaton.MealyAutomaton
-      Automaton.MooreAutomaton
-      BlackBox
-      EquivalenceOracle.CombinedOracle
-      EquivalenceOracle.RandomWalk
-      EquivalenceOracle.RandomWords
-      EquivalenceOracle.WMethod
-      EquivalenceOracle.WpMethod
-      Experiment
-      Learning.LMstar
+      Haal.Automaton.DFA
+      Haal.Automaton.MealyAutomaton
+      Haal.Automaton.MooreAutomaton
+      Haal.BlackBox
+      Haal.EquivalenceOracle.CombinedOracle
+      Haal.EquivalenceOracle.RandomWalk
+      Haal.EquivalenceOracle.RandomWords
+      Haal.EquivalenceOracle.WMethod
+      Haal.EquivalenceOracle.WpMethod
+      Haal.Experiment
+      Haal.Learning.LMstar
   other-modules:
       Paths_haal
   autogen-modules:

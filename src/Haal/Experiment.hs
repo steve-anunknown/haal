@@ -5,7 +5,7 @@
 {- | This module exports the basic types, classes and functions that are required to
 easily construct and configure learning experiments.
 -}
-module Experiment (
+module Haal.Experiment (
     Experiment,
     ExperimentT,
     Learner (..),
@@ -19,8 +19,8 @@ module Experiment (
 
 import Control.Monad.Reader
 
-import BlackBox (Automaton, Finite, FiniteEq, FiniteOrd, SUL, step, walk)
 import Control.Monad.Identity
+import Haal.BlackBox (Automaton, Finite, FiniteEq, FiniteOrd, SUL, step, walk)
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
 Instances of this class should provide methods to generate a test suite
@@ -89,7 +89,8 @@ data Statistics aut i o = Statistics
     { statsRounds :: Int
     , statsCexs :: [[i]]
     , statsHyps :: [aut i o]
-    } deriving(Show)
+    }
+    deriving (Show)
 
 statsEmpty :: Statistics aut i o
 statsEmpty = Statistics 0 [] []

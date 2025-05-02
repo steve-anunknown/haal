@@ -3,19 +3,19 @@ module EquivalenceOracleSpec (
 ) where
 
 import Control.Monad.Reader
-import EquivalenceOracle.WMethod (WMethod (..), wmethodSuiteSize)
-import Experiment
+import Haal.EquivalenceOracle.WMethod (WMethod (..), wmethodSuiteSize)
+import Haal.Experiment
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
 import Utils
 
 -- Generic identity and difference properties
 prop_identity :: (OracleWrapper w oracle) => Mealy State Input Output -> w -> Bool
-prop_identity (Mealy aut) w = ([], []) == (snd $ runReader (findCex (unwrap w) aut) aut)
+prop_identity (Mealy aut) w = ([], []) == snd (runReader (findCex (unwrap w) aut) aut)
 
 prop_difference :: (OracleWrapper w oracle) => Mealy State Input Output -> Mealy State Input Output -> w -> Property
 prop_difference (Mealy aut1) (Mealy aut2) w =
-    aut1 /= aut2 ==> ([], []) /= (snd $ runReader (findCex (unwrap w) aut1) aut2)
+    aut1 /= aut2 ==> ([], []) /= snd (runReader (findCex (unwrap w) aut1) aut2)
 
 -- WMethod-specific cardinality law
 prop_WMethodCardinality :: ArbWMethod -> Mealy State Input Output -> Bool

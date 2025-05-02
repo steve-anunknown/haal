@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements the W-method equivalence oracle.
-module EquivalenceOracle.WMethod (
+module Haal.EquivalenceOracle.WMethod (
     WMethod (..),
     WMethodConfig (..),
     wmethodSuiteSize,
@@ -9,14 +9,14 @@ module EquivalenceOracle.WMethod (
     RandomWMethodConfig (..),
 ) where
 
-import BlackBox (Automaton, FiniteOrd, accessSequences, globalCharacterizingSet, inputs)
 import Control.Monad (replicateM)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Vector as Vec
-import EquivalenceOracle.RandomWords
-import Experiment
+import Haal.BlackBox (Automaton, FiniteOrd, accessSequences, globalCharacterizingSet, inputs)
+import Haal.EquivalenceOracle.RandomWords
+import Haal.Experiment
 import System.Random (Random (randomRs), RandomGen (split), StdGen)
 
 newtype WMethodConfig = WMethodConfig

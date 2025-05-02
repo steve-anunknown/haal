@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | This module implements a Mealy automaton.
-module Automaton.MealyAutomaton (
+module Haal.Automaton.MealyAutomaton (
     MealyAutomaton (..),
     mkMealyAutomaton,
     mkMealyAutomaton2,
@@ -13,9 +13,9 @@ module Automaton.MealyAutomaton (
 )
 where
 
-import BlackBox
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import Haal.BlackBox
 
 {- | The 'MealyAutomaton' data type is parameterised by the 'input', 'output' and 'state' types
  which play the role of the input alphabet, output alphabet and set of states respectively.

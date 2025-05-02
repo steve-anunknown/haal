@@ -4,7 +4,7 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 -- | This module implements the LM* algorithm for learning Mealy automata.
-module Learning.LMstar (
+module Haal.Learning.LMstar (
     lmstar,
     LMstar (..),
     LMstarConfig (..),
@@ -12,14 +12,14 @@ module Learning.LMstar (
 )
 where
 
-import Automaton.MealyAutomaton
-import BlackBox
 import Control.Monad.Reader
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
-import Experiment
+import Haal.Automaton.MealyAutomaton
+import Haal.BlackBox
+import Haal.Experiment
 
 -- | The 'ObservationTable' type is a data type for storing the observation table of the LM* algorithm.
 data ObservationTable i o = ObservationTable
