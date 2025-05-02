@@ -303,19 +303,6 @@ statesAreEquivalent automaton s1 s2 =
     alphabet = inputs automaton
 
 -- Starts a bfs from the initial state and finds all reachable states
--- findReachable :: MealyAutomaton State Input Output -> Set.Set State
--- findReachable automaton =
---     let initialState = mealyInitialS automaton
---         alphabet = inputs automaton
---         bfs visited [] = visited
---         bfs visited (curr : queue) =
---             let mo = update automaton curr
---                 nextStates = Set.map (current . fst . step mo) alphabet
---                 newVisited = Set.foldr Set.insert visited nextStates
---                 newQueue = queue ++ [s | s <- Set.toList nextStates, s `notElem` visited]
---              in bfs newVisited newQueue
---      in bfs (Set.singleton initialState) [initialState]
-
 findReachable :: MealyAutomaton State Input Output -> Set.Set State
 findReachable automaton =
     let initialState = mealyInitialS automaton
