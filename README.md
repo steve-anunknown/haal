@@ -88,7 +88,7 @@ stack haddock
 
 ## Example
 
-Here's a quick GHCi session putting it all together, showing how to define a simple Mealy machine, configure an experiment, and run a learning algorithm using `haal`.
+Here's a quick GHCi session putting it all together, showing how to define a simple Mealy machine, configure an experiment, and run a learning algorithm using `haal`. This session is also available as a program `examples/LearningExperiment.hs` which can be run with `stack runghc examples/LearningExperiment.hs`.
 
 ```haskell
 ghci> :set +m
