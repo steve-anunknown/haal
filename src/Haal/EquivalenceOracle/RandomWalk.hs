@@ -1,6 +1,7 @@
 module Haal.EquivalenceOracle.RandomWalk (
     RandomWalk (..),
     RandomWalkConfig (..),
+    mkRandomWalk,
 )
 where
 
@@ -23,6 +24,15 @@ data RandomWalkConfig = RandomWalkConfig
 
 newtype RandomWalk = RandomWalk RandomWalkConfig deriving (Show, Eq)
 
+mkRandomWalk :: StdGen -> Int -> Double -> RandomWalk
+mkRandomWalk gen maxS restartP =
+    RandomWalk
+        RandomWalkConfig
+            { rwlGen = gen
+            , rwlMaxSteps = maxS
+            , rwlRestart = restartP
+            }
+
 -- | Generates a random walk for the automaton.
 randomWalkSuite :: (FiniteOrd a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
 randomWalkSuite (RandomWalk (RandomWalkConfig{rwlGen = g, rwlMaxSteps = maxS, rwlRestart = restartP})) aut =
@@ -31,8 +41,8 @@ randomWalkSuite (RandomWalk (RandomWalkConfig{rwlGen = g, rwlMaxSteps = maxS, rw
         randomInputs = take maxS $ randomRs (0, V.length alphabet - 1) g1
         inputSequence = map (alphabet V.!) randomInputs
         (inputSequence', g3) = splitWithProbability g2 restartP inputSequence
-        oracle' = RandomWalkConfig{rwlGen = g3, rwlMaxSteps = maxS, rwlRestart = restartP}
-     in (RandomWalk oracle', inputSequence')
+        oracle' = mkRandomWalk g3 maxS restartP
+     in (oracle', inputSequence')
 
 splitWithProbability :: StdGen -> Double -> [a] -> ([[a]], StdGen)
 splitWithProbability generator p symbols = go generator symbols [] []

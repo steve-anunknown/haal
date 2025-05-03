@@ -2,6 +2,7 @@
 module Haal.EquivalenceOracle.RandomWords (
     RandomWords (..),
     RandomWordsConfig (..),
+    mkRandomWords,
 )
 where
 
@@ -24,6 +25,16 @@ data RandomWordsConfig = RandomWordsConfig
 
 newtype RandomWords = RandomWords RandomWordsConfig deriving (Show, Eq)
 
+mkRandomWords :: StdGen -> Int -> Int -> Int -> RandomWords
+mkRandomWords gen limit minL maxL =
+    RandomWords
+        RandomWordsConfig
+            { rwGen = gen
+            , rwLimit = limit
+            , rwMinLength = minL
+            , rwMaxLength = maxL
+            }
+
 generateRandomWords :: (FiniteOrd a) => RandomWords -> sul a o -> (RandomWords, [[a]])
 generateRandomWords
     ( RandomWords
@@ -36,8 +47,8 @@ generateRandomWords
         )
     aut =
         let (ranWords, finalGen) = runState (replicateM count genWord) generator
-            config = RandomWordsConfig{rwGen = finalGen, rwLimit = count, rwMinLength = minL, rwMaxLength = maxL}
-         in (RandomWords config, ranWords)
+            oracle = mkRandomWords finalGen count minL maxL
+         in (oracle, ranWords)
       where
         alphaVec = V.fromList . Set.toList $ inputs aut
         alphaLen = V.length alphaVec - 1

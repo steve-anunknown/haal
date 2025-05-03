@@ -18,7 +18,7 @@ sulTransitions S2 A = (S0, X)
 sulTransitions S2 B = (S0, Y)
 
 -- Set up the experiment.
-myexperiment = experiment (mkLMstar Star) (WMethod (WMethodConfig 2))
+myexperiment = experiment (mkLMstar Star) (mkWMethod 2)
 
 -- Define the Mealy system under learning. Remember that automata can act as suls.
 mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0

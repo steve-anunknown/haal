@@ -8,6 +8,8 @@ module Haal.EquivalenceOracle.WpMethod (
     RandomWpMethodConfig (..),
     wpmethodSuiteSize,
     randomWpMethodSuite,
+    mkWpMethod,
+    mkRandomWpMethod,
 ) where
 
 import Control.Monad (replicateM)
@@ -26,6 +28,9 @@ newtype WpMethodConfig = WpMethodConfig
 
 -- | Type for the WpMethod. It simply wraps the depth of the method.
 newtype WpMethod = WpMethod WpMethodConfig deriving (Eq, Show)
+
+mkWpMethod :: Int -> WpMethod
+mkWpMethod = WpMethod . WpMethodConfig
 
 -- | The 'wpmethodSuiteSize' returns the nunmber of test cases in the test suite of WpMethod
 wpmethodSuiteSize :: a
@@ -96,6 +101,22 @@ data RandomWpMethodConfig = RandomWpMethodConfig
     deriving (Show, Eq)
 
 newtype RandomWpMethod = RandomWpMethod RandomWpMethodConfig deriving (Show, Eq)
+
+mkRandomWpMethod ::
+    StdGen ->
+    Int ->
+    Int ->
+    Int ->
+    RandomWpMethod
+mkRandomWpMethod g e mi lim =
+    RandomWpMethod
+        ( RandomWpMethodConfig
+            { rwpGen = g
+            , rwpExpected = e
+            , rwpMin = mi
+            , rwpLimit = lim
+            }
+        )
 
 randomWpMethodSuite ::
     forall aut i o s.

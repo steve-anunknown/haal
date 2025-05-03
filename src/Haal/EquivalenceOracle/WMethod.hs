@@ -7,6 +7,8 @@ module Haal.EquivalenceOracle.WMethod (
     wmethodSuiteSize,
     RandomWMethod (..),
     RandomWMethodConfig (..),
+    mkWMethod,
+    mkRandomWMethod,
 ) where
 
 import Control.Monad (replicateM)
@@ -30,6 +32,9 @@ It is just a wrapper around an integer, which is used for configuring
 the exploration depth of the method.
 -}
 newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
+
+mkWMethod :: Int -> WMethod
+mkWMethod = WMethod . WMethodConfig
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
@@ -90,6 +95,9 @@ data RandomWMethodConfig = RandomWMethodConfig
 -- | The 'RandomWMethod' type represents a random W-method equivalence oracle.
 newtype RandomWMethod = RandomWMethod RandomWMethodConfig deriving (Show, Eq)
 
+mkRandomWMethod :: StdGen -> Int -> Int -> RandomWMethod
+mkRandomWMethod g l n = RandomWMethod (RandomWMethodConfig g n l)
+
 -- | The 'randomWMethodSuite' function generates the test suite for the random W-method and a new oracle.
 randomWMethodSuite ::
     forall i o s aut.
@@ -115,7 +123,7 @@ randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
         suffixes = map (vecSuffixes Vec.!) randomSuffixes
 
         suite = [prefix ++ rand ++ suffix | prefix <- prefixes, rand <- flatWords, suffix <- suffixes]
-     in (RandomWMethod (RandomWMethodConfig gen''' wpr wl), suite)
+     in (mkRandomWMethod gen''' wpr wl, suite)
 
 instance EquivalenceOracle RandomWMethod where
     testSuite = randomWMethodSuite
