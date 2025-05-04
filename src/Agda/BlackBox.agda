@@ -11,3 +11,13 @@ record SUL (sul : Set → Set → Set) : Set₂ where
 open SUL
 
 {-# COMPILE AGDA2HS SUL class #-}
+
+helpWalk : ∀ {sul i o} → sul i o → List i → (sul i o) × (List o)
+helpWalk system [] os = system , reverse os 
+helpWalk system (input ∷ inputs) os = 
+    let system' , output = (step system) system input 
+    in helpWalk system' inputs (output ∷ outputs)
+
+walk : ∀ {sul i o} → sul i o → List i → (sul i o) × (List o)
+walk system inputs = helpWalk system inputs []
+
