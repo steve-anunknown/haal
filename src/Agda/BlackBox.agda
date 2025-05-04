@@ -1,4 +1,4 @@
-module agda.BlackBox where 
+module Agda.BlackBox where 
 
 open import Haskell.Prelude
 
