@@ -38,14 +38,14 @@ It provides methods to step through the automaton, walk through a list of inputs
 and retrieve the current state.
 -}
 class SUL sul where
-    step :: (Ord i) => sul i o -> i -> (sul i o, o)
+    step :: sul i o -> i -> (sul i o, o)
     reset :: sul i o -> sul i o
 
 type Finite i = (Enum i, Bounded i)
 type FiniteEq i = (Eq i, Finite i)
 type FiniteOrd i = (Ord i, Finite i)
 
-walk :: (Ord i, SUL sul) => sul i o -> [i] -> (sul i o, [o])
+walk :: (SUL sul) => sul i o -> [i] -> (sul i o, [o])
 walk = List.mapAccumL step
 
 inputs :: (FiniteOrd i) => sul i o -> Set.Set i
