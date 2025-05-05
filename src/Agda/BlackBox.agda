@@ -30,13 +30,6 @@ walk system inputs = helpwalk system inputs []
 
 {-# COMPILE AGDA2HS walk #-}
 
--- record Automaton (aut : Set → Set → Set → Set) : Set₃ where 
---     field 
---         overlap ⦃ super ⦄ : ∀ {sul} → SUL sul
---         current : ∀ {s i o} → aut s i o → s
--- 
--- {-# COMPILE AGDA2HS Automaton class #-}
-
 -- Automaton class, with `current` method only for now
 record Automaton (aut : Set → Set → Set → Set) : Set₃ where
   field
