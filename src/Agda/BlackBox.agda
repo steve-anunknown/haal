@@ -1,6 +1,8 @@
 module Agda.BlackBox where 
 
 open import Haskell.Prelude
+open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; decSetoid)
 
 {-# NO_POSITIVITY_CHECK #-}
 record SUL (sul : Set → Set → Set) : Set₂ where 
@@ -27,3 +29,27 @@ walk : ∀ {sul : Set → Set → Set} {i o : Set} {{_ : SUL sul}} →
 walk system inputs = helpwalk system inputs []
 
 {-# COMPILE AGDA2HS walk #-}
+
+-- record Automaton (aut : Set → Set → Set → Set) : Set₃ where 
+--     field 
+--         overlap ⦃ super ⦄ : ∀ {sul} → SUL sul
+--         current : ∀ {s i o} → aut s i o → s
+-- 
+-- {-# COMPILE AGDA2HS Automaton class #-}
+
+-- Automaton class, with `current` method only for now
+record Automaton (aut : Set → Set → Set → Set) : Set₃ where
+  field
+    overlap ⦃ super ⦄ : ∀ {s} → SUL (aut s)
+    current : ∀ {s i o} → aut s i o → s
+
+open Automaton {{...}}
+
+{-# COMPILE AGDA2HS Automaton class #-}
+
+initial : ∀ {aut : Set → Set → Set → Set} {s i o : Set} {{_ : Automaton aut}} → aut s i o → s
+initial = current ∘ reset
+
+{-# COMPILE AGDA2HS initial #-}
+
+

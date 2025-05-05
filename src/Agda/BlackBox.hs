@@ -13,3 +13,9 @@ helpwalk system (input : rest) outputs
 walk :: SUL sul => sul i o -> [i] -> (sul i o, [o])
 walk system inputs = helpwalk system inputs []
 
+class SUL (aut s) => Automaton aut where
+    current :: forall s i o . aut s i o -> s
+
+initial :: Automaton aut => aut s i o -> s
+initial = current . reset
+
