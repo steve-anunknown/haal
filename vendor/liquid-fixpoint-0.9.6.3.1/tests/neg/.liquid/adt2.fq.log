@@ -1,0 +1,12 @@
+
+
+Liquid-Fixpoint Copyright 2013-21 Regents of the University of California.
+All Rights Reserved.
+
+[1;95mCrash!: :1:1-1:1: Error
+  Constraint with free vars
+  4
+  [y]
+  Try using the --prune-unsorted flag
+CRASH: -1
+[0m

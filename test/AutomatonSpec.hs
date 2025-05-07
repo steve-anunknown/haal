@@ -18,7 +18,7 @@ import Haal.Automaton.MealyAutomaton (
 import Haal.BlackBox
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
-import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, findReachable, statesAreEquivalent)
+import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, statesAreEquivalent)
 
 -- The global characterizing set of a non minimal mealy automaton contains
 -- the empty list. This will fail if the 'State' type has less than 6-7 constructors

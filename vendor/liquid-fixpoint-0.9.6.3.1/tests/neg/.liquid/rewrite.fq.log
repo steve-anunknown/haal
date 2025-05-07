@@ -1,0 +1,32 @@
+
+
+Liquid-Fixpoint Copyright 2013-21 Regents of the University of California.
+All Rights Reserved.
+
+[1;95mCrash!: :1:1-1:1: Error
+  elaborate solver failed on:
+      concat3Left (concat xs ws) ys zs == concat3Right (concat xs ws) ys zs
+  with error
+      Cannot unify (BitVec @(68)) with fix$36$$91$$93$ in expression: concat xs 
+  in environment
+      concat := func(3 , [(BitVec @(0)); (BitVec @(1)); (BitVec @(2))])
+
+      concat3Left := func(0 , [fix$36$$91$$93$;
+                               fix$36$$91$$93$;
+                               fix$36$$91$$93$;
+                               fix$36$$91$$93$])
+
+      concat3Right := func(0 , [fix$36$$91$$93$;
+                                fix$36$$91$$93$;
+                                fix$36$$91$$93$;
+                                fix$36$$91$$93$])
+
+      ws := fix$36$$91$$93$
+
+      xs := fix$36$$91$$93$
+
+      ys := fix$36$$91$$93$
+
+      zs := fix$36$$91$$93$
+CRASH: -1
+[0m

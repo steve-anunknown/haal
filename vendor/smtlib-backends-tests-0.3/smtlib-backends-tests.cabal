@@ -1,0 +1,39 @@
+name:               smtlib-backends-tests
+version:            0.3
+synopsis:           Testing SMT-LIB backends.
+description:
+  This library provides common functions and values used for testing SMT-LIB
+  backends, as provided by the smtlib-backends library.
+
+license:            MIT
+license-file:       LICENSE
+author:             Quentin Aristote
+maintainer:         quentin.aristote@tweag.io
+build-type:         Simple
+category:           SMT, Testing
+cabal-version:      >=1.10
+extra-source-files: CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/tweag/smtlib-backends
+  subdir:   smtlib-backends-tests
+
+source-repository this
+  type:     git
+  location: https://github.com/tweag/smtlib-backends
+  tag:      0.3
+  subdir:   smtlib-backends-tests
+
+library
+  ghc-options:      -Wall -Wunused-packages
+  hs-source-dirs:   src
+  exposed-modules:  SMTLIB.Backends.Tests
+  other-modules:    SMTLIB.Backends.Tests.Sources
+  build-depends:
+      base             >=4.14   && <4.18
+    , smtlib-backends  >=0.3    && <0.4
+    , tasty            >=1.4.2  && <1.5
+    , tasty-hunit      >=0.10.0 && <0.11
+
+  default-language: Haskell2010
