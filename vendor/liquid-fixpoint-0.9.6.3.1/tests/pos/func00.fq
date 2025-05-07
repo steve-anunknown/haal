@@ -1,0 +1,9 @@
+
+bind 0 f : {v: func(0, [int; int]) | []}
+
+constraint:
+  env [ ]
+  lhs {v : int | [f = f]}
+  rhs {v : int | [0 < 7]}
+  id 1 tag []
+

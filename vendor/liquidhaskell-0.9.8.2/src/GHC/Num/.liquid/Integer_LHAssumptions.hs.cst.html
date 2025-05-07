@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>src/GHC/Num/Integer_LHAssumptions.hs</title>
+</head>
+<head>
+<link type='text/css' rel='stylesheet' href='syntax.css' />
+</head>
+
+<body>
+<hr>
+Put mouse over identifiers to see inferred types
+<pre><span class=hs-linenum> 1: </span><a class=annot href="#"><span class=annottext>{VV##52 : GHC.Types.Module | $k_##53}</span><span class='hs-comment'>{-# OPTIONS_GHC -fplugin=LiquidHaskellBoot #-}</span></a>
+<span class=hs-linenum> 2: </span><span class='hs-comment'>{-# LANGUAGE MagicHash #-}</span>
+<span class=hs-linenum> 3: </span><span class='hs-comment'>{-# OPTIONS_GHC -Wno-unused-imports #-}</span>
+<span class=hs-linenum> 4: </span><span class='hs-keyword'>module</span> <span class='hs-conid'>GHC.Num.Integer_LHAssumptions</span><span class='hs-conid'>()</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum> 5: </span>
+<span class=hs-linenum> 6: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.Types</span>
+<span class=hs-linenum> 7: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.Num.Integer</span>
+<span class=hs-linenum> 8: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.Types_LHAssumptions</span><span class='hs-conid'>()</span>
+<span class=hs-linenum> 9: </span>
+<span class=hs-linenum>10: </span>
+<span class=hs-linenum>11: </span><span class='hs-keyword'>{-@</span>
+<span class=hs-linenum>12: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Num.Integer.IS</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-conid'>GHC.Prim.Int</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Num.Integer.Integer</span> <span class='hs-keyword'>| v = (x :: int) }</span>
+<span class=hs-linenum>13: </span><span class='hs-keyword'>@-}</span>
+</pre>
+</body>
+</html>

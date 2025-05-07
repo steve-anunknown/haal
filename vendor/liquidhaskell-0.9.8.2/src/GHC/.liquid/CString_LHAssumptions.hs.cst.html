@@ -1,0 +1,33 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>src/GHC/CString_LHAssumptions.hs</title>
+</head>
+<head>
+<link type='text/css' rel='stylesheet' href='syntax.css' />
+</head>
+
+<body>
+<hr>
+Put mouse over identifiers to see inferred types
+<pre><span class=hs-linenum> 1: </span><a class=annot href="#"><span class=annottext>{VV##69 : GHC.Types.Module | $k_##70}</span><span class='hs-comment'>{-# OPTIONS_GHC -fplugin=LiquidHaskellBoot #-}</span></a>
+<span class=hs-linenum> 2: </span><span class='hs-comment'>{-# LANGUAGE MagicHash #-}</span>
+<span class=hs-linenum> 3: </span><span class='hs-comment'>{-# OPTIONS_GHC -Wno-missing-signatures #-}</span>
+<span class=hs-linenum> 4: </span><span class='hs-keyword'>module</span> <span class='hs-conid'>GHC.CString_LHAssumptions</span><span class='hs-conid'>()</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum> 5: </span>
+<span class=hs-linenum> 6: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.CString</span>
+<span class=hs-linenum> 7: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.Types_LHAssumptions</span><span class='hs-conid'>()</span>
+<span class=hs-linenum> 8: </span>
+<span class=hs-linenum> 9: </span><a class=annot href="#"><span class=annottext>lq_tmp$x##66:GHC.Prim.Addr# -&gt; {lq_tmp$x##64 : [GHC.Types.Char] | len lq_tmp$x##64 == strLen lq_tmp$x##66
+                                                                  &amp;&amp; lq_tmp$x##64 ~~ lq_tmp$x##66}</span><span class='hs-sel'>_f</span></a> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>unpackCString</span><span class='hs-cpp'>#</span>
+<span class=hs-linenum>10: </span>
+<span class=hs-linenum>11: </span><span class='hs-keyword'>{-@</span>
+<span class=hs-linenum>12: </span><span class='hs-definition'>measure</span> <span class='hs-varid'>strLen</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Addr</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Int</span>
+<span class=hs-linenum>13: </span>
+<span class=hs-linenum>14: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.CString.unpackCString</span><span class='hs-cpp'>#</span>
+<span class=hs-linenum>15: </span>  <span class='hs-keyglyph'>::</span> <span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-conid'>GHC.Prim.Addr</span><span class='hs-cpp'>#</span>
+<span class=hs-linenum>16: </span>  <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>{</span><span class='hs-varid'>v</span><span class='hs-conop'>:</span><span class='hs-keyglyph'>[</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>|</span> <span class='hs-varid'>v</span> <span class='hs-varop'>~~</span> <span class='hs-varid'>x</span> <span class='hs-varop'>&amp;&amp;</span> <span class='hs-varid'>len</span> <span class='hs-varid'>v</span> <span class='hs-varop'>==</span> <span class='hs-varid'>strLen</span> <span class='hs-varid'>x</span><span class='hs-layout'>}</span>
+<span class=hs-linenum>17: </span><span class='hs-keyword'>@-}</span>
+</pre>
+</body>
+</html>

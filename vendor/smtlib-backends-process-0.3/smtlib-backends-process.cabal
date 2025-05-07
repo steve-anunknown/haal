@@ -1,0 +1,61 @@
+name:               smtlib-backends-process
+version:            0.3
+synopsis:           An SMT-LIB backend running solvers as external processes.
+description:
+  This library implements an SMT-LIB backend (in the sense of the
+  smtlib-backends package) which runs solvers as external processes.
+
+license:            MIT
+license-file:       LICENSE
+author:             Quentin Aristote
+maintainer:         quentin.aristote@tweag.io
+build-type:         Simple
+category:           SMT
+cabal-version:      >=1.10
+extra-source-files: CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/tweag/smtlib-backends
+  subdir:   smtlib-backends-process
+
+source-repository this
+  type:     git
+  location: https://github.com/tweag/smtlib-backends
+  tag:      0.3
+  subdir:   smtlib-backends-process
+
+library
+  hs-source-dirs:   src
+  ghc-options:      -Wall -Wunused-packages
+  exposed-modules:  SMTLIB.Backends.Process
+  other-extensions: Safe
+  build-depends:
+      base             >=4.14    && <4.18
+    , bytestring       >=0.10.12 && <0.12
+    , process          >=1.6     && <1.7
+    , smtlib-backends  >=0.3     && <0.4
+
+  default-language: Haskell2010
+
+test-suite test
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   tests
+  main-is:          Main.hs
+  other-modules:
+    EdgeCases
+    Examples
+
+  ghc-options:      -threaded -Wall -Wunused-packages
+  build-depends:
+      async
+    , base
+    , bytestring
+    , process
+    , smtlib-backends
+    , smtlib-backends-process
+    , smtlib-backends-tests
+    , tasty
+    , tasty-hunit
+
+  default-language: Haskell2010

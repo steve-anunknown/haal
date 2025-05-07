@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>src/GHC/Float_LHAssumptions.hs</title>
+</head>
+<head>
+<link type='text/css' rel='stylesheet' href='syntax.css' />
+</head>
+
+<body>
+<hr>
+Put mouse over identifiers to see inferred types
+<pre><span class=hs-linenum> 1: </span><a class=annot href="#"><span class=annottext>{VV##178 : GHC.Types.Module | $k_##179}</span><span class='hs-comment'>{-# OPTIONS_GHC -fplugin=LiquidHaskellBoot #-}</span></a>
+<span class=hs-linenum> 2: </span><span class='hs-keyword'>module</span> <span class='hs-conid'>GHC.Float_LHAssumptions</span><span class='hs-layout'>(</span><span class='hs-conid'>Floating</span><span class='hs-layout'>(</span><span class='hs-keyglyph'>..</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum> 3: </span>
+<span class=hs-linenum> 4: </span><span class='hs-keyword'>{-@</span>
+<span class=hs-linenum> 5: </span><span class='hs-keyword'>class</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Real.Fractional</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>GHC.Float.Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum> 6: </span>  <span class='hs-conid'>GHC.Float.pi</span>       <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum> 7: </span>  <span class='hs-conid'>GHC.Float.exp</span>      <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| y &gt; 0}</span>
+<span class=hs-linenum> 8: </span>  <span class='hs-conid'>GHC.Float.log</span>      <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{x:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| x &gt; 0}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum> 9: </span>  <span class='hs-conid'>GHC.Float.sqrt</span>     <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{x:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| x &gt;= 0}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| y &gt;= 0}</span>
+<span class=hs-linenum>10: </span>  <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Float</span><span class='hs-varop'>.**</span><span class='hs-layout'>)</span>     <span class='hs-keyglyph'>::</span> <span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| x = 0 =&gt; y &gt;= 0}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>11: </span>  <span class='hs-conid'>GHC.Float.logBase</span>  <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{b:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| b &gt; 0 &amp;&amp; b /= 1}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{x:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| x &gt; 0}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>12: </span>  <span class='hs-conid'>GHC.Float.sin</span>      <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| -1 &lt;= y &amp;&amp; y &lt;= 1}</span>
+<span class=hs-linenum>13: </span>  <span class='hs-conid'>GHC.Float.cos</span>      <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| -1 &lt;= y &amp;&amp; y &lt;= 1}</span>
+<span class=hs-linenum>14: </span>  <span class='hs-conid'>GHC.Float.tan</span>      <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>15: </span>  <span class='hs-conid'>GHC.Float.asin</span>     <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{x:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| -1 &lt;= x &amp;&amp; x &lt;= 1}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>16: </span>  <span class='hs-conid'>GHC.Float.acos</span>     <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{x:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| -1 &lt;= x &amp;&amp; x &lt;= 1}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>17: </span>  <span class='hs-conid'>GHC.Float.atan</span>     <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>18: </span>  <span class='hs-conid'>GHC.Float.sinh</span>     <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>19: </span>  <span class='hs-conid'>GHC.Float.cosh</span>     <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| y &gt;= 1}</span>
+<span class=hs-linenum>20: </span>  <span class='hs-conid'>GHC.Float.tanh</span>     <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| -1 &lt; y &amp;&amp; y &lt; 1}</span>
+<span class=hs-linenum>21: </span>  <span class='hs-conid'>GHC.Float.asinh</span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>22: </span>  <span class='hs-conid'>GHC.Float.acosh</span>    <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| y &gt;= 1}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>23: </span>  <span class='hs-conid'>GHC.Float.atanh</span>    <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{y:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| -1 &lt; y &amp;&amp; y &lt; 1}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>24: </span>  <span class='hs-conid'>GHC.Float.log1p</span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>25: </span>  <span class='hs-conid'>GHC.Float.expm1</span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>26: </span>  <span class='hs-conid'>GHC.Float.log1pexp</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>27: </span>  <span class='hs-conid'>GHC.Float.log1mexp</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>28: </span><span class='hs-keyword'>@-}</span>
+</pre>
+</body>
+</html>

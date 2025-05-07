@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>src/Data/ByteString/Lazy/Char8_LHAssumptions.hs</title>
+</head>
+<head>
+<link type='text/css' rel='stylesheet' href='syntax.css' />
+</head>
+
+<body>
+<hr>
+Put mouse over identifiers to see inferred types
+<pre><span class=hs-linenum>  1: </span><a class=annot href="#"><span class=annottext>GHC.Types.Module</span><span class='hs-comment'>{-# OPTIONS_GHC -fplugin=LiquidHaskellBoot #-}</span></a>
+<span class=hs-linenum>  2: </span><span class='hs-comment'>{-# OPTIONS_GHC -Wno-unused-imports #-}</span>
+<span class=hs-linenum>  3: </span><span class='hs-keyword'>module</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8_LHAssumptions</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum>  4: </span>
+<span class=hs-linenum>  5: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>Data.ByteString.Lazy</span> <span class='hs-varid'>hiding</span> <span class='hs-layout'>(</span><span class='hs-varid'>hGetNonBlocking</span><span class='hs-layout'>,</span> <span class='hs-varid'>scanl</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>  6: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8</span>
+<span class=hs-linenum>  7: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>Data.ByteString.Lazy_LHAssumptions</span><span class='hs-conid'>()</span>
+<span class=hs-linenum>  8: </span>
+<span class=hs-linenum>  9: </span><span class='hs-keyword'>{-@</span>
+<span class=hs-linenum> 10: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.last</span> <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen bs }</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 11: </span>
+<span class=hs-linenum> 12: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.singleton</span>
+<span class=hs-linenum> 13: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen bs == 1 }</span>
+<span class=hs-linenum> 14: </span>
+<span class=hs-linenum> 15: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.pack</span>
+<span class=hs-linenum> 16: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>w8s</span> <span class='hs-conop'>:</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum> 17: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen bs == len w8s }</span>
+<span class=hs-linenum> 18: </span>
+<span class=hs-linenum> 19: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.unpack</span>
+<span class=hs-linenum> 20: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 21: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ w8s :</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-keyglyph'>]</span> <span class='hs-keyword'>| len w8s == bllen bs }</span>
+<span class=hs-linenum> 22: </span>
+<span class=hs-linenum> 23: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.cons</span>
+<span class=hs-linenum> 24: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 25: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 26: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i + 1 }</span>
+<span class=hs-linenum> 27: </span>
+<span class=hs-linenum> 28: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.snoc</span>
+<span class=hs-linenum> 29: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 30: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 31: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i + 1 }</span>
+<span class=hs-linenum> 32: </span>
+<span class=hs-linenum> 33: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.head</span>
+<span class=hs-linenum> 34: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen bs }</span>
+<span class=hs-linenum> 35: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 36: </span>
+<span class=hs-linenum> 37: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.uncons</span>
+<span class=hs-linenum> 38: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 39: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>,</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i - 1 }</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 40: </span>
+<span class=hs-linenum> 41: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.unsnoc</span>
+<span class=hs-linenum> 42: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 43: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-layout'>(</span><span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i - 1 }</span><span class='hs-layout'>,</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 44: </span>
+<span class=hs-linenum> 45: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.map</span>
+<span class=hs-linenum> 46: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 47: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 48: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i }</span>
+<span class=hs-linenum> 49: </span>
+<span class=hs-linenum> 50: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.intersperse</span>
+<span class=hs-linenum> 51: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 52: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 53: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| (bllen i == 0 &lt;=&gt; bllen o == 0) &amp;&amp; (1 &lt;= bllen i &lt;=&gt; bllen o == 2 * bllen i - 1) }</span>
+<span class=hs-linenum> 54: </span>
+<span class=hs-linenum> 55: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.foldl1</span>
+<span class=hs-linenum> 56: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 57: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen bs }</span>
+<span class=hs-linenum> 58: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 59: </span>
+<span class=hs-linenum> 60: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.foldl1'</span>
+<span class=hs-linenum> 61: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 62: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen bs }</span>
+<span class=hs-linenum> 63: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 64: </span>
+<span class=hs-linenum> 65: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.foldr1</span>
+<span class=hs-linenum> 66: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 67: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen bs }</span>
+<span class=hs-linenum> 68: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 69: </span>
+<span class=hs-linenum> 70: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.concatMap</span>
+<span class=hs-linenum> 71: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 72: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 73: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen i == 0 ==&gt; bllen o == 0 }</span>
+<span class=hs-linenum> 74: </span>
+<span class=hs-linenum> 75: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.any</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 76: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 77: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ b :</span> <span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| bllen bs == 0 ==&gt; not b }</span>
+<span class=hs-linenum> 78: </span>
+<span class=hs-linenum> 79: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.all</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 80: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 81: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ b :</span> <span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| bllen bs == 0 ==&gt; b }</span>
+<span class=hs-linenum> 82: </span>
+<span class=hs-linenum> 83: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.maximum</span> <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen bs }</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 84: </span>
+<span class=hs-linenum> 85: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.minimum</span> <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen bs }</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 86: </span>
+<span class=hs-linenum> 87: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.scanl</span>
+<span class=hs-linenum> 88: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 89: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum> 90: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum> 91: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i }</span>
+<span class=hs-linenum> 92: </span>
+<span class=hs-linenum> 93: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.scanl1</span>
+<span class=hs-linenum> 94: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum> 95: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-keyword'>{ i :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen i }</span>
+<span class=hs-linenum> 96: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i }</span>
+<span class=hs-linenum> 97: </span>
+<span class=hs-linenum> 98: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.scanr</span>
+<span class=hs-linenum> 99: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>100: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>101: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>102: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i }</span>
+<span class=hs-linenum>103: </span>
+<span class=hs-linenum>104: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.scanr1</span>
+<span class=hs-linenum>105: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>106: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-keyword'>{ i :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen i }</span>
+<span class=hs-linenum>107: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i }</span>
+<span class=hs-linenum>108: </span>
+<span class=hs-linenum>109: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.mapAccumL</span>
+<span class=hs-linenum>110: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-varid'>acc</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>acc</span><span class='hs-layout'>,</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>111: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>acc</span>
+<span class=hs-linenum>112: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>113: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>acc</span><span class='hs-layout'>,</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i }</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>114: </span>
+<span class=hs-linenum>115: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.mapAccumR</span>
+<span class=hs-linenum>116: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-varid'>acc</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>acc</span><span class='hs-layout'>,</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>117: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>acc</span>
+<span class=hs-linenum>118: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>119: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>acc</span><span class='hs-layout'>,</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o == bllen i }</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>120: </span>
+<span class=hs-linenum>121: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.replicate</span>
+<span class=hs-linenum>122: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>n</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Int64</span>
+<span class=hs-linenum>123: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>124: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ bs :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen bs == n }</span>
+<span class=hs-linenum>125: </span>
+<span class=hs-linenum>126: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.takeWhile</span>
+<span class=hs-linenum>127: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>128: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>129: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt;= bllen i }</span>
+<span class=hs-linenum>130: </span>
+<span class=hs-linenum>131: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.dropWhile</span>
+<span class=hs-linenum>132: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>133: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>134: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt;= bllen i }</span>
+<span class=hs-linenum>135: </span>
+<span class=hs-linenum>136: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.span</span>
+<span class=hs-linenum>137: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>138: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>139: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span> <span class='hs-keyword'>{ l :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen l &lt;= bllen i }</span>
+<span class=hs-linenum>140: </span>       <span class='hs-layout'>,</span> <span class='hs-keyword'>{ r :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen r &lt;= bllen i }</span>
+<span class=hs-linenum>141: </span>       <span class='hs-layout'>)</span>
+<span class=hs-linenum>142: </span>
+<span class=hs-linenum>143: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.break</span>
+<span class=hs-linenum>144: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>145: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>146: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span> <span class='hs-keyword'>{ l :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen l &lt;= bllen i }</span>
+<span class=hs-linenum>147: </span>       <span class='hs-layout'>,</span> <span class='hs-keyword'>{ r :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen r &lt;= bllen i }</span>
+<span class=hs-linenum>148: </span>       <span class='hs-layout'>)</span>
+<span class=hs-linenum>149: </span>
+<span class=hs-linenum>150: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.groupBy</span>
+<span class=hs-linenum>151: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>152: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>153: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| 1 &lt;= bllen o &amp;&amp; bllen o &lt;= bllen i }</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>154: </span>
+<span class=hs-linenum>155: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.split</span>
+<span class=hs-linenum>156: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>157: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>158: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt;= bllen i }</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>159: </span>
+<span class=hs-linenum>160: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.splitWith</span>
+<span class=hs-linenum>161: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>162: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>163: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt;= bllen i }</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>164: </span>
+<span class=hs-linenum>165: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.lines</span>
+<span class=hs-linenum>166: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>167: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt;= bllen i }</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>168: </span>
+<span class=hs-linenum>169: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.words</span>
+<span class=hs-linenum>170: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>171: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt;= bllen i }</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>172: </span>
+<span class=hs-linenum>173: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.unlines</span>
+<span class=hs-linenum>174: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>is</span> <span class='hs-conop'>:</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Data.ByteString.Lazy.ByteString</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>175: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| (len is == 0 &lt;=&gt; bllen o == 0) &amp;&amp; bllen o &gt;= len is }</span>
+<span class=hs-linenum>176: </span>
+<span class=hs-linenum>177: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.unwords</span>
+<span class=hs-linenum>178: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>is</span> <span class='hs-conop'>:</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Data.ByteString.Lazy.ByteString</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>179: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| (len is == 0 ==&gt; bllen o == 0) &amp;&amp; (1 &lt;= len is ==&gt; bllen o &gt;= len is - 1) }</span>
+<span class=hs-linenum>180: </span>
+<span class=hs-linenum>181: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.elem</span>
+<span class=hs-linenum>182: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>183: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>184: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ b :</span> <span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| bllen bs == 0 ==&gt; not b }</span>
+<span class=hs-linenum>185: </span>
+<span class=hs-linenum>186: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.notElem</span>
+<span class=hs-linenum>187: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>188: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>189: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ b :</span> <span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| bllen bs == 0 ==&gt; b }</span>
+<span class=hs-linenum>190: </span>
+<span class=hs-linenum>191: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.find</span>
+<span class=hs-linenum>192: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>193: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>194: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-keyword'>{ w8 :</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyword'>| bllen bs /= 0 }</span>
+<span class=hs-linenum>195: </span>
+<span class=hs-linenum>196: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.filter</span>
+<span class=hs-linenum>197: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>198: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>199: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt;= bllen i }</span>
+<span class=hs-linenum>200: </span>
+<span class=hs-linenum>201: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.index</span>
+<span class=hs-linenum>202: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>203: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ n :</span> <span class='hs-conid'>Int64</span> <span class='hs-keyword'>| 0 &lt;= n &amp;&amp; n &lt; bllen bs }</span>
+<span class=hs-linenum>204: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>205: </span>
+<span class=hs-linenum>206: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.elemIndex</span>
+<span class=hs-linenum>207: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>208: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>209: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-keyword'>{ n :</span> <span class='hs-conid'>Int64</span> <span class='hs-keyword'>| 0 &lt;= n &amp;&amp; n &lt; bllen bs }</span>
+<span class=hs-linenum>210: </span>
+<span class=hs-linenum>211: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.elemIndices</span>
+<span class=hs-linenum>212: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>213: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>214: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyword'>{ n :</span> <span class='hs-conid'>Int64</span> <span class='hs-keyword'>| 0 &lt;= n &amp;&amp; n &lt; bllen bs }</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>215: </span>
+<span class=hs-linenum>216: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.findIndex</span>
+<span class=hs-linenum>217: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>218: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>219: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-keyword'>{ n :</span> <span class='hs-conid'>Int64</span> <span class='hs-keyword'>| 0 &lt;= n &amp;&amp; n &lt; bllen bs }</span>
+<span class=hs-linenum>220: </span>
+<span class=hs-linenum>221: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.findIndices</span>
+<span class=hs-linenum>222: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Bool</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>223: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>224: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyword'>{ n :</span> <span class='hs-conid'>Int64</span> <span class='hs-keyword'>| 0 &lt;= n &amp;&amp; n &lt; bllen bs }</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>225: </span>
+<span class=hs-linenum>226: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.count</span>
+<span class=hs-linenum>227: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Types.Char</span>
+<span class=hs-linenum>228: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>bs</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>229: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ n :</span> <span class='hs-conid'>Int64</span> <span class='hs-keyword'>| 0 &lt;= n &amp;&amp; n &lt; bllen bs }</span>
+<span class=hs-linenum>230: </span>
+<span class=hs-linenum>231: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.zip</span>
+<span class=hs-linenum>232: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>l</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>233: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>r</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>234: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-keyglyph'>[</span><span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>,</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span><span class='hs-keyglyph'>]</span> <span class='hs-keyword'>| len o &lt;= bllen l &amp;&amp; len o &lt;= bllen r }</span>
+<span class=hs-linenum>235: </span>
+<span class=hs-linenum>236: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.zipWith</span>
+<span class=hs-linenum>237: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>238: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>l</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>239: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>r</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>240: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{ o :</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>a</span><span class='hs-keyglyph'>]</span> <span class='hs-keyword'>| len o &lt;= bllen l &amp;&amp; len o &lt;= bllen r }</span>
+<span class=hs-linenum>241: </span>
+<span class=hs-linenum>242: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.Char8.unzip</span>
+<span class=hs-linenum>243: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-keyglyph'>[</span><span class='hs-layout'>(</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>,</span> <span class='hs-conid'>GHC.Types.Char</span><span class='hs-layout'>)</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>244: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span> <span class='hs-keyword'>{ l :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen l == len i }</span>
+<span class=hs-linenum>245: </span>       <span class='hs-layout'>,</span> <span class='hs-keyword'>{ r :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen r == len i }</span>
+<span class=hs-linenum>246: </span>       <span class='hs-layout'>)</span>
+<span class=hs-linenum>247: </span>
+<span class=hs-linenum>248: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.ReadInt.readInt</span>
+<span class=hs-linenum>249: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>250: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-keyword'>{ p :</span> <span class='hs-layout'>(</span><span class='hs-conid'>Int</span><span class='hs-layout'>,</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt; bllen i}</span><span class='hs-layout'>)</span> <span class='hs-keyword'>| bllen i /= 0 }</span>
+<span class=hs-linenum>251: </span>
+<span class=hs-linenum>252: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.ByteString.Lazy.ReadNat.readInteger</span>
+<span class=hs-linenum>253: </span>    <span class='hs-keyglyph'>::</span> <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span>
+<span class=hs-linenum>254: </span>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-keyword'>{ p :</span> <span class='hs-layout'>(</span><span class='hs-conid'>Integer</span><span class='hs-layout'>,</span> <span class='hs-keyword'>{ o :</span> <span class='hs-conid'>Data.ByteString.Lazy.ByteString</span> <span class='hs-keyword'>| bllen o &lt; bllen i}</span><span class='hs-layout'>)</span> <span class='hs-keyword'>| bllen i /= 0 }</span>
+<span class=hs-linenum>255: </span>
+<span class=hs-linenum>256: </span><span class='hs-keyword'>@-}</span>
+</pre>
+</body>
+</html>

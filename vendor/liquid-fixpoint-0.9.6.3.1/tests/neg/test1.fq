@@ -1,0 +1,29 @@
+
+// This qualifier saves the day; solve constraints WITHOUT IT
+qualif Zog(v:a) : (10 <= v)
+
+bind 0 x : {v : int | v = 9}
+bind 1 y : {v : int | v = 20}
+bind 2 a : {v : int | $k0    }
+      
+constraint:
+  env [0]
+  lhs {v : int | v = x}
+  rhs {v : int | $k0   }
+  id 1 tag []
+
+constraint:
+  env [1]
+  lhs {v : int | v = y}
+  rhs {v : int | $k0   }
+  id 2 tag []
+
+constraint:
+  env [2]
+  lhs {v : int | v = a  }
+  rhs {v : int | 10 <= v}
+  id 3 tag []
+
+wf:
+  env [ ]
+  reft {v : int | $k0}

@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>src/GHC/Types_LHAssumptions.hs</title>
+</head>
+<head>
+<link type='text/css' rel='stylesheet' href='syntax.css' />
+</head>
+
+<body>
+<hr>
+Put mouse over identifiers to see inferred types
+<pre><span class=hs-linenum> 1: </span><a class=annot href="#"><span class=annottext>{VV##227 : GHC.Types.Module | $k_##228}</span><span class='hs-comment'>{-# OPTIONS_GHC -fplugin=LiquidHaskellBoot #-}</span></a>
+<span class=hs-linenum> 2: </span><span class='hs-comment'>{-# LANGUAGE MagicHash #-}</span>
+<span class=hs-linenum> 3: </span><span class='hs-comment'>{-# OPTIONS_GHC -Wno-missing-signatures #-}</span>
+<span class=hs-linenum> 4: </span><span class='hs-keyword'>module</span> <span class='hs-conid'>GHC.Types_LHAssumptions</span><span class='hs-conid'>()</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum> 5: </span>
+<span class=hs-linenum> 6: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.Types</span>
+<span class=hs-linenum> 7: </span>
+<span class=hs-linenum> 8: </span><span class='hs-comment'>-- This definition is needed to make the listed data constructors</span>
+<span class=hs-linenum> 9: </span><span class='hs-comment'>-- visible to LH</span>
+<span class=hs-linenum>10: </span><a class=annot href="#"><span class=annottext>{VV##124 : (lq_tmp$x##96:{VV##97 : GHC.Prim.Double# | $k_##98} -&gt; {VV##99 : GHC.Types.Double | $k_##100}, lq_tmp$x##101:{VV##102 : GHC.Prim.Float# | $k_##103} -&gt; {VV##104 : GHC.Types.Float | $k_##105}, lq_tmp$x##106:{VV##107 : GHC.Prim.Word# | $k_##108} -&gt; {VV##109 : GHC.Types.Word | $k_##110})&lt;\lq_tmp$x##111 VV -&gt; lq_tmp$x##112:{VV##113 : GHC.Prim.Float# | $k_##114} -&gt; {VV##115 : GHC.Types.Float | $k_##116}, \lq_tmp$x##117 lq_tmp$x##118 VV -&gt; lq_tmp$x##119:{VV##120 : GHC.Prim.Word# | $k_##121} -&gt; {VV##122 : GHC.Types.Word | $k_##123}&gt; | $k_##125}</span><span class='hs-sel'>_f</span></a> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><a class=annot href="#"><span class=annottext>{lq_tmp$x##130 : GHC.Types.Double | lq_tmp$x##130 == (ds_d2FV : real)}</span><span class='hs-conid'>D</span></a><span class='hs-cpp'>#</span><span class='hs-layout'>,</span> <a class=annot href="#"><span class=annottext>{lq_tmp$x##139 : GHC.Types.Float | lq_tmp$x##139 == (ds_d2FU : real)}</span><span class='hs-conid'>F</span></a><span class='hs-cpp'>#</span><span class='hs-layout'>,</span> <a class=annot href="#"><span class=annottext>{lq_tmp$x##148 : GHC.Types.Word | lq_tmp$x##148 == ds_d2FT}</span><span class='hs-conid'>W</span></a><span class='hs-cpp'>#</span><span class='hs-layout'>)</span>
+<span class=hs-linenum>11: </span>
+<span class=hs-linenum>12: </span><span class='hs-keyword'>{-@</span>
+<span class=hs-linenum>13: </span><span class='hs-varop'>//</span>  <span class='hs-conid'>Boxed</span> <span class='hs-varid'>types</span>
+<span class=hs-linenum>14: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Types.Double</span>  <span class='hs-keyword'>as</span> <span class='hs-varid'>real</span>
+<span class=hs-linenum>15: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Prim.Double</span><span class='hs-cpp'>#</span>  <span class='hs-keyword'>as</span> <span class='hs-varid'>real</span>
+<span class=hs-linenum>16: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Types.Float</span>   <span class='hs-keyword'>as</span> <span class='hs-varid'>real</span>
+<span class=hs-linenum>17: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Prim.Float</span><span class='hs-cpp'>#</span>   <span class='hs-keyword'>as</span> <span class='hs-varid'>real</span>
+<span class=hs-linenum>18: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Types.Word</span>    <span class='hs-keyword'>as</span> <span class='hs-varid'>int</span>
+<span class=hs-linenum>19: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Prim.Word</span><span class='hs-cpp'>#</span>    <span class='hs-keyword'>as</span> <span class='hs-varid'>int</span>
+<span class=hs-linenum>20: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Prim.Word64</span><span class='hs-cpp'>#</span>  <span class='hs-keyword'>as</span> <span class='hs-varid'>int</span>
+<span class=hs-linenum>21: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Types.Int</span>     <span class='hs-keyword'>as</span> <span class='hs-varid'>int</span>
+<span class=hs-linenum>22: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Prim.Int</span><span class='hs-cpp'>#</span>     <span class='hs-keyword'>as</span> <span class='hs-varid'>int</span>
+<span class=hs-linenum>23: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Types.Bool</span>    <span class='hs-keyword'>as</span> <span class='hs-varid'>bool</span>
+<span class=hs-linenum>24: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Types.Char</span>    <span class='hs-keyword'>as</span> <span class='hs-conid'>Char</span>
+<span class=hs-linenum>25: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Prim.Char</span><span class='hs-cpp'>#</span>    <span class='hs-keyword'>as</span> <span class='hs-conid'>Char</span>
+<span class=hs-linenum>26: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Prim.Addr</span><span class='hs-cpp'>#</span>    <span class='hs-keyword'>as</span> <span class='hs-conid'>Str</span>
+<span class=hs-linenum>27: </span>
+<span class=hs-linenum>28: </span><span class='hs-definition'>embed</span> <span class='hs-conid'>GHC.Num.Integer.Integer</span> <span class='hs-keyword'>as</span> <span class='hs-varid'>int</span>
+<span class=hs-linenum>29: </span>
+<span class=hs-linenum>30: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.True</span>    <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{v:</span><span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| v     }</span>
+<span class=hs-linenum>31: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.False</span>   <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{v:</span><span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| (~ v) }</span>
+<span class=hs-linenum>32: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.isTrue</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>n</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{v:</span><span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| (n = 1 &lt;=&gt; v)}</span>
+<span class=hs-linenum>33: </span>
+<span class=hs-linenum>34: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.D</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-conid'>GHC.Prim.Double</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Double</span> <span class='hs-keyword'>| v = (x :: real) }</span>
+<span class=hs-linenum>35: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.F</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-conid'>GHC.Prim.Float</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Float</span> <span class='hs-keyword'>| v = (x :: real) }</span>
+<span class=hs-linenum>36: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.I</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-conid'>GHC.Prim.Int</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Int</span> <span class='hs-keyword'>| v = (x :: int) }</span>
+<span class=hs-linenum>37: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.C</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-conid'>GHC.Prim.Char</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Char</span> <span class='hs-keyword'>| v = (x :: Char) }</span>
+<span class=hs-linenum>38: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>GHC.Types.W</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>w</span><span class='hs-conop'>:</span><span class='hs-conid'>GHC.Prim.Word</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{v:</span><span class='hs-conid'>GHC.Types.Word</span> <span class='hs-keyword'>| v == w }</span>
+<span class=hs-linenum>39: </span>
+<span class=hs-linenum>40: </span><span class='hs-definition'>measure</span> <span class='hs-varid'>addrLen</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Prim.Addr</span><span class='hs-cpp'>#</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Int</span>
+<span class=hs-linenum>41: </span>
+<span class=hs-linenum>42: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>GeInt</span> <span class='hs-conid'>N</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Int</span> <span class='hs-keyword'>| v &gt;= N }</span>
+<span class=hs-linenum>43: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>LeInt</span> <span class='hs-conid'>N</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Int</span> <span class='hs-keyword'>| v &lt;= N }</span>
+<span class=hs-linenum>44: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>Nat</span>     <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Int</span> <span class='hs-keyword'>| v &gt;= 0 }</span>
+<span class=hs-linenum>45: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>Even</span>    <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Int</span> <span class='hs-keyword'>| (v mod 2) = 0 }</span>
+<span class=hs-linenum>46: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>Odd</span>     <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Int</span> <span class='hs-keyword'>| (v mod 2) = 1 }</span>
+<span class=hs-linenum>47: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>BNat</span> <span class='hs-conid'>N</span>  <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>Nat</span>           <span class='hs-keyword'>| v &lt;= N }</span>
+<span class=hs-linenum>48: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>TT</span>      <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| v}</span>
+<span class=hs-linenum>49: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>FF</span>      <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>{v:</span> <span class='hs-conid'>GHC.Types.Bool</span> <span class='hs-keyword'>| not v}</span>
+<span class=hs-linenum>50: </span><span class='hs-keyword'>type</span> <span class='hs-conid'>String</span>  <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>51: </span>
+<span class=hs-linenum>52: </span><span class='hs-keyword'>class</span> <span class='hs-varid'>measure</span> <span class='hs-varid'>len</span> <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>forall</span> <span class='hs-varid'>f</span> <span class='hs-varid'>a</span><span class='hs-varop'>.</span> <span class='hs-varid'>f</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Int</span>
+<span class=hs-linenum>53: </span><span class='hs-keyword'>@-}</span>
+</pre>
+</body>
+</html>

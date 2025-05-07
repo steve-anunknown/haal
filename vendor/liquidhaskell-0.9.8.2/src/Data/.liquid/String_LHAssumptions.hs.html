@@ -1,0 +1,30 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>src/Data/String_LHAssumptions.hs</title>
+</head>
+<head>
+<link type='text/css' rel='stylesheet' href='syntax.css' />
+</head>
+
+<body>
+<hr>
+Put mouse over identifiers to see inferred types
+<pre><span class=hs-linenum> 1: </span><a class=annot href="#"><span class=annottext>GHC.Types.Module</span><span class='hs-comment'>{-# OPTIONS_GHC -fplugin=LiquidHaskellBoot #-}</span></a>
+<span class=hs-linenum> 2: </span><span class='hs-comment'>{-# OPTIONS_GHC -Wno-unused-imports #-}</span>
+<span class=hs-linenum> 3: </span><span class='hs-keyword'>module</span> <span class='hs-conid'>Data.String_LHAssumptions</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum> 4: </span>
+<span class=hs-linenum> 5: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>Data.String</span>
+<span class=hs-linenum> 6: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.Types_LHAssumptions</span><span class='hs-conid'>()</span>
+<span class=hs-linenum> 7: </span>
+<span class=hs-linenum> 8: </span><span class='hs-keyword'>{-@</span>
+<span class=hs-linenum> 9: </span><span class='hs-definition'>measure</span> <span class='hs-varid'>stringlen</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>GHC.Types.Int</span>
+<span class=hs-linenum>10: </span>
+<span class=hs-linenum>11: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.String.fromString</span>
+<span class=hs-linenum>12: </span>    <span class='hs-keyglyph'>::</span>  <span class='hs-keyword'>forall</span> <span class='hs-varid'>a</span><span class='hs-varop'>.</span> <span class='hs-conid'>Data.String.IsString</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>13: </span>    <span class='hs-keyglyph'>=&gt;</span>  <span class='hs-varid'>i</span> <span class='hs-conop'>:</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>GHC.Types.Char</span><span class='hs-keyglyph'>]</span>
+<span class=hs-linenum>14: </span>    <span class='hs-keyglyph'>-&gt;</span>  <span class='hs-layout'>{</span> <span class='hs-varid'>o</span> <span class='hs-conop'>:</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>|</span> <span class='hs-varid'>i</span> <span class='hs-varop'>~~</span> <span class='hs-varid'>o</span> <span class='hs-varop'>&amp;&amp;</span> <span class='hs-varid'>len</span> <span class='hs-varid'>i</span> <span class='hs-varop'>==</span> <span class='hs-varid'>stringlen</span> <span class='hs-varid'>o</span> <span class='hs-layout'>}</span>
+<span class=hs-linenum>15: </span><span class='hs-keyword'>@-}</span>
+</pre>
+</body>
+</html>

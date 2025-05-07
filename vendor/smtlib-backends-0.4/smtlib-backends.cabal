@@ -1,0 +1,41 @@
+name:               smtlib-backends
+version:            0.4
+synopsis:
+  Low-level functions for SMT-LIB-based interaction with SMT solvers.
+
+description:
+  This library provides an extensible interface for interacting with SMT solvers
+  using SMT-LIB. The smtlib-backends-process package provides a backend that
+  runs solvers as external processes, and the smtlib-backends-z3 package
+  provides a backend that uses inlined calls to Z3's C API.
+
+license:            MIT
+license-file:       LICENSE
+author:             Quentin Aristote
+maintainer:
+  facundo.dominguez@tweag.io, gabriel.hondet@tweag.io, mathieu.montin@tweag.io
+
+build-type:         Simple
+category:           SMT
+cabal-version:      >=1.10
+extra-source-files: CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/tweag/smtlib-backends
+
+source-repository this
+  type:     git
+  location: https://github.com/tweag/smtlib-backends
+  tag:      0.3
+
+library
+  hs-source-dirs:   src
+  ghc-options:      -Wall -Wunused-packages
+  exposed-modules:  SMTLIB.Backends
+  other-extensions: Safe
+  build-depends:
+      base        >=4.14    && <4.20
+    , bytestring  >=0.10.12 && <0.13
+
+  default-language: Haskell2010

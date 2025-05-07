@@ -1,0 +1,90 @@
+cabal-version:      2.4
+name:               liquidhaskell
+version:            0.9.8.2
+synopsis:           Liquid Types for Haskell
+description:        Liquid Types for Haskell.
+license:            BSD-3-Clause
+license-file:       LICENSE
+copyright:          2010-19 Ranjit Jhala & Niki Vazou & Eric L. Seidel, University of California, San Diego.
+author:             Ranjit Jhala, Niki Vazou, Eric Seidel
+maintainer:         Ranjit Jhala <jhala@cs.ucsd.edu>
+category:           Language
+homepage:           https://github.com/ucsd-progsys/liquidhaskell
+build-type:         Custom
+tested-with:        GHC == 9.8.2
+extra-doc-files: CHANGES.md
+                 README.md
+
+source-repository head
+  type:     git
+  location: https://github.com/ucsd-progsys/liquidhaskell/
+
+flag devel
+  default:     False
+  manual:      True
+  description: Enable more warnings and fail compilation when warnings occur.
+               Turn this flag on in CI.
+
+custom-setup
+  setup-depends: Cabal<4, base<5, liquidhaskell-boot
+
+library
+  exposed-modules:    LiquidHaskell
+                      GHC.Classes_LHAssumptions
+                      GHC.CString_LHAssumptions
+                      GHC.Types_LHAssumptions
+
+                      Data.Bits_LHAssumptions
+                      Data.Either_LHAssumptions
+                      Data.Foldable_LHAssumptions
+                      Data.Int_LHAssumptions
+                      Data.Maybe_LHAssumptions
+                      Data.String_LHAssumptions
+                      Data.Tuple_LHAssumptions
+                      Data.Word_LHAssumptions
+                      Foreign.C.String_LHAssumptions
+                      Foreign.C.Types_LHAssumptions
+                      Foreign.Concurrent_LHAssumptions
+                      Foreign.Marshal.Alloc_LHAssumptions
+                      Foreign.ForeignPtr_LHAssumptions
+                      Foreign.Ptr_LHAssumptions
+                      Foreign.Storable_LHAssumptions
+                      GHC.Base_LHAssumptions
+                      GHC.Exts_LHAssumptions
+                      GHC.Float_LHAssumptions
+                      GHC.ForeignPtr_LHAssumptions
+                      GHC.Int_LHAssumptions
+                      GHC.IO.Handle_LHAssumptions
+                      GHC.List_LHAssumptions
+                      GHC.Num_LHAssumptions
+                      GHC.Num.Integer_LHAssumptions
+                      GHC.Maybe_LHAssumptions
+                      GHC.Ptr_LHAssumptions
+                      GHC.Real_LHAssumptions
+                      GHC.Word_LHAssumptions
+                      Liquid.Prelude.Real_LHAssumptions
+                      Liquid.Prelude.Totality_LHAssumptions
+                      Prelude_LHAssumptions
+
+                      Data.ByteString_LHAssumptions
+                      Data.ByteString.Char8_LHAssumptions
+                      Data.ByteString.Lazy.Char8_LHAssumptions
+                      Data.ByteString.Lazy_LHAssumptions
+                      Data.ByteString.Short_LHAssumptions
+                      Data.ByteString.Unsafe_LHAssumptions
+
+                      Data.Set_LHAssumptions
+
+  hs-source-dirs:     src
+
+  build-depends:      base                 >= 4.11.1.0 && < 5,
+                      liquidhaskell-boot   == 0.9.8.2,
+                      bytestring           == 0.12.1.0,
+                      containers           == 0.6.8,
+                      ghc-bignum,
+                      ghc-prim
+  default-language:   Haskell98
+  ghc-options:        -Wall
+
+  if flag(devel)
+    ghc-options:      -Werror

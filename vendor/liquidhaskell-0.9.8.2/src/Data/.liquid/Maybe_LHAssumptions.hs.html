@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>src/Data/Maybe_LHAssumptions.hs</title>
+</head>
+<head>
+<link type='text/css' rel='stylesheet' href='syntax.css' />
+</head>
+
+<body>
+<hr>
+Put mouse over identifiers to see inferred types
+<pre><span class=hs-linenum> 1: </span><a class=annot href="#"><span class=annottext>GHC.Types.Module</span><span class='hs-comment'>{-# OPTIONS_GHC -fplugin=LiquidHaskellBoot #-}</span></a>
+<span class=hs-linenum> 2: </span><span class='hs-comment'>{-# OPTIONS_GHC -Wno-unused-imports #-}</span>
+<span class=hs-linenum> 3: </span><span class='hs-keyword'>module</span> <span class='hs-conid'>Data.Maybe_LHAssumptions</span> <span class='hs-keyword'>where</span>
+<span class=hs-linenum> 4: </span>
+<span class=hs-linenum> 5: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC.Types_LHAssumptions</span><span class='hs-conid'>()</span>
+<span class=hs-linenum> 6: </span><span class='hs-keyword'>import</span> <span class='hs-conid'>Data.Maybe</span>
+<span class=hs-linenum> 7: </span>
+<span class=hs-linenum> 8: </span><span class='hs-keyword'>{-@</span>
+<span class=hs-linenum> 9: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.Maybe.maybe</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>v</span><span class='hs-conop'>:</span><span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>u</span><span class='hs-conop'>:</span><span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Maybe</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{w:</span><span class='hs-definition'>b</span> <span class='hs-keyword'>| not (isJust u) =&gt; w == v}</span>
+<span class=hs-linenum>10: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.Maybe.isNothing</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>v</span><span class='hs-conop'>:</span><span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Maybe</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{b:</span><span class='hs-conid'>Bool</span> <span class='hs-keyword'>| not (isJust v) == b}</span>
+<span class=hs-linenum>11: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.Maybe.fromMaybe</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>v</span><span class='hs-conop'>:</span><span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>u</span><span class='hs-conop'>:</span><span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Maybe</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{x:</span><span class='hs-definition'>a</span> <span class='hs-keyword'>| not (isJust u) =&gt; x == v}</span>
+<span class=hs-linenum>12: </span>
+<span class=hs-linenum>13: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.Maybe.isJust</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>v</span><span class='hs-conop'>:</span><span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Maybe</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyword'>{b:</span><span class='hs-conid'>Bool</span> <span class='hs-keyword'>| b == isJust v}</span>
+<span class=hs-linenum>14: </span><span class='hs-definition'>measure</span> <span class='hs-varid'>isJust</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Maybe.Maybe</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Bool</span>
+<span class=hs-linenum>15: </span>  <span class='hs-varid'>isJust</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Just</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>true</span>
+<span class=hs-linenum>16: </span>  <span class='hs-varid'>isJust</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Nothing</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>false</span>
+<span class=hs-linenum>17: </span>
+<span class=hs-linenum>18: </span><span class='hs-definition'>assume</span> <span class='hs-conid'>Data.Maybe.fromJust</span> <span class='hs-keyglyph'>::</span> <span class='hs-keyword'>{v:</span><span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Maybe</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>| isJust v}</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>19: </span><span class='hs-definition'>measure</span> <span class='hs-varid'>fromJust</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GHC.Maybe.Maybe</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<span class=hs-linenum>20: </span>  <span class='hs-varid'>fromJust</span> <span class='hs-layout'>(</span><span class='hs-conid'>GHC.Maybe.Just</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x</span>
+<span class=hs-linenum>21: </span><span class='hs-keyword'>@-}</span>
+</pre>
+</body>
+</html>

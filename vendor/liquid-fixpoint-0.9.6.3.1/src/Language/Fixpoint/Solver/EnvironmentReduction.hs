@@ -1,0 +1,783 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TupleSections #-}
+
+-- | Functions to make environments smaller
+module Language.Fixpoint.Solver.EnvironmentReduction
+  ( reduceEnvironments
+  , simplifyBindings
+  , dropLikelyIrrelevantBindings
+  , inlineInExpr
+  , inlineInSortedReft
+  , mergeDuplicatedBindings
+  , simplifyBooleanRefts
+  , undoANF
+  , undoANFAndVV
+
+  -- for use in tests
+  , undoANFSimplifyingWith
+  ) where
+
+import           Control.Monad (guard, mplus, msum)
+import           Data.Char (isUpper)
+import           Data.Hashable (Hashable)
+import           Data.HashMap.Lazy (HashMap)
+import qualified Data.HashMap.Lazy as HashMap
+import qualified Data.HashMap.Strict as HashMap.Strict
+import           Data.HashSet (HashSet)
+import qualified Data.HashSet as HashSet
+#if MIN_VERSION_base(4,20,0)
+import           Data.List (nub, partition)
+#else
+import           Data.List (foldl', nub, partition)
+#endif
+import           Data.Maybe (fromMaybe)
+import           Data.ShareMap (ShareMap)
+import qualified Data.ShareMap as ShareMap
+import qualified Data.Text as Text
+import           Language.Fixpoint.SortCheck (exprSortMaybe)
+import           Language.Fixpoint.Types.Config
+import           Language.Fixpoint.Types.Constraints
+import           Language.Fixpoint.Types.Environments
+  ( BindEnv
+  , BindId
+  , IBindEnv
+  , beBinds
+  , diffIBindEnv
+  , elemsIBindEnv
+  , emptyIBindEnv
+  , filterIBindEnv
+  , fromListIBindEnv
+  , insertsIBindEnv
+  , insertBindEnv
+  , lookupBindEnv
+  , memberIBindEnv
+  , unionIBindEnv
+  , unionsIBindEnv
+  )
+import           Language.Fixpoint.Types.Names
+  ( Symbol
+  , anfPrefix
+  , isPrefixOfSym
+  , prefixOfSym
+  , symbolText
+  , vvName
+  )
+import           Language.Fixpoint.Types.PrettyPrint
+import           Language.Fixpoint.Types.Refinements
+  ( Brel(..)
+  , Expr(..)
+  , KVar(..)
+  , SortedReft(..)
+  , Subst(..)
+  , pattern PTrue
+  , pattern PFalse
+  , dropECst
+  , expr
+  , exprKVars
+  , exprSymbolsSet
+  , mapPredReft
+  , pAnd
+  , reft
+  , reftBind
+  , reftPred
+  , sortedReftSymbols
+  , subst1
+  )
+import           Language.Fixpoint.Types.Sorts (boolSort, sortSymbols)
+import           Language.Fixpoint.Types.Visitor (mapExprOnExpr)
+import           Lens.Family2 (Lens', view, (%~))
+import           Lens.Family2.Stock (_2)
+import Language.Fixpoint.Misc (snd3)
+
+-- | Strips from all the constraint environments the bindings that are
+-- irrelevant for their respective constraints.
+--
+-- Environment reduction has the following stages.
+--
+-- Stage 1)
+-- Compute the binding dependencies of each constraint ignoring KVars.
+--
+-- A binding is a dependency of a constraint if it is mentioned in the lhs, or
+-- the rhs of the constraint, or in a binding that is a dependency, or in a
+-- @define@ or @match@ clause that is mentioned in the lhs or rhs or another
+-- binding dependency, or if it appears in the environment of the constraint and
+-- can't be discarded as trivial (see 'dropIrrelevantBindings').
+--
+-- Stage 2)
+-- Compute the binding dependencies of KVars.
+--
+-- A binding is a dependency of a KVar K1 if it is a dependency of a constraint
+-- in which the K1 appears, or if it is a dependency of another KVar appearing
+-- in a constraint in which K1 appears.
+--
+-- Stage 3)
+-- Drop from the environment of each constraint the bindings that aren't
+-- dependencies of the constraint, or that aren't dependencies of any KVar
+-- appearing in the constraint.
+--
+--
+-- Note on SInfo:
+--
+-- This function can be changed to work on 'SInfo' rather than 'FInfo'. However,
+-- this causes some tests to fail. At least:
+--
+--    liquid-fixpoint/tests/proof/rewrite.fq
+--    tests/import/client/ReflectClient4a.hs
+--
+-- lhs bindings are numbered with the highest numbers when FInfo
+-- is converted to SInfo. Environment reduction, however, rehashes
+-- the binding identifiers and lhss could end up with a lower numbering.
+-- For most of the tests, this doesn't seem to make a difference, but it
+-- causes the two tests referred above to fail.
+--
+-- See #473 for more discussion.
+--
+reduceEnvironments :: FInfo a -> FInfo a
+reduceEnvironments finfo =
+  let constraints = HashMap.Strict.toList $ cm finfo
+      aenvMap = axiomEnvSymbols (ae finfo)
+      reducedEnvs = map (reduceConstraintEnvironment (bs finfo) aenvMap) constraints
+      (cm', ws') = reduceWFConstraintEnvironments (bs finfo) (reducedEnvs, ws finfo)
+      bs' = (bs finfo) { beBinds = dropBindsMissingFrom (beBinds $ bs finfo) cm' ws' }
+
+   in finfo
+     { bs = bs'
+     , cm = HashMap.fromList cm'
+     , ws = ws'
+     , ebinds = updateEbinds bs' (ebinds finfo)
+     , bindInfo = updateBindInfoKeys bs' $ bindInfo finfo
+     }
+
+  where
+    dropBindsMissingFrom
+      :: HashMap BindId (Symbol, SortedReft, a)
+      -> [(SubcId, SubC a)]
+      -> HashMap KVar (WfC a)
+      -> HashMap BindId (Symbol, SortedReft, a)
+    dropBindsMissingFrom be cs wmap =
+      let ibindEnv = unionsIBindEnv $
+            map (senv . snd) cs ++
+            map wenv (HashMap.elems wmap)
+       in
+          HashMap.filterWithKey (\bId _ -> memberIBindEnv bId ibindEnv) be
+
+    -- Updates BindIds in an ebinds list
+    updateEbinds be = filter (`HashMap.member` beBinds be)
+
+    -- Updates BindId keys in a bindInfos map
+    updateBindInfoKeys be oldBindInfos =
+      HashMap.intersection oldBindInfos (beBinds be)
+
+-- | Reduces the environments of WF constraints.
+--
+-- @reduceWFConstraintEnvironments bindEnv (cs, ws)@
+--  * enlarges the environments in cs with bindings needed by the kvars they use
+--  * replaces the environment in ws with reduced environments
+--
+-- Reduction of wf environments gets rid of any bindings not mentioned by
+-- 'relatedKVarBinds' or any substitution on the corresponding KVar anywhere.
+--
+reduceWFConstraintEnvironments
+  :: BindEnv a    -- ^ Environment before reduction
+  -> ([ReducedConstraint a], HashMap KVar (WfC a))
+     -- ^ @(cs, ws)@:
+     --  * @cs@ are the constraints with reduced environments
+     --  * @ws@ are the wf constraints in which to reduce environments
+  -> ([(SubcId, SubC a)], HashMap KVar (WfC a))
+reduceWFConstraintEnvironments bindEnv (cs, wfs) =
+  let
+      (kvarsBinds, kvarSubstSymbols, kvarsBySubC) = relatedKVarBinds bindEnv cs
+
+      wfBindsPlusSortSymbols =
+        HashMap.unionWith HashSet.union kvarsBinds $
+        HashMap.map (sortSymbols . (\(_, b, _) -> b) . wrft) wfs
+
+      kvarsRelevantBinds =
+        HashMap.unionWith HashSet.union wfBindsPlusSortSymbols kvarSubstSymbols
+
+      ws' =
+        HashMap.mapWithKey
+          (reduceWFConstraintEnvironment kvarsRelevantBinds)
+          wfs
+
+      wsSymbols = HashMap.map (asSymbolSet bindEnv . wenv) ws'
+
+      kvarsWsBinds =
+        HashMap.unionWith HashSet.intersection wfBindsPlusSortSymbols wsSymbols
+
+      cs' = zipWith
+              (updateSubcEnvsWithKVarBinds kvarsWsBinds)
+              kvarsBySubC
+              cs
+   in
+      (cs', ws')
+
+  where
+    -- Initially, the constraint environment only includes the information
+    -- relevant to the rhs and the lhs. If a kvar is present, it may need
+    -- additional bindings that are required by the kvar. These are added
+    -- in this function.
+    updateSubcEnvsWithKVarBinds
+      :: HashMap KVar (HashSet Symbol)
+      -> [KVar]
+      -> ReducedConstraint a
+      -> (SubcId, SubC a)
+    updateSubcEnvsWithKVarBinds kvarsBinds kvs c =
+      let updateIBindEnv oldEnv =
+            unionIBindEnv (reducedEnv c) $
+            if null kvs then emptyIBindEnv
+            else fromListIBindEnv
+              [ bId
+              | bId <- elemsIBindEnv oldEnv
+              , let (s, _sr, _) = lookupBindEnv bId bindEnv
+              , any (neededByKVar s) kvs
+              ]
+          neededByKVar s kvar =
+            case HashMap.lookup kvar kvarsBinds of
+              Nothing -> False
+              Just kbindSyms -> HashSet.member s kbindSyms
+       in (constraintId c, updateSEnv (originalConstraint c) updateIBindEnv)
+
+    -- @reduceWFConstraintEnvironment be kbinds k c@ drops bindings from @c@
+    -- that aren't present in @kbinds ! k@.
+    reduceWFConstraintEnvironment
+      :: HashMap KVar (HashSet Symbol)
+      -> KVar
+      -> WfC a
+      -> WfC a
+    reduceWFConstraintEnvironment kvarBinds k c =
+      case HashMap.lookup k kvarBinds of
+        Nothing -> c { wenv = emptyIBindEnv }
+        Just kbindSymbols ->
+          c { wenv = filterIBindEnv (relevantBindIds kbindSymbols) (wenv c) }
+      where
+        relevantBindIds :: HashSet Symbol -> BindId -> Bool
+        relevantBindIds kbindSymbols bId =
+          let (s, _, _) = lookupBindEnv bId bindEnv
+           in HashSet.member s kbindSymbols
+
+data ReducedConstraint a = ReducedConstraint
+  { reducedEnv :: IBindEnv       -- ^ Environment which has been reduced
+  , originalConstraint :: SubC a -- ^ The original constraint
+  , constraintId :: SubcId       -- ^ Id of the constraint
+  }
+
+reduceConstraintEnvironment
+  :: BindEnv a
+  -> HashMap Symbol (HashSet Symbol)
+  -> (SubcId, SubC a)
+  -> ReducedConstraint a
+reduceConstraintEnvironment bindEnv aenvMap (cid, c) =
+  let env = [ (s, bId, sr, a)
+            | bId <- elemsIBindEnv $ senv c
+            , let (s, sr, a) = lookupBindEnv bId bindEnv
+            ]
+      prunedEnv =
+        fromListIBindEnv
+        [ bId | (_, bId, _,_) <- dropIrrelevantBindings aenvMap constraintSymbols env ]
+      constraintSymbols =
+        HashSet.union (sortedReftSymbols $ slhs c) (sortedReftSymbols $ srhs c)
+   in ReducedConstraint
+        { reducedEnv = prunedEnv
+        , originalConstraint = c
+        , constraintId = cid
+        }
+
+-- | @dropIrrelevantBindings aenvMap ss env@ drops bindings from @env@ which
+-- aren't referenced neither in a refinement type in the environment nor in
+-- @ss@, and not reachable in definitions of @aenv@ referred from @env@ or
+-- @ss@, and which can't possibly affect the outcome of verification.
+--
+-- Right now, it drops bindings of the form @a : {v | true }@ and
+-- @b : {v | v [>=|<=|=|!=|etc] e }@
+-- whenever @a@ and @b@ aren't referenced from any formulas.
+--
+dropIrrelevantBindings
+  :: HashMap Symbol (HashSet Symbol)
+  -> HashSet Symbol
+  -> [(Symbol, BindId, SortedReft, a)]
+  -> [(Symbol, BindId, SortedReft, a)]
+dropIrrelevantBindings aenvMap extraSymbols env =
+  filter relevantBind env
+  where
+    allSymbols =
+      reachableSymbols (HashSet.union extraSymbols envSymbols) aenvMap
+    envSymbols =
+      HashSet.unions $ map (\(_, _, sr,_) -> sortedReftSymbols sr) env
+
+    relevantBind (s, _, sr, _)
+      | HashSet.member s allSymbols = True
+      | otherwise = case reftPred (sr_reft sr) of
+          PTrue -> False
+          PAtom _ (dropECst -> EVar sym) _e -> sym /= reftBind (sr_reft sr)
+          PAtom _ _e (dropECst -> EVar sym) -> sym /= reftBind (sr_reft sr)
+          _ -> True
+
+-- | For each Equation and Rewrite, collects the symbols that it needs.
+axiomEnvSymbols :: AxiomEnv -> HashMap Symbol (HashSet Symbol)
+axiomEnvSymbols axiomEnv =
+  HashMap.union
+    (HashMap.fromList $ map eqSymbols $ aenvEqs axiomEnv)
+    (HashMap.fromList $ map rewriteSymbols $ aenvSimpl axiomEnv)
+  where
+    eqSymbols eq =
+      let bodySymbols =
+            HashSet.difference
+              (exprSymbolsSet (eqBody eq) `HashSet.union` sortSymbols (eqSort eq))
+              (HashSet.fromList $ map fst $ eqArgs eq)
+          sortSyms = HashSet.unions $ map (sortSymbols . snd) $ eqArgs eq
+          allSymbols =
+            if eqRec eq then
+              HashSet.insert (eqName eq) (bodySymbols `HashSet.union` sortSyms)
+            else
+              bodySymbols `HashSet.union` sortSyms
+       in
+          (eqName eq, allSymbols)
+
+    rewriteSymbols rw =
+      let bodySymbols =
+            HashSet.difference
+              (exprSymbolsSet (smBody rw))
+              (HashSet.fromList $ smArgs rw)
+          rwSymbols = HashSet.insert (smDC rw) bodySymbols
+       in (smName rw, rwSymbols)
+
+unconsHashSet :: (Hashable a, Eq a) => HashSet a -> Maybe (a, HashSet a)
+unconsHashSet xs = case HashSet.toList xs of
+  [] -> Nothing
+  (x : _) -> Just (x, HashSet.delete x xs)
+
+setOf :: (Hashable k, Eq k) => HashMap k (HashSet a) -> k -> HashSet a
+setOf m x = fromMaybe HashSet.empty (HashMap.lookup x m)
+
+mapOf :: (Hashable k, Eq k) => HashMap k (HashMap a b) -> k -> HashMap a b
+mapOf m x = fromMaybe HashMap.empty (HashMap.lookup x m)
+
+-- @relatedKVarBinds binds cs@ yields:
+-- 1) the set of all bindings that might be needed by each KVar mentioned
+-- in the constraints @cs@, and
+-- 2) the set of symbols appearing in substitutions of the KVar in any
+-- constraint. That is: @kv@ is associated with @i@, @j@, and @h@ if there
+-- is some constraint with the KVar substitution @kv[i:=e0][j:=e1]@ and
+-- some constraint with the KVar substitution @kv[h:=e2]@ appearing in
+-- the rhs, lhs, or the environment.
+-- 3) The list of kvars used in each constraint.
+--
+-- We assume that if a KVar is mentioned in a constraint or in its
+-- environment, then all the bindings in the environment of the constraint
+-- might be needed by the KVar.
+--
+-- Moreover, if two KVars are mentioned together in the same constraint,
+-- then the bindings that might be needed for either of them might
+-- be needed by the other.
+--
+relatedKVarBinds
+  :: BindEnv a
+  -> [ReducedConstraint a]
+  -> (HashMap KVar (HashSet Symbol), HashMap KVar (HashSet Symbol), [[KVar]])
+relatedKVarBinds bindEnv cs =
+  let kvarsSubstSymbolsBySubC = map kvarBindsFromSubC cs
+      kvarsBySubC = map HashMap.keys kvarsSubstSymbolsBySubC
+      bindIdsByKVar =
+       ShareMap.toHashMap $
+       ShareMap.map (asSymbolSet bindEnv) $
+       groupIBindEnvByKVar $ zip (map reducedEnv cs) kvarsBySubC
+      substsByKVar =
+        foldl' (HashMap.unionWith HashSet.union) HashMap.empty kvarsSubstSymbolsBySubC
+   in
+      (bindIdsByKVar, substsByKVar, kvarsBySubC)
+  where
+    kvarsByBindId :: HashMap BindId (HashMap KVar [Subst])
+    kvarsByBindId =
+      HashMap.map (exprKVars . reftPred . sr_reft . snd3) $ beBinds bindEnv
+
+    -- Returns all of the KVars used in the constraint, together with
+    -- the symbols that appear in substitutions of those KVars.
+    kvarBindsFromSubC :: ReducedConstraint a -> HashMap KVar (HashSet Symbol)
+    kvarBindsFromSubC sc =
+      let c = originalConstraint sc
+          unSubst (Su su) = su
+          substsToHashSet =
+            HashSet.fromMap . HashMap.map (const ()) . HashMap.unions . map unSubst
+       in foldl' (HashMap.unionWith HashSet.union) HashMap.empty $
+          map (HashMap.map substsToHashSet) $
+          (exprKVars (reftPred $ sr_reft $ srhs c) :) $
+          (exprKVars (reftPred $ sr_reft $ slhs c) :) $
+          map (mapOf kvarsByBindId) $
+          elemsIBindEnv (reducedEnv sc)
+
+    -- @groupIBindEnvByKVar kvs@ is a map of KVars to all the bindings that
+    -- they can potentially use.
+    --
+    -- @kvars@ tells for each environment what KVars it uses.
+    groupIBindEnvByKVar :: [(IBindEnv, [KVar])] -> ShareMap KVar IBindEnv
+    groupIBindEnvByKVar = foldl' mergeBinds ShareMap.empty
+
+    -- @mergeBinds sm bs (bindIds, kvars)@ merges the binds used by all KVars in
+    -- @kvars@ and also adds to the result the bind Ids in @bindIds@.
+    mergeBinds
+      :: ShareMap KVar IBindEnv
+      -> (IBindEnv, [KVar])
+      -> ShareMap KVar IBindEnv
+    mergeBinds sm (bindIds, kvars) = case kvars of
+      [] -> sm
+      k : ks ->
+        let sm' = ShareMap.insertWith unionIBindEnv k bindIds sm
+         in foldr (ShareMap.mergeKeysWith unionIBindEnv k) sm' ks
+
+asSymbolSet :: BindEnv a -> IBindEnv -> HashSet Symbol
+asSymbolSet be ibinds =
+  HashSet.fromList
+    [ s
+    | bId <- elemsIBindEnv ibinds
+    , let (s, _,_) = lookupBindEnv bId be
+    ]
+
+-- | @reachableSymbols x r@ computes the set of symbols reachable from @x@
+-- in the graph represented by @r@. Includes @x@ in the result.
+reachableSymbols :: HashSet Symbol -> HashMap Symbol (HashSet Symbol) -> HashSet Symbol
+reachableSymbols ss0 outgoingEdges = go HashSet.empty ss0
+  where
+    -- @go acc ss@ contains @acc@ and @ss@ plus any symbols reachable from @ss@
+    go :: HashSet Symbol -> HashSet Symbol -> HashSet Symbol
+    go acc ss = case unconsHashSet ss of
+      Nothing -> acc
+      Just (x, xs) ->
+        if x `HashSet.member` acc then go acc xs
+        else
+          let relatedToX = setOf outgoingEdges x
+           in go (HashSet.insert x acc) (HashSet.union relatedToX xs)
+
+-- | Simplifies bindings in constraint environments.
+--
+-- It runs 'mergeDuplicatedBindings' and 'simplifyBooleanRefts'
+-- on the environment of each constraint.
+--
+-- If 'inlineANFBindings cfg' is on, also runs 'undoANFAndVV' to inline
+-- @lq_anf@ bindings.
+simplifyBindings :: Config -> FInfo a -> FInfo a
+simplifyBindings cfg finfo =
+  let (bs', cm', oldToNew) = simplifyConstraints (bs finfo) (cm finfo)
+   in finfo
+        { bs = bs'
+        , cm = cm'
+        , ebinds = updateEbinds oldToNew (ebinds finfo)
+        , bindInfo = updateBindInfoKeys oldToNew $ bindInfo finfo
+        }
+  where
+    updateEbinds :: HashMap BindId [BindId] -> [BindId] -> [BindId]
+    updateEbinds oldToNew ebs =
+      nub $
+      concat [ bId : fromMaybe [] (HashMap.lookup bId oldToNew) | bId <- ebs ]
+
+    updateBindInfoKeys
+      :: HashMap BindId [BindId] -> HashMap BindId a -> HashMap BindId a
+    updateBindInfoKeys oldToNew infoMap =
+      HashMap.fromList
+        [ (n, a)
+        | (bId, a) <- HashMap.toList infoMap
+        , Just news <- [HashMap.lookup bId oldToNew]
+        , n <- bId : news
+        ]
+
+    simplifyConstraints
+      :: BindEnv a
+      -> HashMap SubcId (SubC a)
+      -> (BindEnv a, HashMap SubcId (SubC a), HashMap BindId [BindId])
+    simplifyConstraints be cs =
+      let (be', cs', newToOld) =
+             HashMap.foldlWithKey' simplifyConstraintBindings (be, [], []) cs
+          oldToNew =
+            HashMap.fromListWith (++) $
+            concatMap (\(n, olds) -> map (, [n]) olds) newToOld
+       in
+          (be', HashMap.fromList cs', oldToNew)
+
+    simplifyConstraintBindings
+      :: (BindEnv a, [(SubcId, SubC a)], [(BindId, [BindId])])
+      -> SubcId
+      -> SubC a
+      -> (BindEnv a, [(SubcId, SubC a)], [(BindId, [BindId])])
+    simplifyConstraintBindings (bindEnv, cs, newToOld) cid c =
+      let env =
+            [ (s, ([(bId, a)], sr))
+            | bId <- elemsIBindEnv $ senv c
+            , let (s, sr, a) = lookupBindEnv bId bindEnv
+            ]
+
+          mergedEnv = mergeDuplicatedBindings env
+          undoANFEnv =
+            if inlineANFBindings cfg then undoANFOnlyModified mergedEnv else HashMap.empty
+          boolSimplEnv =
+            simplifyBooleanRefts $ HashMap.union undoANFEnv mergedEnv
+
+          modifiedBinds = HashMap.toList $ HashMap.union boolSimplEnv undoANFEnv
+
+          modifiedBindIds = [ fst <$> bindIds | (_, (bindIds,_)) <- modifiedBinds ]
+
+          unchangedBindIds = senv c `diffIBindEnv` fromListIBindEnv (concat modifiedBindIds)
+
+          (newBindIds, bindEnv') = insertBinds ([], bindEnv) modifiedBinds
+
+          newIBindEnv = insertsIBindEnv newBindIds unchangedBindIds
+
+          newToOld' = zip newBindIds modifiedBindIds ++ newToOld
+       in
+          (bindEnv', (cid, updateSEnv c (const newIBindEnv)) : cs, newToOld')
+
+    insertBinds = foldl' $ \(xs, be) (s, (bIdAs, sr)) ->
+      let (bId, be') = insertBindEnv s sr (snd . head $ bIdAs) be
+      in (bId : xs, be')
+
+-- | If the environment contains duplicated bindings, they are
+-- combined with conjunctions.
+--
+-- This means that @[ a : {v | P v }, a : {z | Q z }, b : {v | S v} ]@
+-- is combined into @[ a : {v | P v && Q v }, b : {v | S v} ]@
+--
+-- If a symbol has two bindings with different sorts, none of the bindings
+-- for that symbol are merged.
+mergeDuplicatedBindings
+  :: Semigroup m
+  => [(Symbol, (m, SortedReft))]
+  -> HashMap Symbol (m, SortedReft)
+mergeDuplicatedBindings xs =
+    HashMap.mapMaybe dropNothings $
+    HashMap.fromListWith mergeSortedReft $
+    map (fmap (fmap Just)) xs
+  where
+    dropNothings (m, msr) = (,) m <$> msr
+
+    mergeSortedReft (bs0, msr0) (bs1, msr1) =
+      let msr = do
+            sr0 <- msr0
+            sr1 <- msr1
+            guard (sr_sort sr0 == sr_sort sr1)
+            Just sr0 { sr_reft = mergeRefts (sr_reft sr0) (sr_reft sr1) }
+       in
+          (bs0 <> bs1, msr)
+
+    mergeRefts r0 r1 =
+      reft
+        (reftBind r0)
+        (pAnd
+          [ reftPred r0
+          , subst1 (reftPred r1) (reftBind r1, expr (reftBind r0))
+          ]
+        )
+
+-- | Inlines some of the bindings whose symbol satisfies a given predicate.
+--
+-- Only works if the bindings don't form cycles.
+substBindingsSimplifyingWith
+  :: (SortedReft -> SortedReft)
+  -> Lens' v SortedReft
+  -> (Symbol -> Bool)
+  -> HashMap Symbol v
+  -> HashMap Symbol v
+substBindingsSimplifyingWith simplifier vLens p env =
+    -- Circular program here. This should terminate as long as the
+    -- bindings introduced by ANF don't form cycles.
+    let env' = HashMap.map (vLens %~ simplifier . inlineInSortedReft (srLookup filteredEnv)) env
+        filteredEnv = HashMap.filterWithKey (\sym _v -> p sym) env'
+     in env'
+  where
+    srLookup env' sym = view vLens <$> HashMap.lookup sym env'
+
+substBindings
+  :: Lens' v SortedReft
+  -> (Symbol -> Bool)
+  -> HashMap Symbol v
+  -> HashMap Symbol v
+substBindings = substBindingsSimplifyingWith simplify
+
+-- | Like 'substBindings' but specialized for ANF bindings.
+--
+-- Only bindings with prefix lq_anf$... might be inlined.
+--
+undoANFSimplifyingWith :: (SortedReft -> SortedReft) -> Lens' v SortedReft -> HashMap Symbol v -> HashMap Symbol v
+undoANFSimplifyingWith simplifier vLens = substBindingsSimplifyingWith simplifier vLens $ \sym -> anfPrefix `isPrefixOfSym` sym
+
+undoANF :: Lens' v SortedReft -> HashMap Symbol v -> HashMap Symbol v
+undoANF = undoANFSimplifyingWith simplify
+
+-- | Like 'undoANF' but also inlines VV bindings
+--
+-- This function is used to produced the prettified output, and the user
+-- can request to use it in the verification pipeline with
+-- @--inline-anf-bindings@. However, using it in the verification
+-- pipeline causes some tests in liquidhaskell to blow up.
+--
+-- Note: This function simplifies.
+undoANFAndVV :: HashMap Symbol (m, SortedReft) -> HashMap Symbol (m, SortedReft)
+undoANFAndVV = substBindings _2 $ \sym -> anfPrefix `isPrefixOfSym` sym || vvName `isPrefixOfSym` sym
+
+-- | Like 'undoANF' but returns only modified bindings and **DOES NOT SIMPLIFY**.
+undoANFOnlyModified :: HashMap Symbol (m, SortedReft) -> HashMap Symbol (m, SortedReft)
+undoANFOnlyModified env =
+    let undoANFEnv = undoANFSimplifyingWith id _2 env
+     in HashMap.differenceWith dropUnchanged env undoANFEnv
+  where
+    dropUnchanged (_, a) v@(_, b) | a == b = Just v
+      | otherwise = Nothing
+
+-- | Inlines bindings in env in the given 'SortedReft'.
+inlineInSortedReft
+  :: (Symbol -> Maybe SortedReft)
+  -> SortedReft
+  -> SortedReft
+inlineInSortedReft srLookup sr =
+    let reft' = sr_reft sr
+     in sr { sr_reft = mapPredReft (inlineInExpr (filterBind (reftBind reft'))) reft' }
+  where
+    filterBind b sym = do
+      guard (sym /= b)
+      srLookup sym
+
+-- | Inlines bindings given by @srLookup@ in the given expression
+-- if they appear in equalities.
+--
+-- Given a binding like @a : { v | v = e1 && e2 }@ and an expression @... e0 = a ...@,
+-- this function produces the expression @... e0 = e1 ...@
+-- if @v@ does not appear free in @e1@.
+--
+-- @... e0 = (a : s) ...@ is equally transformed to
+-- @... e0 = (e1 : s) ...@
+--
+-- Given a binding like @a : { v | v = e1 }@ and an expression @... a ...@,
+-- this function produces the expression @... e1 ...@ if @v@ does not
+-- appear free in @e1@.
+inlineInExpr :: (Symbol -> Maybe SortedReft) -> Expr -> Expr
+inlineInExpr srLookup = mapExprOnExpr inlineExpr
+  where
+    inlineExpr (EVar sym)
+      | Just sr <- srLookup sym
+      , let r = sr_reft sr
+      , Just e <- isSingletonE (reftBind r) (reftPred r)
+      = wrapWithCoercion Eq (sr_sort sr) e
+    inlineExpr (PAtom br e0 e1@(dropECst -> EVar sym))
+      | isEq br
+      , Just sr <- srLookup sym
+      , let r = sr_reft sr
+      , Just e <- isSingletonE (reftBind r) (reftPred r)
+      =
+        PAtom br e0 $ subst1 e1 (sym, wrapWithCoercion br (sr_sort sr) e)
+    inlineExpr e = e
+
+    isSingletonE v (PAtom br e0 e1)
+      | isEq br = isSingEq v e0 e1 `mplus` isSingEq v e1 e0
+    isSingletonE v (PIff e0 e1) =
+      isSingEq v e0 e1 `mplus` isSingEq v e1 e0
+    isSingletonE v (PAnd cs) =
+      msum $ map (isSingletonE v) cs
+    isSingletonE _ _ =
+      Nothing
+
+    isSingEq v e0 e1 = do
+      guard $ EVar v == dropECst e0 && not (HashSet.member v $ exprSymbolsSet e1)
+      Just e1
+
+    isEq r = r == Eq || r == Ueq
+
+    wrapWithCoercion br to e = case exprSortMaybe e of
+      Just from -> if from /= to then ECoerc from to e else e
+      Nothing -> if br == Ueq then ECst e to else e
+
+-- | Transforms bindings of the form @{v:bool | v && P v}@ into
+-- @{v:Bool | v && P true}@, and bindings of the form @{v:bool | ~v && P v}@
+-- into @{v:bool | ~v && P false}@.
+--
+-- Only yields the modified bindings.
+simplifyBooleanRefts
+  :: HashMap Symbol (m, SortedReft) -> HashMap Symbol (m, SortedReft)
+simplifyBooleanRefts = HashMap.mapMaybe simplifyBooleanSortedReft
+  where
+    simplifyBooleanSortedReft (m, sr)
+      | sr_sort sr == boolSort
+      , let r = sr_reft sr
+      , Just (e, rest) <- symbolUsedAtTopLevelAnd (reftBind r) (reftPred r)
+      = let e' = pAnd $ e : map (`subst1` (reftBind r, atomToBool e)) rest
+            atomToBool a = if a == EVar (reftBind r) then PTrue else PFalse
+         in Just (m, sr { sr_reft = mapPredReft (const e') r })
+    simplifyBooleanSortedReft _ = Nothing
+
+    symbolUsedAtTopLevelAnd s (PAnd ps) =
+      findExpr (EVar s) ps `mplus` findExpr (PNot (EVar s)) ps
+    symbolUsedAtTopLevelAnd _ _ = Nothing
+
+    findExpr e es = do
+      case partition (e ==) es of
+        ([], _) -> Nothing
+        (f:_, rest) -> Just (f, rest)
+
+-- | @dropLikelyIrrelevantBindings ss env@ is like @dropIrrelevantBindings@
+-- but drops bindings that could potentially be necessary to validate a
+-- constraint.
+--
+-- This function drops any bindings in the reachable set of symbols of @ss@.
+-- See 'relatedSymbols'.
+--
+-- A constraint might be rendered unverifiable if the verification depends on
+-- the environment being inconsistent. For instance, suppose the constraint
+-- is @a < 0@ and we call this function like
+--
+-- > dropLikelyIrrelevantBindings ["a"] [a : { v | v > 0 }, b : { v | false }]
+-- >   == [a : { v | v > 0 }]
+--
+-- The binding for @b@ is dropped since it is not otherwise related to @a@,
+-- making the corresponding constraint unverifiable.
+--
+-- Bindings refered only from @match@ or @define@ clauses will be dropped as
+-- well.
+--
+-- Symbols starting with a capital letter will be dropped too, as these are
+-- usually global identifiers with either uninteresting or known types.
+--
+dropLikelyIrrelevantBindings
+  :: HashSet Symbol
+  -> HashMap Symbol SortedReft
+  -> HashMap Symbol SortedReft
+dropLikelyIrrelevantBindings ss env = HashMap.filterWithKey relevant env
+  where
+    relatedSyms = relatedSymbols ss env
+    relevant s _sr =
+      (not (capitalizedSym s) || prefixOfSym s /= s) && s `HashSet.member` relatedSyms
+    capitalizedSym = Text.all isUpper . Text.take 1 . symbolText
+
+-- | @relatedSymbols ss env@ is the set of all symbols used transitively
+-- by @ss@ in @env@ or used together with it in a refinement type.
+-- The output includes @ss@.
+--
+-- For instance, say @ss@ contains @a@, and the environment is
+--
+-- > a : { v | v > b }, b : int, c : { v | v >= b && b >= d}, d : int
+--
+-- @a@ uses @b@. Because the predicate of @c@ relates @b@ with @d@,
+-- @d@ can also influence the validity of the predicate of @a@, and therefore
+-- we include both @b@, @c@, and @d@ in the set of related symbols.
+relatedSymbols :: HashSet Symbol -> HashMap Symbol SortedReft -> HashSet Symbol
+relatedSymbols ss0 env = go HashSet.empty ss0
+  where
+    directlyUses = HashMap.map (exprSymbolsSet . reftPred . sr_reft) env
+    usedBy = HashMap.fromListWith HashSet.union
+               [ (x, HashSet.singleton s)
+               | (s, xs) <- HashMap.toList directlyUses
+               , x <- HashSet.toList xs
+               ]
+
+    -- @go acc ss@ contains @acc@ and @ss@ plus any symbols reachable from @ss@
+    go :: HashSet Symbol -> HashSet Symbol -> HashSet Symbol
+    go acc ss = case unconsHashSet ss of
+      Nothing -> acc
+      Just (x, xs) ->
+        if x `HashSet.member` acc then go acc xs
+        else
+          let usersOfX = usedBy `setOf` x
+              relatedToX = HashSet.unions $
+                usersOfX : map (directlyUses `setOf`) (x : HashSet.toList usersOfX)
+           in go (HashSet.insert x acc) (HashSet.union relatedToX xs)

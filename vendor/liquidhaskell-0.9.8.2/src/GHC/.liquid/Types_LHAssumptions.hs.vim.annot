@@ -1,0 +1,5 @@
+1:1-1:1::GHC.Types_LHAssumptions.$trModule :: "GHC.Types.Module"
+10:1-10:3::GHC.Types_LHAssumptions._f :: "(GHC.Prim.Double# -> GHC.Types.Double, GHC.Prim.Float# -> GHC.Types.Float, GHC.Prim.Word# -> GHC.Types.Word)"
+10:7-10:9::_ :: "GHC.Types.Double"
+10:11-10:13::_ :: "GHC.Types.Float"
+10:15-10:17::_ :: "GHC.Types.Word"
