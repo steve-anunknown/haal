@@ -1,8 +1,7 @@
 module Agda.BlackBox where 
 
 open import Haskell.Prelude
-open import Relation.Binary.Bundles using (StrictTotalOrder)
-open import Data.Tree.AVL.Map using (Map)
+open import Data.Tree.AVL.Sets renaming (⟨Set⟩ to FinSet)
 
 {-# NO_POSITIVITY_CHECK #-}
 record SUL (sul : Set → Set → Set) : Set₂ where 
@@ -15,8 +14,8 @@ record SUL (sul : Set → Set → Set) : Set₂ where
 open SUL {{...}}  -- open fields from instance
 
 postulate
-  inputs : ∀ {sul : Set → Set → Set} {i o} {{ _ : Enum i }} {{ _ : Bounded i }} → sul i o → List i
-  outputs : ∀ {sul : Set → Set → Set} {i o} {{ _ : Enum o }} {{ _ : Bounded o }} → sul i o → List o
+  inputs : ∀ {sul : Set → Set → Set} {i o} → sul i o → FinSet i
+  outputs : ∀ {sul : Set → Set → Set} {i o} → sul i o → FinSet o
 
 {-# COMPILE AGDA2HS inputs #-}
 {-# COMPILE AGDA2HS outputs #-}
@@ -38,11 +37,18 @@ walk system is = walk' system is []
 {-# COMPILE AGDA2HS walk #-}
 
 -- Automaton class, with `current` method only for now
-record Automaton (aut : Set → Set → Set) (st : Set) : Set₂ where
+record Automaton
+  (aut : Set → Set → Set)
+  (st : Set)
+  : Set₂ where
+
   field
-    overlap ⦃ super ⦄ : SUL (aut)
+    overlap ⦃ super ⦄ : SUL aut
+    
     current : ∀ {i o} → aut i o → st
     update  : ∀ {i o} → aut i o → st → aut i o
+    γ       : ∀ {i o} → aut i o → (st → i → st) 
+    δ       : ∀ {i o} → aut i o → (st → i → o)
 
 open Automaton {{...}}
 
@@ -53,11 +59,6 @@ initial = current ∘ reset
 
 {-# COMPILE AGDA2HS initial #-}
 
--- accessSequences : ∀ {aut : Set → Set → Set} {i o : Set} {st}
---                 {{_ : Automaton aut st}} 
---                 {{_ : StrictTotalOrder st }} 
---                 {{_ : Enum i}}
---                 {{_ : Bounded i}} → 
---                 aut i o → Map st (List i)
--- accessSequences = ⊤
+-- accessSequences : ∀ {aut : Set → Set → Set} {st i o : Set} {{_ : Automaton aut st}} → aut i o → st → List i
+-- accessSequences aut = bfs ((initial aut),[]) ∷ [] (FinSet.singleton (initial aut)) _
 
