@@ -14,6 +14,7 @@ module Haal.BlackBox (
     FiniteOrd,
     inputs,
     outputs,
+    reachable,
     walk,
     initial,
     distinguish,
@@ -70,8 +71,8 @@ initial :: (Automaton aut st) => aut i o -> st
 initial = current . reset
 
 -- Starts a bfs from the initial state and finds all reachable states
-findReachable :: (Automaton aut st, FiniteOrd i, FiniteOrd st) => aut i o -> Set.Set st
-findReachable automaton =
+reachable :: (Automaton aut st, FiniteOrd i, FiniteOrd st) => aut i o -> Set.Set st
+reachable automaton =
     let initialState = initial automaton
         alphabet = inputs automaton
         bfs visited queue =

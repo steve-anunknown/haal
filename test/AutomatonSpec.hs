@@ -5,7 +5,6 @@ module AutomatonSpec (
     spec,
 )
 where
-
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -62,21 +61,21 @@ prop_mappingEquivalentToFunctions (Mealy automaton) =
 
 -- The access sequences returned by 'mealyAccessSequences' cover all reachable states.
 prop_completeAccessSequences :: Mealy State Input Output -> Property
-prop_completeAccessSequences (Mealy automaton) = sts == reachable ==> allin
+prop_completeAccessSequences (Mealy automaton) = sts == rsts ==> allin
   where
     seqs = accessSequences automaton
     sts = states automaton
-    reachable = findReachable automaton
-    allin = all (`Map.member` seqs) reachable
+    rsts = reachable automaton
+    allin = all (`Map.member` seqs) rsts
 
 -- The access sequences returned by 'mealyAccessSequences' are the shortest
 prop_shortestAccessSequences :: Mealy State Input Output -> State -> State -> Property
 prop_shortestAccessSequences (Mealy automaton) s1 s2 =
-    s1 `Set.member` reachable
-        && s2 `Set.member` reachable
+    s1 `Set.member` rsts
+        && s2 `Set.member` rsts
         && existsS1toS2 ==> List.length seq2 <= List.length seq1 + 1
   where
-    reachable = findReachable automaton
+    rsts = reachable automaton
     transs = transitions automaton
     accessSeqs = accessSequences automaton
     seq1 = accessSeqs Map.! s1
