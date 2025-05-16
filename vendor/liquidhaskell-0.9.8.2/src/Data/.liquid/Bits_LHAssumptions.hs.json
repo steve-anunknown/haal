@@ -1,1 +1,0 @@
-{"errors":[],"sptypes":[{"ann":"GHC.Types.Module","ident":"Data.Bits_LHAssumptions.$trModule","start":{"column":1,"line":1},"stop":{"column":1,"line":1}}],"status":"safe","types":{"1":{"1":{"ann":"GHC.Types.Module","col":1,"ident":"Data.Bits_LHAssumptions.$trModule","row":1}}}}

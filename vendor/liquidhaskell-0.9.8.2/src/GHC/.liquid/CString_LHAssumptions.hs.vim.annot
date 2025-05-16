@@ -1,2 +1,0 @@
-1:1-1:1::GHC.CString_LHAssumptions.$trModule :: "GHC.Types.Module"
-9:1-9:3::GHC.CString_LHAssumptions._f :: "x1:GHC.Prim.Addr# -> {v : [GHC.Types.Char] | len v == strLen x1\n                                             && v ~~ x1}"
