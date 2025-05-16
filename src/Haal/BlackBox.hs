@@ -20,6 +20,7 @@ module Haal.BlackBox (
     accessSequences,
     localCharacterizingSet,
     globalCharacterizingSet,
+    reachable,
 )
 where
 
@@ -68,6 +69,20 @@ class (SUL (aut s) i o) => Automaton aut s i o where
 
 initial :: (Automaton aut s i o) => aut s i o -> s
 initial = current . reset
+
+reachable :: forall s i o aut. (Automaton aut s, Ord s, FiniteOrd i) => aut i o -> Set.Set s
+reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
+  where
+    alphabet = inputs aut
+
+    bfs :: [s] -> Set.Set s -> Set.Set s
+    bfs [] visited = visited
+    bfs (st : queue) visited = bfs queue' visited'
+      where
+        aut' = update aut st
+        neighbours = Set.map (current . fst . step aut') alphabet
+        visited' = visited `Set.union` neighbours
+        queue' = Set.toList (neighbours `Set.difference` visited) ++ queue
 
 -- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::

@@ -18,7 +18,7 @@ import Haal.Automaton.MealyAutomaton (
 import Haal.BlackBox
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
-import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, findReachable, statesAreEquivalent)
+import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, statesAreEquivalent)
 
 -- The global characterizing set of a non minimal mealy automaton contains
 -- the empty list. This will fail if the 'State' type has less than 6-7 constructors
@@ -62,21 +62,21 @@ prop_mappingEquivalentToFunctions (Mealy automaton) =
 
 -- The access sequences returned by 'mealyAccessSequences' cover all reachable states.
 prop_completeAccessSequences :: Mealy State Input Output -> Property
-prop_completeAccessSequences (Mealy automaton) = sts == reachable ==> allin
+prop_completeAccessSequences (Mealy automaton) = sts == rsts ==> allin
   where
     seqs = accessSequences automaton
     sts = states automaton
-    reachable = findReachable automaton
-    allin = all (`Map.member` seqs) reachable
+    rsts = reachable automaton
+    allin = all (`Map.member` seqs) rsts
 
 -- The access sequences returned by 'mealyAccessSequences' are the shortest
 prop_shortestAccessSequences :: Mealy State Input Output -> State -> State -> Property
 prop_shortestAccessSequences (Mealy automaton) s1 s2 =
-    s1 `Set.member` reachable
-        && s2 `Set.member` reachable
+    s1 `Set.member` rsts
+        && s2 `Set.member` rsts
         && existsS1toS2 ==> List.length seq2 <= List.length seq1 + 1
   where
-    reachable = findReachable automaton
+    rsts = reachable automaton
     transs = transitions automaton
     accessSeqs = accessSequences automaton
     seq1 = accessSeqs Map.! s1
