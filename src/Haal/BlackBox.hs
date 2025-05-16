@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fplugin=LiquidHaskell -fplugin-opt=LiquidHaskell:--prune-unsorted #-}
 
 {- | This module defines the BlackBox type class as well as the Automaton and SUL
 sub classes.
