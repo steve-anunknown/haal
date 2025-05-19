@@ -38,13 +38,13 @@ mkWMethod = WMethod . WMethodConfig
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
     ) =>
     WMethod ->
-    aut i o ->
+    aut s i o ->
     Int
 wmethodSuiteSize (WMethod (WMethodConfig{wmDepth = d})) aut = size
   where
@@ -56,13 +56,13 @@ wmethodSuiteSize (WMethod (WMethodConfig{wmDepth = d})) aut = size
 
 -- | The 'wmethodSuite' function generates the test suite for the W-method and a new oracle.
 wmethodSuite ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
     ) =>
     WMethod ->
-    aut i o ->
+    aut s i o ->
     (WMethod, [[i]])
 wmethodSuite wm@(WMethod (WMethodConfig{wmDepth = d})) aut = (wm, suite)
   where
@@ -101,20 +101,20 @@ mkRandomWMethod g l n = RandomWMethod (RandomWMethodConfig g n l)
 -- | The 'randomWMethodSuite' function generates the test suite for the random W-method and a new oracle.
 randomWMethodSuite ::
     forall i o s aut.
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
     ) =>
     RandomWMethod ->
-    aut i o ->
+    aut s i o ->
     (RandomWMethod, [[i]])
 randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
     let rorc = RandomWords (RandomWordsConfig{rwMaxLength = wl, rwMinLength = 1, rwLimit = wpr, rwGen = g})
         prefixes = Map.elems $ accessSequences aut
         vecSuffixes = Vec.fromList $ Set.toList $ globalCharacterizingSet aut
 
-        (RandomWords roc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut i o))
+        (RandomWords roc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut s i o))
         flatWords = concat wordBatches
 
         (gen'', gen''') = split (rwGen roc')

@@ -39,13 +39,13 @@ wpmethodSuiteSize = error "todo"
 -- | Returns the test suite for the WpMethod.
 wpmethodSuite ::
     forall aut i o s.
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
     ) =>
     WpMethod ->
-    aut i o ->
+    aut s i o ->
     (WpMethod, [[i]])
 wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
   where
@@ -120,13 +120,13 @@ mkRandomWpMethod g e mi lim =
 
 randomWpMethodSuite ::
     forall aut i o s.
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
     ) =>
     RandomWpMethod ->
-    aut i o ->
+    aut s i o ->
     (RandomWpMethod, [[i]])
 randomWpMethodSuite
     ( RandomWpMethod

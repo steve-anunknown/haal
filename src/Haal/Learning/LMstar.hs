@@ -58,7 +58,7 @@ It must be in the 'Experiment' monad to allow queries to the SUL.
 -}
 initializeOT ::
     forall i o sul.
-    (FiniteOrd i, SUL sul) =>
+    (FiniteOrd i, SUL sul i o) =>
     Experiment (sul i o) (ObservationTable i o)
 initializeOT = do
     sul <- ask
@@ -103,7 +103,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 
 -- | The 'lmstar' function implements one iteration of the LM* algorithm.
 lmstar ::
-    (SUL sul, FiniteOrd i, Eq o) =>
+    (SUL sul i o, FiniteOrd i, Eq o) =>
     LMstar i o ->
     Experiment (sul i o) (LMstar i o, MealyAutomaton StateID i o)
 lmstar (LMstar ot) = case otIsClosed ot of
@@ -151,7 +151,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
 -- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
 otRefineAngluin ::
     forall sul i o.
-    (FiniteOrd i, SUL sul) =>
+    (FiniteOrd i, SUL sul i o) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)
@@ -210,7 +210,7 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length r
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
     forall i o sul.
-    (FiniteOrd i, SUL sul) =>
+    (FiniteOrd i, SUL sul i o) =>
     ObservationTable i o ->
     ([i], [i]) ->
     Experiment (sul i o) (ObservationTable i o)
@@ -239,7 +239,7 @@ makeConsistent ot (column, symbol) = do
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
 makeClosed ::
     forall sul i o.
-    (FiniteOrd i, SUL sul) =>
+    (FiniteOrd i, SUL sul i o) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)
@@ -256,7 +256,7 @@ makeClosed ot inc = do
         tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), last $ snd $ walk sul e) | s <- alph, e <- Set.toList em]
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
-instance Learner LMstar (MealyAutomaton StateID) where
+instance Learner LMstar MealyAutomaton StateID where
     initialize (LMstar _) = do
         LMstar <$> initializeOT
     initialize (LMplus _) = do
@@ -277,7 +277,7 @@ which is an improvement over Angluin's algorithm.
 -}
 otRefinePlus ::
     forall sul i o.
-    (FiniteOrd i, SUL sul) =>
+    (FiniteOrd i, SUL sul i o) =>
     ObservationTable i o ->
     [i] ->
     Experiment (sul i o) (ObservationTable i o)
@@ -302,5 +302,5 @@ otRefinePlus ot cex = do
         tm' = updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
-updateMap :: (Ord i, SUL sul) => Map.Map ([i], [i]) a -> Set.Set ([i], [i]) -> sul i a -> Map.Map ([i], [i]) a
+updateMap :: (Ord i, SUL sul i o) => Map.Map ([i], [i]) o -> Set.Set ([i], [i]) -> sul i o -> Map.Map ([i], [i]) o
 updateMap themap thestuff thesul = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk thesul (a ++ b))) themap thestuff

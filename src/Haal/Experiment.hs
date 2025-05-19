@@ -31,13 +31,13 @@ Instances of this class should provide methods to generate a test suite
 -}
 class EquivalenceOracle or where
     testSuite ::
-        ( Automaton aut s
+        ( Automaton aut s i o
         , FiniteOrd i
         , FiniteOrd s
         , Eq o
         ) =>
         or ->
-        aut i o ->
+        aut s i o ->
         (or, [[i]])
 
 {- | The 'Learner' type class defines the interface for learning algorithms.
@@ -45,17 +45,16 @@ Instances of this class should provide methods to initialize the learner,
 refine the learner with a counterexample, and learn an automaton. The type 'l'
 determines the type of automaton 'aut' that is learned.
 -}
-class Learner l aut | l -> aut where
+class Learner l aut s | l -> aut s where
     initialize ::
-        ( SUL sul
-        , Automaton aut s
+        ( SUL sul i o
         , FiniteOrd i
         , Finite o
         ) =>
         l i o ->
         Experiment (sul i o) (l i o)
     refine ::
-        ( SUL sul
+        ( SUL sul i o
         , FiniteOrd i
         , Finite o
         ) =>
@@ -63,14 +62,14 @@ class Learner l aut | l -> aut where
         [i] ->
         Experiment (sul i o) (l i o)
     learn ::
-        ( SUL sul
-        , Automaton aut s
+        ( SUL sul i o
+        , Automaton aut s i o
         , FiniteOrd i
         , FiniteOrd s
         , FiniteEq o
         ) =>
         l i o ->
-        Experiment (sul i o) (l i o, aut i o)
+        Experiment (sul i o) (l i o, aut s i o)
 
 {- | The 'ExperimentT' type is a monad transformer that allows for
 running experiments in a reader monad. This may prove useful for
@@ -89,14 +88,14 @@ It is just an alias for 'runReader'.
 runExperiment :: Experiment r a -> r -> a
 runExperiment = runReader
 
-data Statistics aut i o = Statistics
+data Statistics aut s i o = Statistics
     { statsRounds :: Int
     , statsCexs :: [[i]]
-    , statsHyps :: [aut i o]
+    , statsHyps :: [aut s i o]
     }
     deriving (Show)
 
-statsEmpty :: Statistics aut i o
+statsEmpty :: Statistics aut s i o
 statsEmpty = Statistics 0 [] []
 
 {- | The 'experiment' function returns an 'Experiment' that can be run with
@@ -104,9 +103,9 @@ the 'runExperiment' function. It takes a learner and an equivalence oracle
 and then requires a system under learning (SUL) to run the experiment.
 -}
 experiment ::
-    ( SUL sul
-    , Automaton aut s
-    , Learner learner aut
+    ( SUL sul i o
+    , Automaton aut s i o
+    , Learner learner aut s
     , EquivalenceOracle oracle
     , FiniteOrd i
     , FiniteOrd s
@@ -114,7 +113,7 @@ experiment ::
     ) =>
     learner i o ->
     oracle ->
-    Experiment (sul i o) (aut i o, Statistics aut i o)
+    Experiment (sul i o) (aut s i o, Statistics aut s i o)
 experiment learner oracle = do
     initializedLearner <- initialize learner
     let inner le orc stats = do
@@ -133,13 +132,13 @@ experiment learner oracle = do
 
 -- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
 execute ::
-    ( SUL sul
-    , Automaton aut s
+    ( SUL sul i o
+    , Automaton aut s i o
     , Ord i
     , Eq o
     ) =>
     sul i o ->
-    aut i o ->
+    aut s i o ->
     [[i]] ->
     ([i], [o])
 execute _ _ [] = ([], [])
@@ -154,13 +153,13 @@ execute theSul theAut (s : ss) =
 simultaneously, checking if the outputs are the same.
 -}
 pairwiseWalk ::
-    ( SUL sul
-    , Automaton aut s
+    ( SUL sul i o
+    , Automaton aut s i o
     , Ord i
     , Eq o
     ) =>
     sul i o ->
-    aut i o ->
+    aut s i o ->
     [i] ->
     Bool
 pairwiseWalk _ _ [] = True
@@ -173,15 +172,15 @@ pairwiseWalk theSul theAut (s : ss) = (out1 == out2) && pairwiseWalk sul' aut' s
 and SUL.
 -}
 findCex ::
-    ( SUL sul
-    , Automaton aut s
+    ( SUL sul i o
+    , Automaton aut s i o
     , EquivalenceOracle or
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
     ) =>
     or ->
-    aut i o ->
+    aut s i o ->
     Experiment (sul i o) (or, ([i], [o]))
 findCex oracle aut = do
     sul <- ask
