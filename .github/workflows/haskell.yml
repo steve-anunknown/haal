@@ -17,7 +17,7 @@ jobs:
     - name: Set up Haskell
       uses: haskell-actions/setup@v2
       with:
-        ghc-version: '9.8.2'
+        ghc-version: '9.6.7'
 
     - name: Install stack
       uses: haskell-actions/setup@v2

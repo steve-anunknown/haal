@@ -8,9 +8,13 @@
 # A snapshot resolver dictates the compiler version and the set of packages
 # to be used for project dependencies. For example:
 #
-snapshot: nightly-2024-10-21
+# snapshot: nightly-2024-10-21
+snapshot: lts-22.44
 
 notify-if-nix-on-path: false
+
+nix:
+  enable: false
 
 packages:
 - .
