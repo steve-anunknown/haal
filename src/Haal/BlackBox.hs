@@ -113,7 +113,7 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
 
     explore _ [] = []
     explore visited ((q1, q2, prefix) : queue)
-        | Just seqFound <- discrepancy = reverse (seqFound : prefix)
+        | Just symbol <- discrepancy = reverse (symbol : prefix)
         | otherwise = explore newVisited (queue ++ newQueue)
       where
         newVisited = Map.insert (q1, q2) prefix visited
@@ -123,7 +123,7 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
         (nextStates1, outputs1) = unzip $ map (stepAndCurrent mo1) alphabet
         (nextStates2, outputs2) = unzip $ map (stepAndCurrent mo2) alphabet
 
-        discrepancy = List.elemIndex False (zipWith (==) outputs1 outputs2) >>= \idx -> Just (alphabet !! idx)
+        discrepancy = snd <$> List.find fst (zip (zipWith (/=) outputs1 outputs2) alphabet)
 
         appended = map (: prefix) alphabet
 
