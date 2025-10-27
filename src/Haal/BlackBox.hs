@@ -70,7 +70,7 @@ class (SUL (aut s) i o) => Automaton aut s i o where
 initial :: (Automaton aut s i o) => aut s i o -> s
 initial = current . reset
 
-reachable :: forall s i o aut. (Automaton aut s, Ord s, FiniteOrd i) => aut i o -> Set.Set s
+reachable :: forall s i o aut. (Automaton aut s i o, Ord s, FiniteOrd i) => aut s i o -> Set.Set s
 reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
   where
     alphabet = inputs aut
