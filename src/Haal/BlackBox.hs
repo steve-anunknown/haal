@@ -35,8 +35,7 @@ import qualified Data.Set as Set
 type StateID = Int
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
-It provides methods to step through the automaton, walk through a list of inputs,
-and retrieve the current state.
+It provides methods to step through the automaton and retrieve the current state.
 -}
 class SUL sul i o where
     step :: sul i o -> i -> (sul i o, o)
