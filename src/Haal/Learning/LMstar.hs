@@ -9,6 +9,7 @@ module Haal.Learning.LMstar (
     LMstar (..),
     LMstarConfig (..),
     mkLMstar,
+    makeHypothesis,
 )
 where
 
@@ -191,7 +192,7 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length r
     -- Helper: get the ID for the class a string belongs to
     getStateId :: [i] -> StateID
     getStateId s =
-        case List.find (\rep -> equivalentRows ot rep s) repList of
+        case List.find (equivalentRows ot s) repList of
             Just rep -> repToId Map.! rep
             Nothing -> error "No equivalent class found for string!"
 
