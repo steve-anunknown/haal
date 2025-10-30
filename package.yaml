@@ -59,3 +59,18 @@ tests:
     - QuickCheck
     - mtl
     - random
+
+executables:
+  div:
+    main: div.hs 
+    source-dirs: examples
+    dependencies: 
+    - haal 
+    - base
+  demo: 
+    main: demo.hs 
+    source-dirs: examples
+    dependencies: 
+    - haal 
+    - base
+    - containers

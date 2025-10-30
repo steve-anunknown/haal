@@ -1,4 +1,4 @@
-module Main where
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 import qualified Data.Set as Set
 import Haal.Automaton.MealyAutomaton
@@ -26,7 +26,8 @@ mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
 -- Run the experiment
 (learnedmodel, stats) = runExperiment myexperiment mysul
 
-main = do 
+main :: IO ()
+main = do
     putStrLn "Learning Experiment"
     putStrLn "==================="
     putStrLn $ "System Under Learning: " ++ show mysul
