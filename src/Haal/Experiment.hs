@@ -10,6 +10,7 @@ module Haal.Experiment (
     ExperimentT,
     Learner (..),
     EquivalenceOracle (..),
+    Statistics (..),
     experiment,
     runExperiment,
     pairwiseWalk,
