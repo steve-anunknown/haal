@@ -9,7 +9,6 @@ module Haal.Learning.LMstar (
     LMstar (..),
     LMstarConfig (..),
     mkLMstar,
-    makeHypothesis,
 )
 where
 
