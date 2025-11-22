@@ -57,9 +57,9 @@ equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e
 It must be in the 'Experiment' monad to allow queries to the SUL.
 -}
 initializeOT ::
-    forall i o sul.
-    (FiniteOrd i, SUL sul i o) =>
-    Experiment (sul i o) (ObservationTable i o)
+    forall i o sul m.
+    (FiniteOrd i, SUL sul i o, Monad m) =>
+    ExperimentT (sul i o) m (ObservationTable i o)
 initializeOT = do
     sul <- ask
     let alph = List.map (: []) $ Set.toList $ inputs sul
@@ -103,9 +103,10 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 
 -- | The 'lmstar' function implements one iteration of the LM* algorithm.
 lmstar ::
-    (SUL sul i o, FiniteOrd i, Eq o) =>
+    forall sul i o m.
+    (SUL sul i o, FiniteOrd i, Eq o, Monad m) =>
     LMstar i o ->
-    Experiment (sul i o) (LMstar i o, MealyAutomaton StateID i o)
+    ExperimentT (sul i o) m (LMstar i o, MealyAutomaton StateID i o)
 lmstar (LMstar ot) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
         ([], []) -> return (LMstar ot, makeHypothesis ot)
@@ -150,11 +151,11 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
 
 -- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
 otRefineAngluin ::
-    forall sul i o.
-    (FiniteOrd i, SUL sul i o) =>
+    forall sul i o m.
+    (FiniteOrd i, SUL sul i o, Monad m) =>
     ObservationTable i o ->
     [i] ->
-    Experiment (sul i o) (ObservationTable i o)
+    ExperimentT (sul i o) m (ObservationTable i o)
 otRefineAngluin ot [] = return ot
 otRefineAngluin ot cex = do
     sul <- ask
@@ -209,11 +210,11 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length r
 
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
-    forall i o sul.
-    (FiniteOrd i, SUL sul i o) =>
+    forall i o sul m.
+    (FiniteOrd i, SUL sul i o, Monad m) =>
     ObservationTable i o ->
     ([i], [i]) ->
-    Experiment (sul i o) (ObservationTable i o)
+    ExperimentT (sul i o) m (ObservationTable i o)
 makeConsistent ot ([], []) = return ot
 makeConsistent ot (column, symbol) = do
     sul <- ask
@@ -238,11 +239,11 @@ makeConsistent ot (column, symbol) = do
 
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
 makeClosed ::
-    forall sul i o.
-    (FiniteOrd i, SUL sul i o) =>
+    forall sul i o m.
+    (FiniteOrd i, SUL sul i o, Monad m) =>
     ObservationTable i o ->
     [i] ->
-    Experiment (sul i o) (ObservationTable i o)
+    ExperimentT (sul i o) m (ObservationTable i o)
 makeClosed ot [] = return ot
 makeClosed ot inc = do
     sul <- ask
@@ -276,11 +277,11 @@ instance Learner LMstar MealyAutomaton StateID where
 which is an improvement over Angluin's algorithm.
 -}
 otRefinePlus ::
-    forall sul i o.
-    (FiniteOrd i, SUL sul i o) =>
+    forall sul i o m.
+    (FiniteOrd i, SUL sul i o, Monad m) =>
     ObservationTable i o ->
     [i] ->
-    Experiment (sul i o) (ObservationTable i o)
+    ExperimentT (sul i o) m (ObservationTable i o)
 otRefinePlus ot [] = return ot
 otRefinePlus ot cex = do
     sul <- ask

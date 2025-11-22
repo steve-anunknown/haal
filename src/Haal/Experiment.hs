@@ -51,26 +51,29 @@ class Learner l aut s | l -> aut s where
         ( SUL sul i o
         , FiniteOrd i
         , Finite o
+        , Monad m
         ) =>
         l i o ->
-        Experiment (sul i o) (l i o)
+        ExperimentT (sul i o) m (l i o)
     refine ::
         ( SUL sul i o
         , FiniteOrd i
         , Finite o
+        , Monad m
         ) =>
         l i o ->
         [i] ->
-        Experiment (sul i o) (l i o)
+        ExperimentT (sul i o) m (l i o)
     learn ::
         ( SUL sul i o
         , Automaton aut s i o
         , FiniteOrd i
         , FiniteOrd s
         , FiniteEq o
+        , Monad m
         ) =>
         l i o ->
-        Experiment (sul i o) (l i o, aut s i o)
+        ExperimentT (sul i o) m (l i o, aut s i o)
 
 {- | The 'ExperimentT' type is a monad transformer that allows for
 running experiments in a reader monad. This may prove useful for
@@ -111,10 +114,11 @@ experiment ::
     , FiniteOrd i
     , FiniteOrd s
     , FiniteEq o
+    , Monad m
     ) =>
     learner i o ->
     oracle ->
-    Experiment (sul i o) (aut s i o, Statistics aut s i o)
+    ExperimentT (sul i o) m (aut s i o, Statistics aut s i o)
 experiment learner oracle = do
     initializedLearner <- initialize learner
     let inner le orc stats = do
@@ -179,10 +183,11 @@ findCex ::
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
+    , Monad m
     ) =>
     or ->
     aut s i o ->
-    Experiment (sul i o) (or, ([i], [o]))
+    ExperimentT (sul i o) m (or, ([i], [o]))
 findCex oracle aut = do
     sul <- ask
     let (oracle', theSuite) = testSuite oracle aut
