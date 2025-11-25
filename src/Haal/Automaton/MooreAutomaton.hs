@@ -14,6 +14,7 @@ where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Haal.BlackBox
+import Control.Monad.Identity (Identity)
 
 data MooreAutomaton state input output = MooreAutomaton
     { mooreDelta :: state -> input -> state
@@ -49,9 +50,9 @@ mooreStep m i = (m{mooreCurrentS = nextState}, output)
 mooreReset :: MooreAutomaton s i o -> MooreAutomaton s i o
 mooreReset m = m{mooreCurrentS = mooreInitialS m}
 
-instance SUL (MooreAutomaton s) i o where
-    step = mooreStep
-    reset = mooreReset
+instance SUL (MooreAutomaton s) Identity i o where
+    step sul i = return (mooreStep sul i)
+    reset = return . mooreReset
 
 {- | Returns a map describing the combined behaviour of the 'mooreDelta'
 and 'mooreLambda' functions.

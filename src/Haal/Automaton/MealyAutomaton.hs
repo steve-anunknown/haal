@@ -16,6 +16,7 @@ where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Haal.BlackBox
+import Control.Monad.Identity (Identity)
 
 {- | The 'MealyAutomaton' data type is parameterised by the 'input', 'output' and 'state' types
  which play the role of the input alphabet, output alphabet and set of states respectively.
@@ -72,9 +73,9 @@ mealyStep m i = (m{mealyCurrentS = nextState}, output)
 mealyReset :: MealyAutomaton s i o -> MealyAutomaton s i o
 mealyReset m = m{mealyCurrentS = mealyInitialS m}
 
-instance SUL (MealyAutomaton s) i o where
-    step = mealyStep
-    reset = mealyReset
+instance SUL (MealyAutomaton s) Identity i o where
+    step sul i = return (mealyStep sul i)
+    reset = return . mealyReset
 
 {- | Returns a map describing the combined behaviour of the 'mealyDelta'
 and 'mealyLambda' functions.

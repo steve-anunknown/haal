@@ -12,7 +12,8 @@ module Haal.Learning.LMstar (
 )
 where
 
-import Control.Monad.Reader (MonadReader (ask))
+import Control.Monad (foldM, forM)
+import Control.Monad.Reader (MonadReader (ask), MonadTrans (lift))
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -58,7 +59,7 @@ It must be in the 'Experiment' monad to allow queries to the SUL.
 -}
 initializeOT ::
     forall i o sul m.
-    (FiniteOrd i, SUL sul i o, Monad m) =>
+    (FiniteOrd i, SUL sul m i o) =>
     ExperimentT (sul i o) m (ObservationTable i o)
 initializeOT = do
     sul <- ask
@@ -66,14 +67,15 @@ initializeOT = do
         sm = Set.singleton []
         sm_I = Set.fromList alph
         em = Set.fromList alph
-        domain = (sm `Set.union` sm_I) `Set.cartesianProduct` em
-        tm =
-            Map.fromList
-                [ ( (in1, in2)
-                  , last $ snd $ walk (reset sul) (in1 ++ in2)
-                  )
-                | (in1, in2) <- Set.toList domain
-                ]
+        domain = Set.toList $ (sm `Set.union` sm_I) `Set.cartesianProduct` em
+    -- monadic mapping because walk is in m
+    tmList <- forM domain $ \(in1, in2) -> do
+        sul0 <- lift $ reset sul
+        (_, outs) <- lift $ walk sul0 (in1 ++ in2)
+        pure ((in1, in2), last outs)
+
+    let tm = Map.fromList tmList
+
     return
         ( ObservationTable
             { prefixSetS = sm
@@ -104,7 +106,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 -- | The 'lmstar' function implements one iteration of the LM* algorithm.
 lmstar ::
     forall sul i o m.
-    (SUL sul i o, FiniteOrd i, Eq o, Monad m) =>
+    (SUL sul m i o, FiniteOrd i, Eq o, Monad m) =>
     LMstar i o ->
     ExperimentT (sul i o) m (LMstar i o, MealyAutomaton StateID i o)
 lmstar (LMstar ot) = case otIsClosed ot of
@@ -152,7 +154,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
 -- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
 otRefineAngluin ::
     forall sul i o m.
-    (FiniteOrd i, SUL sul i o, Monad m) =>
+    (FiniteOrd i, SUL sul m i o) =>
     ObservationTable i o ->
     [i] ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -168,8 +170,8 @@ otRefineAngluin ot cex = do
         sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- Set.toList $ inputs sul]
         missing = (sm' `Set.union` sm_I') `Set.cartesianProduct` em
 
-        tm' = updateMap tm missing sul
-        ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'}
+    tm' <- lift $ updateMap tm missing sul
+    let ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'}
     return ot'
 
 {- | The 'makeHypothesis' function constructs a Mealy automaton from the observation table. It uses
@@ -211,7 +213,7 @@ makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length r
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
     forall i o sul m.
-    (FiniteOrd i, SUL sul i o, Monad m) =>
+    (FiniteOrd i, SUL sul m i o) =>
     ObservationTable i o ->
     ([i], [i]) ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -233,14 +235,19 @@ makeConsistent ot (column, symbol) = do
         tm = mappingT ot
 
         missing = (sm `Set.union` sm_I) `Set.cartesianProduct` em'
+        missing' = map (uncurry (++)) $ Set.toList missing
 
-        tm' = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk sul (a ++ b))) tm missing
+    outs <- lift $ forM missing' (walk sul)
+
+    let
+        outs' = map (last . snd) outs
+        tm' = foldr (\((a, b), o) -> Map.insert (a, b) o) tm (zip (Set.toList missing) outs')
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
 makeClosed ::
     forall sul i o m.
-    (FiniteOrd i, SUL sul i o, Monad m) =>
+    (FiniteOrd i, SUL sul m i o) =>
     ObservationTable i o ->
     [i] ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -254,7 +261,9 @@ makeClosed ot inc = do
         tm = mappingT ot
         sm' = inc `Set.insert` sm
         sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- alph]
-        tm' = List.foldr (uncurry Map.insert) tm [((inc ++ [s], e), last $ snd $ walk sul e) | s <- alph, e <- Set.toList em]
+    outs <- lift $ forM (Set.toList em) (walk sul)
+    let mappings = [((inc ++ [s], e), last (snd o)) | s <- alph, (e, o) <- zip (Set.toList em) outs]
+        tm' = List.foldr (uncurry Map.insert) tm mappings
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
 instance Learner LMstar MealyAutomaton StateID where
@@ -278,7 +287,7 @@ which is an improvement over Angluin's algorithm.
 -}
 otRefinePlus ::
     forall sul i o m.
-    (FiniteOrd i, SUL sul i o, Monad m) =>
+    (FiniteOrd i, SUL sul m i o) =>
     ObservationTable i o ->
     [i] ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -300,8 +309,21 @@ otRefinePlus ot cex = do
         newSuffixes = em `Set.difference` Set.fromList (init $ List.tails suffix)
         em' = List.foldr Set.insert em newSuffixes
         missing = (sm `Set.union` sm_I) `Set.cartesianProduct` newSuffixes
-        tm' = updateMap tm missing sul
+    tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
-updateMap :: (Ord i, SUL sul i o) => Map.Map ([i], [i]) o -> Set.Set ([i], [i]) -> sul i o -> Map.Map ([i], [i]) o
-updateMap themap thestuff thesul = Set.foldr (\(a, b) -> Map.insert (a, b) (last $ snd $ walk thesul (a ++ b))) themap thestuff
+updateMap ::
+    (Ord i, SUL sul m i o, Monad m) =>
+    Map.Map ([i], [i]) o ->
+    Set.Set ([i], [i]) ->
+    sul i o ->
+    m (Map.Map ([i], [i]) o)
+updateMap themap thestuff thesul =
+    foldM
+        ( \acc (a, b) -> do
+            (_, outs) <- walk thesul (a ++ b)
+            let o = last outs
+            pure (Map.insert (a, b) o acc)
+        )
+        themap
+        thestuff

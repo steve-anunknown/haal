@@ -19,6 +19,7 @@ import qualified Data.Set as Set
 import Haal.BlackBox
 import Haal.Experiment
 import System.Random (Random (randomR), StdGen)
+import Control.Monad.Identity (Identity(runIdentity))
 
 newtype WpMethodConfig = WpMethodConfig
     { wpDepth :: Int
@@ -80,7 +81,7 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
         concat
             [ [ acc ++ middle ++ suf
               | acc <- Set.toList difference
-              , suf <- Set.toList $ localSuf Map.! current (fst (walk aut (acc ++ middle)))
+              , suf <- Set.toList $ localSuf Map.! current (fst (runIdentity (walk aut (acc ++ middle))))
               ]
             | fixed <- [0 .. d]
             , middle <- replicateM fixed $ Set.toList alphabet
@@ -157,7 +158,7 @@ randomWpMethodSuite
             local <- state $ randomR (False, True)
             if local
                 then do
-                    let curr = current $ fst (walk aut (prefix ++ middle))
+                    let curr = current $ fst (runIdentity (walk aut (prefix ++ middle)))
                         suffixSet = localSuf Map.! curr
                     suffixIdx <- state $ randomR (0, Set.size suffixSet - 1)
                     let suffix = suffixIdx `Set.elemAt` suffixSet

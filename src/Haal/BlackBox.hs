@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 {- | This module defines the BlackBox type class as well as the Automaton and SUL
 sub classes.
@@ -28,6 +29,7 @@ import qualified Data.Bifunctor as Bif
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import Control.Monad.Identity (Identity, runIdentity)
 
 {- | The 'StateID' type is an alias for an integer that represents the state of the automaton.
  - It is used as a default type for the state of learned automata.
@@ -37,16 +39,20 @@ type StateID = Int
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
 It provides methods to step through the automaton and retrieve the current state.
 -}
-class SUL sul i o where
-    step :: sul i o -> i -> (sul i o, o)
-    reset :: sul i o -> sul i o
+class (Monad m) => SUL sul m i o where
+    step :: sul i o -> i -> m (sul i o, o)
+    reset :: sul i o -> m (sul i o)
 
 type Finite i = (Enum i, Bounded i)
 type FiniteEq i = (Eq i, Finite i)
 type FiniteOrd i = (Ord i, Finite i)
 
-walk :: (SUL sul i o) => sul i o -> [i] -> (sul i o, [o])
-walk = List.mapAccumL step
+walk :: (SUL sul m i o) => sul i o -> [i] -> m (sul i o, [o])
+walk sul [] = pure (sul, [])
+walk sul (x:xs) = do
+    (sul', o)     <- step sul x
+    (sul'', os)   <- walk sul' xs
+    pure (sul'', o : os)
 
 inputs :: (FiniteOrd i) => sul i o -> Set.Set i
 inputs _ = Set.fromList [minBound .. maxBound]
@@ -57,7 +63,7 @@ outputs _ = Set.fromList [minBound .. maxBound]
 {- | The 'Automaton' type class extends the 'SUL' type class and adds
 support for automata operations.
 -}
-class (SUL (aut s) i o) => Automaton aut s i o where
+class (SUL (aut s) Identity i o ) => Automaton aut s i o where
     transitions ::
         (FiniteOrd i, FiniteOrd s) =>
         aut s i o ->
@@ -66,8 +72,18 @@ class (SUL (aut s) i o) => Automaton aut s i o where
     current :: aut s i o -> s
     update :: aut s i o -> s -> aut s i o
 
-initial :: (Automaton aut s i o) => aut s i o -> s
-initial = current . reset
+-- unwrap step/reset for the Identity case
+stepPure :: (SUL sul Identity i o) => sul i o -> i -> (sul i o, o)
+stepPure sul i = runIdentity (step sul i)
+
+walkPure :: (SUL sul Identity i o) => sul i o -> [i] -> (sul i o, [o])
+walkPure sul i = runIdentity (walk sul i)
+
+resetPure :: (SUL sul Identity i o) => sul i o -> sul i o
+resetPure sul = runIdentity (reset sul)
+
+initial :: Automaton aut s i o => aut s i o -> s
+initial = current . resetPure
 
 reachable :: forall s i o aut. (Automaton aut s i o, Ord s, FiniteOrd i) => aut s i o -> Set.Set s
 reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
@@ -79,7 +95,7 @@ reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
     bfs (st : queue) visited = bfs queue' visited'
       where
         aut' = update aut st
-        neighbours = Set.map (current . fst . step aut') alphabet
+        neighbours = Set.map (current . fst . stepPure aut') alphabet
         visited' = visited `Set.union` neighbours
         queue' = Set.toList (neighbours `Set.difference` visited) ++ queue
 
@@ -99,11 +115,11 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
     bfs ((_, prefix) : rest) visited acc =
         bfs (rest ++ newQueue) newVisited newMap
       where
-        mo = fst $ walk (reset aut) (reverse prefix)
+        mo = fst $ walkPure (resetPure aut) (reverse prefix)
         successors =
             [ (nextState, input : prefix)
             | input <- alphabet
-            , let nextState = current . fst $ step mo input
+            , let nextState = current . fst $ stepPure mo input
             , nextState `Set.notMember` visited
             ]
 
@@ -145,7 +161,7 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
 
         newQueue = [(s1', s2', p) | ((s1', s2'), p) <- Map.toList toBeVisited, (s1', s2') `Map.notMember` visited]
 
-    stepAndCurrent mo i = Bif.first current (step mo i)
+    stepAndCurrent mo i = Bif.first current (stepPure mo i)
 
 {- | Returns a set of lists of inputs that can be used to distinguish between the given state and
  - any other state of the automaton.

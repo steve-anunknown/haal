@@ -20,6 +20,7 @@ module Haal.Experiment (
 
 import Control.Monad.Reader (
     MonadReader (ask),
+    MonadTrans (lift),
     ReaderT,
     runReader,
  )
@@ -48,29 +49,26 @@ determines the type of automaton 'aut' that is learned.
 -}
 class Learner l aut s | l -> aut s where
     initialize ::
-        ( SUL sul i o
+        ( SUL sul m i o
         , FiniteOrd i
         , Finite o
-        , Monad m
         ) =>
         l i o ->
         ExperimentT (sul i o) m (l i o)
     refine ::
-        ( SUL sul i o
+        ( SUL sul m i o
         , FiniteOrd i
         , Finite o
-        , Monad m
         ) =>
         l i o ->
         [i] ->
         ExperimentT (sul i o) m (l i o)
     learn ::
-        ( SUL sul i o
+        ( SUL sul m i o
         , Automaton aut s i o
         , FiniteOrd i
         , FiniteOrd s
         , FiniteEq o
-        , Monad m
         ) =>
         l i o ->
         ExperimentT (sul i o) m (l i o, aut s i o)
@@ -107,14 +105,13 @@ the 'runExperiment' function. It takes a learner and an equivalence oracle
 and then requires a system under learning (SUL) to run the experiment.
 -}
 experiment ::
-    ( SUL sul i o
+    ( SUL sul m i o
     , Automaton aut s i o
     , Learner learner aut s
     , EquivalenceOracle oracle
     , FiniteOrd i
     , FiniteOrd s
     , FiniteEq o
-    , Monad m
     ) =>
     learner i o ->
     oracle ->
@@ -137,7 +134,7 @@ experiment learner oracle = do
 
 -- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
 execute ::
-    ( SUL sul i o
+    ( SUL sul m i o
     , Automaton aut s i o
     , Ord i
     , Eq o
@@ -145,20 +142,21 @@ execute ::
     sul i o ->
     aut s i o ->
     [[i]] ->
-    ([i], [o])
-execute _ _ [] = ([], [])
-execute theSul theAut (s : ss) =
+    m ([i], [o])
+execute _ _ [] = return ([], [])
+execute theSul theAut (s : ss) = do
+    continue <- pairwiseWalk theSul theAut s
     if continue
         then execute theSul theAut ss
-        else (s, snd $ walk theSul s)
-  where
-    continue = pairwiseWalk theSul theAut s
+        else do
+            (_, out) <- walk theSul s
+            return (s, out)
 
 {- | The 'pairwiseWalk' function executes a test case on both the SUL and the automaton
 simultaneously, checking if the outputs are the same.
 -}
 pairwiseWalk ::
-    ( SUL sul i o
+    ( SUL sul m i o
     , Automaton aut s i o
     , Ord i
     , Eq o
@@ -166,24 +164,24 @@ pairwiseWalk ::
     sul i o ->
     aut s i o ->
     [i] ->
-    Bool
-pairwiseWalk _ _ [] = True
-pairwiseWalk theSul theAut (s : ss) = (out1 == out2) && pairwiseWalk sul' aut' ss
-  where
-    (sul', out1) = step theSul s
-    (aut', out2) = step theAut s
+    m Bool
+pairwiseWalk _ _ [] = return True
+pairwiseWalk theSul theAut (s : ss) = do
+    (sul', out1) <- step theSul s
+    let (aut', out2) = runIdentity (step theAut s)
+    rest <- pairwiseWalk sul' aut' ss
+    return $ out1 == out2 && rest
 
 {- | The 'findCex' function executes the test suite of each oracle to the automaton
 and SUL.
 -}
 findCex ::
-    ( SUL sul i o
+    ( SUL sul m i o
     , Automaton aut s i o
     , EquivalenceOracle or
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
-    , Monad m
     ) =>
     or ->
     aut s i o ->
@@ -191,4 +189,5 @@ findCex ::
 findCex oracle aut = do
     sul <- ask
     let (oracle', theSuite) = testSuite oracle aut
-    return (oracle', execute sul aut theSuite)
+    (cin, cout) <- lift $ execute sul aut theSuite
+    return (oracle', (cin, cout))

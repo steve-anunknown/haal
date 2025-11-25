@@ -6,6 +6,7 @@ import Haal.BlackBox (SUL (..), StateID)
 import Haal.EquivalenceOracle.WpMethod (WpMethod, mkWpMethod)
 import Haal.Experiment
 import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
+import Control.Monad.Identity (Identity)
 
 -- main logic
 divisible :: Integer -> Bool
@@ -49,9 +50,9 @@ data Program i o = Program
     , buffer :: [i]
     }
 
-instance Haal.BlackBox.SUL Program i o where
-    step = theStep
-    reset = theReset
+instance SUL Program Identity i o where
+    step s i = return (theStep s i)
+    reset = return . theReset
 
 wrapped :: [Binary] -> Bool
 wrapped = divisible . convert
