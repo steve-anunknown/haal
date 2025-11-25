@@ -67,6 +67,7 @@ executables:
     dependencies: 
     - haal 
     - base
+    - mtl
   demo: 
     main: demo.hs 
     source-dirs: examples
@@ -74,3 +75,11 @@ executables:
     - haal 
     - base
     - containers
+  io:
+    main: io.hs 
+    source-dirs: examples
+    dependencies: 
+    - haal 
+    - base
+    - process
+    - mtl
