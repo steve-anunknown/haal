@@ -18,7 +18,7 @@ import System.Process (readProcess)
 -- Note that this is relative to the project root. Otherwise
 -- the executable will not be found
 source :: String
-source = "./src/divisible3"
+source = "./examples/divisible3"
 
 inputMap :: Int -> String
 inputMap num = show num ++ "\n"
@@ -43,15 +43,15 @@ convert [B0] = 0
 convert [B1] = 1
 convert (b : bs) = convert [b] + 2 * convert bs
 
+-- this time, in contrast to div.hs, a Program performs IO actions,
+-- instead of purely returning the computes values
 data Program i o = Program
     { theStep :: i -> IO (Program i o, o)
     , theReset :: IO (Program i o)
     , buffer :: [i]
     }
 
--- fix from here on downwards
-
-instance Haal.BlackBox.SUL Program IO Binary Bool where
+instance SUL Program IO Binary Bool where
     step = theStep
     reset = theReset
 

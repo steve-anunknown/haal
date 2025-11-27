@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 {- | This module defines the BlackBox type class as well as the Automaton and SUL
 sub classes.
@@ -25,11 +25,11 @@ module Haal.BlackBox (
 )
 where
 
+import Control.Monad.Identity (Identity, runIdentity)
 import qualified Data.Bifunctor as Bif
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Control.Monad.Identity (Identity, runIdentity)
 
 {- | The 'StateID' type is an alias for an integer that represents the state of the automaton.
  - It is used as a default type for the state of learned automata.
@@ -38,6 +38,8 @@ type StateID = Int
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
 It provides methods to step through the automaton and retrieve the current state.
+It also requires a monad 'm', that may be 'Identity' in case of a pure SUL, or 'IO'
+in case of an external program that performs IO.
 -}
 class (Monad m) => SUL sul m i o where
     step :: sul i o -> i -> m (sul i o, o)
@@ -49,9 +51,9 @@ type FiniteOrd i = (Ord i, Finite i)
 
 walk :: (SUL sul m i o) => sul i o -> [i] -> m (sul i o, [o])
 walk sul [] = pure (sul, [])
-walk sul (x:xs) = do
-    (sul', o)     <- step sul x
-    (sul'', os)   <- walk sul' xs
+walk sul (x : xs) = do
+    (sul', o) <- step sul x
+    (sul'', os) <- walk sul' xs
     pure (sul'', o : os)
 
 inputs :: (FiniteOrd i) => sul i o -> Set.Set i
@@ -61,9 +63,10 @@ outputs :: (FiniteOrd o) => sul i o -> Set.Set o
 outputs _ = Set.fromList [minBound .. maxBound]
 
 {- | The 'Automaton' type class extends the 'SUL' type class and adds
-support for automata operations.
+support for automata operations. Automatons are models, not programs,
+so they are pure and operate in the Identity monad.
 -}
-class (SUL (aut s) Identity i o ) => Automaton aut s i o where
+class (SUL (aut s) Identity i o) => Automaton aut s i o where
     transitions ::
         (FiniteOrd i, FiniteOrd s) =>
         aut s i o ->
@@ -72,19 +75,23 @@ class (SUL (aut s) Identity i o ) => Automaton aut s i o where
     current :: aut s i o -> s
     update :: aut s i o -> s -> aut s i o
 
--- unwrap step/reset for the Identity case
+-- | Pure instance of 'step'.
 stepPure :: (SUL sul Identity i o) => sul i o -> i -> (sul i o, o)
 stepPure sul i = runIdentity (step sul i)
 
+-- | Pure instance of 'walk'.
 walkPure :: (SUL sul Identity i o) => sul i o -> [i] -> (sul i o, [o])
 walkPure sul i = runIdentity (walk sul i)
 
+-- | Pure instance of 'reset'.
 resetPure :: (SUL sul Identity i o) => sul i o -> sul i o
 resetPure sul = runIdentity (reset sul)
 
-initial :: Automaton aut s i o => aut s i o -> s
+-- | Return the initial state of an automaton.
+initial :: (Automaton aut s i o) => aut s i o -> s
 initial = current . resetPure
 
+-- | Return the set of reachable states of an automaton.
 reachable :: forall s i o aut. (Automaton aut s i o, Ord s, FiniteOrd i) => aut s i o -> Set.Set s
 reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
   where
@@ -127,6 +134,9 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
         newVisited = foldr (Set.insert . fst) visited successors
         newQueue = successors
 
+{- | Returns an input sequence that distinguishes the given states in
+the given automaton.
+-}
 distinguish ::
     ( Automaton aut s i o
     , FiniteOrd i
