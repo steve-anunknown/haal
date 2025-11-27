@@ -19,6 +19,7 @@ import Haal.BlackBox
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
 import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, statesAreEquivalent)
+import Control.Monad.Identity (runIdentity)
 
 -- The global characterizing set of a non minimal mealy automaton contains
 -- the empty list. This will fail if the 'State' type has less than 6-7 constructors
@@ -41,8 +42,8 @@ prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
         && output2 /= []
   where
     dist = distinguish automaton s1 s2
-    (_, output1) = walk (update automaton s1) dist
-    (_, output2) = walk (update automaton s2) dist
+    (_, output1) = runIdentity $ walk (update automaton s1) dist
+    (_, output2) = runIdentity $ walk (update automaton s2) dist
 
 -- The map returned by 'mealyTransitions' is equivalent to the 'mealyLambda'
 -- and 'mealyDelta' functions of the automaton.
