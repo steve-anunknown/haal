@@ -16,12 +16,14 @@ module Haal.Experiment (
     pairwiseWalk,
     execute,
     findCex,
+    runExperimentT,
 ) where
 
 import Control.Monad.Reader (
     MonadReader (ask),
     MonadTrans (lift),
-    ReaderT,
+    Reader,
+    ReaderT (runReaderT),
     runReader,
  )
 
@@ -87,7 +89,10 @@ type Experiment sul result = ExperimentT sul Identity result
 {- | The 'runExperiment' function runs an experiment in the 'Experiment' monad.
 It is just an alias for 'runReader'.
 -}
-runExperiment :: Experiment r a -> r -> a
+runExperimentT :: ReaderT r m a -> r -> m a
+runExperimentT = runReaderT
+
+runExperiment :: Reader r a -> r -> a
 runExperiment = runReader
 
 data Statistics aut s i o = Statistics

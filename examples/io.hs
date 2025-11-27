@@ -8,15 +8,17 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 import Data.Functor ((<&>))
-import qualified Haal.BlackBox
+import Haal.Automaton.MealyAutomaton
+import Haal.BlackBox
 import Haal.EquivalenceOracle.WpMethod
 import Haal.Experiment
 import Haal.Learning.LMstar
-import Haal.Automaton.MealyAutomaton
 import System.Process (readProcess)
 
+-- Note that this is relative to the project root. Otherwise
+-- the executable will not be found
 source :: String
-source = "../src/divisible3"
+source = "./src/divisible3"
 
 inputMap :: Int -> String
 inputMap num = show num ++ "\n"
@@ -68,23 +70,37 @@ mkProg buf =
         }
 
 -- construct a sul with an empty buffer
+sul :: Program Binary Bool
 sul = mkProg []
 
+learner :: LMstar Binary Bool
 learner = mkLMstar Star
 
+oracle :: WpMethod
 oracle = mkWpMethod 3
 
-exper :: ExperimentT
-                  (Program Binary Bool)
-                  IO
-                  (Haal.Automaton.MealyAutomaton.MealyAutomaton
-                     Haal.BlackBox.StateID Binary Bool,
-                   Statistics
-                     Haal.Automaton.MealyAutomaton.MealyAutomaton
-                     Haal.BlackBox.StateID
-                     Binary
-                     Bool)
+exper ::
+    ExperimentT
+        (Program Binary Bool)
+        IO
+        ( MealyAutomaton
+            StateID
+            Binary
+            Bool
+        , Statistics
+            MealyAutomaton
+            StateID
+            Binary
+            Bool
+        )
 exper = experiment learner oracle
 
+
 main :: IO ()
-main = undefined
+main = do
+    (theModel, theStats) <- runExperimentT exper sul
+    putStrLn "Learning Experiment"
+    putStrLn "==================="
+    putStrLn "System Under Learning: \\x -> x `mod` 3 == 0"
+    putStrLn $ "Learned Model: " ++ show theModel
+    putStrLn $ "Experiment Statistics: " ++ show theStats
