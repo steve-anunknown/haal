@@ -54,7 +54,7 @@ The library consists of the following main components:
 
 ### Systems under learning
 
-Systems under learning are defined by the `SUL` typeclass, parameterized by the types of their inputs and outputs. They must implement functions that allow them to be queried by learning algorithms and equivalence oracles.
+Systems under learning are defined by the `SUL` typeclass, parameterized by the types of their inputs and outputs. They must implement functions that allow them to be queried by learning algorithms and equivalence oracles. They are also parameterized by a monad which they operate in. For example, a SUL that is an external program performs IO actions, whereas a SUL that is a pure function operates in the Identity monad.
 
 ### Automata
 
