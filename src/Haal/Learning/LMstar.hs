@@ -18,17 +18,18 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import qualified Data.Trie.Set as TSet
 import Haal.Automaton.MealyAutomaton
 import Haal.BlackBox
 import Haal.Experiment
 
 -- | The 'ObservationTable' type is a data type for storing the observation table of the LM* algorithm.
 data ObservationTable i o = ObservationTable
-    { prefixSetS :: Set.Set [i]
-    , suffixSetE :: Set.Set [i]
+    { prefixSetS :: TSet.TSet i
+    , suffixSetE :: TSet.TSet i
     , mappingT :: Map.Map ([i], [i]) o
     , -- more fields to avoid recomputing
-      prefixSetSI :: Set.Set [i]
+      prefixSetSI :: TSet.TSet i
     }
     deriving (Show)
 
@@ -49,10 +50,13 @@ mkLMstar Plus = LMplus (error "this is invisible")
 
 -- | The 'equivalentRows' function checks if two rows in the observation table are equivalent.
 equivalentRows :: forall i o. (Ord i, Eq o) => ObservationTable i o -> [i] -> [i] -> Bool
-equivalentRows ot r1 r2 = and $ Set.map (\e -> mapping (r1, e) == mapping (r2, e)) em
+equivalentRows ot r1 r2 = all (\e -> mapping (r1, e) == mapping (r2, e)) (TSet.enumerate em)
   where
     mapping = flip Map.lookup (mappingT ot)
     em = suffixSetE ot
+
+cartesianProduct :: TSet.TSet c1 -> TSet.TSet c2 -> [([c1], [c2])]
+cartesianProduct s1 s2 = [(a, b) | a <- TSet.toList s1, b <- TSet.toList s2]
 
 {- | The 'initializeOT' function initializes the observation table for the LM* algorithm.
 It must be in the 'Experiment' monad to allow queries to the SUL.
@@ -64,10 +68,10 @@ initializeOT ::
 initializeOT = do
     sul <- ask
     let alph = List.map (: []) $ Set.toList $ inputs sul
-        sm = Set.singleton []
-        sm_I = Set.fromList alph
-        em = Set.fromList alph
-        domain = Set.toList $ (sm `Set.union` sm_I) `Set.cartesianProduct` em
+        sm = TSet.singleton []
+        sm_I = TSet.fromList alph
+        em = TSet.fromList alph
+        domain = (sm `TSet.union` sm_I) `cartesianProduct` em
     -- monadic mapping because walk is in m
     tmList <- forM domain $ \(in1, in2) -> do
         sul0 <- lift $ reset sul
@@ -93,8 +97,10 @@ equivalenceClasses ::
     Map.Map [i] [[i]]
 equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
   where
-    sm = prefixSetS ot
-    sm_I = prefixSetSI ot
+    -- temporary fix (more of a bypass) because Data.Trie.Set does not
+    -- provide the functions that `go` uses.
+    sm   = TSet.toSet $ prefixSetS ot
+    sm_I = TSet.toSet $ prefixSetSI ot
     go acc s
         | Set.null s = acc
         | otherwise =
@@ -128,8 +134,8 @@ lmstar (LMplus ot) = case otIsClosed ot of
 otIsClosed :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
   where
-    sm = prefixSetS ot
-    sm_I = prefixSetSI ot
+    sm   = TSet.enumerate $ prefixSetS ot
+    sm_I = TSet.enumerate $ prefixSetSI ot
 
     exists = List.find (\x -> not $ any (equivalentRows ot x) sm) sm_I
 
@@ -138,7 +144,7 @@ otIsConsistent :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> ([i
 otIsConsistent ot = Maybe.fromMaybe ([], []) condition
   where
     alph = [minBound .. maxBound] :: [i]
-    sm = Set.toList $ prefixSetS ot
+    sm = TSet.toList $ prefixSetS ot
 
     equivalentPairs = [(r1, r2) | r1 <- sm, r2 <- sm, r1 /= r2, equivalentRows ot r1 r2]
 
@@ -166,11 +172,11 @@ otRefineAngluin ot cex = do
         em = suffixSetE ot
         tm = mappingT ot
         -- insert all prefixes of the counterexample
-        sm' = List.foldr Set.insert sm [take n cex | n <- [1 .. length cex]]
-        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- Set.toList $ inputs sul]
-        missing = (sm' `Set.union` sm_I') `Set.cartesianProduct` em
+        sm' = List.foldr TSet.insert sm [take n cex | n <- [1 .. length cex]]
+        sm_I' = TSet.fromList [w ++ [a] | w <- TSet.toList sm', a <- Set.toList $ inputs sul]
+        missing = (sm' `TSet.union` sm_I') `cartesianProduct` em
 
-    tm' <- lift $ updateMap tm missing sul
+    tm' <- lift $ updateMap tm (Set.fromList missing) sul
     let ot' = ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'}
     return ot'
 
@@ -227,21 +233,21 @@ makeConsistent ot (column, symbol) = do
         -- only the query itself must be inserted.
         -- the suffixes are already members.
         em = suffixSetE ot
-        em' = query `Set.insert` em
+        em' = query `TSet.insert` em
 
         sm = prefixSetS ot
         sm_I = prefixSetSI ot
 
         tm = mappingT ot
 
-        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` em'
-        missing' = map (uncurry (++)) $ Set.toList missing
+        missing = (sm `TSet.union` sm_I) `cartesianProduct` em'
+        missing' = map (uncurry (++)) missing
 
     outs <- lift $ forM missing' (walk sul)
 
     let
         outs' = map (last . snd) outs
-        tm' = foldr (\((a, b), o) -> Map.insert (a, b) o) tm (zip (Set.toList missing) outs')
+        tm' = foldr (\((a, b), o) -> Map.insert (a, b) o) tm (zip missing outs')
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
@@ -259,10 +265,11 @@ makeClosed ot inc = do
         sm = prefixSetS ot
         em = suffixSetE ot
         tm = mappingT ot
-        sm' = inc `Set.insert` sm
-        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- alph]
-    outs <- lift $ forM (Set.toList em) (walk sul)
-    let mappings = [((inc ++ [s], e), last (snd o)) | s <- alph, (e, o) <- zip (Set.toList em) outs]
+        sm' = inc `TSet.insert` sm
+        sm_I' = foldr (TSet.insert . List.singleton) sm' alph
+        -- sm_I' = TSet.fromList [w ++ [a] | w <- TSet.toList sm', a <- alph]
+    outs <- lift $ forM (TSet.enumerate em) (walk sul)
+    let mappings = [((inc ++ [s], e), last (snd o)) | s <- alph, (e, o) <- zip (TSet.toList em) outs]
         tm' = List.foldr (uncurry Map.insert) tm mappings
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
@@ -303,13 +310,15 @@ otRefinePlus ot cex = do
         prefixes = List.inits cex
         suffixes = List.tails cex
         pairs = List.reverse $ List.zip prefixes suffixes
-        wrapped = List.find (\x -> Set.member (fst x) sm || Set.member (fst x) sm_I) pairs
+
+        wrapped = List.find (\x -> TSet.member (fst x) sm || TSet.member (fst x) sm_I) pairs
         (_, suffix) = Maybe.fromMaybe (error "failed to update observation table") wrapped
         -- the suffix is the distinguishing suffix. insert all suffixes expect from the empty one
-        newSuffixes = em `Set.difference` Set.fromList (init $ List.tails suffix)
-        em' = List.foldr Set.insert em newSuffixes
-        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` newSuffixes
-    tm' <- lift $ updateMap tm missing sul
+        newSuffixes = em `TSet.difference` TSet.fromList (init $ List.tails suffix)
+        em' = TSet.foldr TSet.insert em newSuffixes
+        missing = (sm `TSet.union` sm_I) `cartesianProduct` newSuffixes
+
+    tm' <- lift $ updateMap tm (Set.fromList missing) sul
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
 updateMap ::

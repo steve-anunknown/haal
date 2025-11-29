@@ -43,6 +43,7 @@ library:
     - mtl >= 2.2.2 && <= 2.3.1
     - random
     - vector
+    - trie-simple
 
 tests:
   haal-test:
