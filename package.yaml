@@ -83,3 +83,10 @@ executables:
     - base
     - process
     - mtl
+  website:
+    main: website.hs 
+    source-dirs: examples
+    dependencies: 
+    - haal 
+    - base
+    - process
