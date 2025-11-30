@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -42,22 +41,22 @@ import Haal.EquivalenceOracle.WMethod (
     RandomWMethod (RandomWMethod),
     RandomWMethodConfig (RandomWMethodConfig),
     WMethod (WMethod),
-    WMethodConfig (WMethodConfig),
+    mkWMethod,
  )
 import Haal.EquivalenceOracle.WpMethod (
     RandomWpMethod (RandomWpMethod),
     RandomWpMethodConfig (RandomWpMethodConfig),
     WpMethod (WpMethod),
-    WpMethodConfig (WpMethodConfig),
+    mkWpMethod,
  )
 import Haal.Experiment (EquivalenceOracle)
 import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
-newtype ArbWMethodConfig = ArbWMethodConfig WMethodConfig deriving (Show, Eq)
+newtype ArbWMethodConfig = ArbWMethodConfig Int deriving (Show, Eq)
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
 
-newtype ArbWpMethodConfig = ArbWpMethodConfig WpMethodConfig deriving (Show, Eq)
+newtype ArbWpMethodConfig = ArbWpMethodConfig Int deriving (Show, Eq)
 newtype ArbWpMethod = ArbWpMethod WpMethod deriving (Show, Eq)
 
 newtype ArbRandomWordsConfig = ArbRandomWordsConfig RandomWordsConfig deriving (Show, Eq)
@@ -75,20 +74,20 @@ newtype ArbRandomWpMethod = ArbRandomWpMethod RandomWpMethod deriving (Show, Eq)
 instance Arbitrary ArbWMethodConfig where
     arbitrary = do
         d <- choose (1, 5)
-        return (ArbWMethodConfig (WMethodConfig d))
+        return (ArbWMethodConfig d)
 instance Arbitrary ArbWMethod where
     arbitrary = do
         (ArbWMethodConfig config) <- arbitrary :: Gen ArbWMethodConfig
-        return (ArbWMethod (WMethod config))
+        return (ArbWMethod (mkWMethod config))
 
 instance Arbitrary ArbWpMethodConfig where
     arbitrary = do
         d <- choose (1, 5)
-        return (ArbWpMethodConfig (WpMethodConfig d))
+        return (ArbWpMethodConfig d)
 instance Arbitrary ArbWpMethod where
     arbitrary = do
         (ArbWpMethodConfig config) <- arbitrary :: Gen ArbWpMethodConfig
-        return (ArbWpMethod (WpMethod config))
+        return (ArbWpMethod (mkWpMethod config))
 
 instance Arbitrary ArbRandomWordsConfig where
     arbitrary = do

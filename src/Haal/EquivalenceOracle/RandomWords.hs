@@ -27,15 +27,8 @@ data RandomWordsConfig = RandomWordsConfig
 newtype RandomWords = RandomWords RandomWordsConfig deriving (Show, Eq)
 
 -- | Constructor for a 'RandomWords' data type.
-mkRandomWords :: StdGen -> Int -> Int -> Int -> RandomWords
-mkRandomWords gen limit minL maxL =
-    RandomWords
-        RandomWordsConfig
-            { rwGen = gen
-            , rwLimit = limit
-            , rwMinLength = minL
-            , rwMaxLength = maxL
-            }
+mkRandomWords :: RandomWordsConfig -> RandomWords
+mkRandomWords = RandomWords
 
 -- | Return the test suite of the 'RandomWords' algorithm.
 generateRandomWords :: (FiniteOrd a) => RandomWords -> sul a o -> (RandomWords, [[a]])
@@ -50,7 +43,7 @@ generateRandomWords
         )
     aut =
         let (ranWords, finalGen) = runState (replicateM count genWord) generator
-            oracle = mkRandomWords finalGen count minL maxL
+            oracle = mkRandomWords (RandomWordsConfig finalGen count minL maxL)
          in (oracle, ranWords)
       where
         alphaVec = V.fromList . Set.toList $ inputs aut

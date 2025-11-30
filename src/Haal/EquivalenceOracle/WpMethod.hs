@@ -3,7 +3,6 @@
 -- | This module implements the WpMethod.
 module Haal.EquivalenceOracle.WpMethod (
     WpMethod (..),
-    WpMethodConfig (..),
     RandomWpMethod (..),
     RandomWpMethodConfig (..),
     wpmethodSuiteSize,
@@ -21,21 +20,12 @@ import Haal.BlackBox
 import Haal.Experiment
 import System.Random (Random (randomR), StdGen)
 
-{- | Type that represents the configuration of an instance of the WpMethod algorithm. It really is just
-a wrapper around an integer.
--}
-newtype WpMethodConfig = WpMethodConfig
-    { wpDepth :: Int
-    -- ^ The maximum depth of the WpMethod.
-    }
-    deriving (Show, Eq)
-
 -- | Type for the WpMethod. It simply wraps the depth of the method.
-newtype WpMethod = WpMethod WpMethodConfig deriving (Eq, Show)
+newtype WpMethod = WpMethod Int deriving (Eq, Show)
 
 -- | Constructor for a 'WpMethod' value.
 mkWpMethod :: Int -> WpMethod
-mkWpMethod = WpMethod . WpMethodConfig
+mkWpMethod = WpMethod
 
 -- | The 'wpmethodSuiteSize' returns the nunmber of test cases in the test suite of WpMethod
 wpmethodSuiteSize :: a
@@ -52,7 +42,7 @@ wpmethodSuite ::
     WpMethod ->
     aut s i o ->
     (WpMethod, [[i]])
-wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
+wpmethodSuite wpm@(WpMethod d) aut = (wpm, suite)
   where
     alphabet = inputs aut
     stateCover = accessSequences aut
@@ -112,21 +102,8 @@ data RandomWpMethodConfig = RandomWpMethodConfig
 newtype RandomWpMethod = RandomWpMethod RandomWpMethodConfig deriving (Show, Eq)
 
 -- | Constructor for a 'RandomWpMethod' value.
-mkRandomWpMethod ::
-    StdGen ->
-    Int ->
-    Int ->
-    Int ->
-    RandomWpMethod
-mkRandomWpMethod g e mi lim =
-    RandomWpMethod
-        ( RandomWpMethodConfig
-            { rwpGen = g
-            , rwpExpected = e
-            , rwpMin = mi
-            , rwpLimit = lim
-            }
-        )
+mkRandomWpMethod :: RandomWpMethodConfig -> RandomWpMethod
+mkRandomWpMethod = RandomWpMethod
 
 -- | Return the 'RandomWpMethod' test suite.
 randomWpMethodSuite ::

@@ -3,7 +3,6 @@
 -- | This module implements the W-method equivalence oracle.
 module Haal.EquivalenceOracle.WMethod (
     WMethod (..),
-    WMethodConfig (..),
     wmethodSuiteSize,
     RandomWMethod (..),
     RandomWMethodConfig (..),
@@ -21,24 +20,15 @@ import Haal.EquivalenceOracle.RandomWords
 import Haal.Experiment
 import System.Random (Random (randomRs), RandomGen (split), StdGen)
 
-{- | The 'WMethodConfig' type represents the configuration of the 'WMethod' algorithm.
-It is just a wrapper around an integer.
--}
-newtype WMethodConfig = WMethodConfig
-    { wmDepth :: Int
-    -- ^ The maximum depth of the W-method.
-    }
-    deriving (Show, Eq)
-
 {- | The 'WMethod' type represents the W-method equivalence oracle.
 It is just a wrapper around an integer, which is used for configuring
 the exploration depth of the method.
 -}
-newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
+newtype WMethod = WMethod Int deriving (Show, Eq)
 
 -- | Constructor for a 'WMethod' value.
 mkWMethod :: Int -> WMethod
-mkWMethod = WMethod . WMethodConfig
+mkWMethod = WMethod
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
@@ -50,7 +40,7 @@ wmethodSuiteSize ::
     WMethod ->
     aut s i o ->
     Int
-wmethodSuiteSize (WMethod (WMethodConfig{wmDepth = d})) aut = size
+wmethodSuiteSize (WMethod d) aut = size
   where
     alphabet = Set.size $ inputs aut
     accessSeqs = Map.size $ accessSequences aut
@@ -68,7 +58,7 @@ wmethodSuite ::
     WMethod ->
     aut s i o ->
     (WMethod, [[i]])
-wmethodSuite wm@(WMethod (WMethodConfig{wmDepth = d})) aut = (wm, suite)
+wmethodSuite wm@(WMethod d) aut = (wm, suite)
   where
     alphabet = Set.toList $ inputs aut
     accessSeqs = accessSequences aut

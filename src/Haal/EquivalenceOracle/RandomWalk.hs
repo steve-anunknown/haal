@@ -28,14 +28,8 @@ data RandomWalkConfig = RandomWalkConfig
 newtype RandomWalk = RandomWalk RandomWalkConfig deriving (Show, Eq)
 
 -- | Constructor for a 'RandomWalk' value.
-mkRandomWalk :: StdGen -> Int -> Double -> RandomWalk
-mkRandomWalk gen maxS restartP =
-    RandomWalk
-        RandomWalkConfig
-            { rwlGen = gen
-            , rwlMaxSteps = maxS
-            , rwlRestart = restartP
-            }
+mkRandomWalk :: RandomWalkConfig -> RandomWalk
+mkRandomWalk = RandomWalk
 
 -- | Generates a random walk for the automaton.
 randomWalkSuite :: (FiniteOrd a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
@@ -45,7 +39,7 @@ randomWalkSuite (RandomWalk (RandomWalkConfig{rwlGen = g, rwlMaxSteps = maxS, rw
         randomInputs = take maxS $ randomRs (0, V.length alphabet - 1) g1
         inputSequence = map (alphabet V.!) randomInputs
         (inputSequence', g3) = splitWithProbability g2 restartP inputSequence
-        oracle' = mkRandomWalk g3 maxS restartP
+        oracle' = mkRandomWalk (RandomWalkConfig g3 maxS restartP)
      in (oracle', inputSequence')
 
 splitWithProbability :: StdGen -> Double -> [a] -> ([[a]], StdGen)
