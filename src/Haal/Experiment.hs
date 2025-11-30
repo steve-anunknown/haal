@@ -46,8 +46,8 @@ class EquivalenceOracle or where
 
 {- | The 'Learner' type class defines the interface for learning algorithms.
 Instances of this class should provide methods to initialize the learner,
-refine the learner with a counterexample, and learn an automaton. The type 'l'
-determines the type of automaton 'aut' that is learned.
+refine the learner with a counterexample, and learn an automaton. The type @l@
+determines the type of automaton @aut@ that is learned.
 -}
 class Learner l aut s | l -> aut s where
     initialize ::
@@ -86,15 +86,24 @@ with the 'Identity' monad. This allows for running pure experiments.
 -}
 type Experiment sul result = ExperimentT sul Identity result
 
-{- | The 'runExperiment' function runs an experiment in the 'Experiment' monad.
-It is just an alias for 'runReader'.
+{- | The 'runExperimentT' function runs an experiment in the 'ExperimentT' monad.
+It is just an alias for 'runReaderT'.
 -}
 runExperimentT :: ReaderT r m a -> r -> m a
 runExperimentT = runReaderT
 
+{- | The 'runExperiment' function runs an experiment in the 'Experiment' monad.
+It is just an alias for 'runReader'.
+-}
 runExperiment :: Reader r a -> r -> a
 runExperiment = runReader
 
+{- | The 'Statistics' data type is parameterized by the type of model being learned
+and the state, input and output types of the model. Its purpose is to keep track of
+different experimental stats. For the time being, only the number of rounds 'statsRounds',
+the counterexamples 'statsCexs' and the intermediate hypotheses 'statsHyps' are being kept
+track of.
+-}
 data Statistics aut s i o = Statistics
     { statsRounds :: Int
     , statsCexs :: [[i]]
@@ -102,8 +111,9 @@ data Statistics aut s i o = Statistics
     }
     deriving (Show)
 
-statsEmpty :: Statistics aut s i o
-statsEmpty = Statistics 0 [] []
+-- | Empty 'Statistics' value.
+mkStats :: Statistics aut s i o
+mkStats = Statistics 0 [] []
 
 {- | The 'experiment' function returns an 'Experiment' that can be run with
 the 'runExperiment' function. It takes a learner and an equivalence oracle
@@ -135,7 +145,7 @@ experiment learner oracle = do
                         hyps = statsHyps stats
                         stats' = Statistics (rounds + 1) (ce : cexs) (aut : hyps)
                     inner refinedLearner oracle' stats'
-    inner initializedLearner oracle statsEmpty
+    inner initializedLearner oracle mkStats
 
 -- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
 execute ::

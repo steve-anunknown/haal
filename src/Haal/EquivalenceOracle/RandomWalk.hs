@@ -1,3 +1,4 @@
+-- | This module implements the Random Walk equivalence oracle.
 module Haal.EquivalenceOracle.RandomWalk (
     RandomWalk (..),
     RandomWalkConfig (..),
@@ -15,6 +16,7 @@ import System.Random (
     StdGen,
  )
 
+-- | The 'RandomWalkConfig' data type represents the configuration for an instance of the 'RandomWalk' algorithm.
 data RandomWalkConfig = RandomWalkConfig
     { rwlGen :: StdGen
     , rwlMaxSteps :: Int
@@ -22,8 +24,10 @@ data RandomWalkConfig = RandomWalkConfig
     }
     deriving (Eq, Show)
 
+-- | The 'RandomWalk' data type is just a wrapper around the config.
 newtype RandomWalk = RandomWalk RandomWalkConfig deriving (Show, Eq)
 
+-- | Constructor for a 'RandomWalk' value.
 mkRandomWalk :: StdGen -> Int -> Double -> RandomWalk
 mkRandomWalk gen maxS restartP =
     RandomWalk

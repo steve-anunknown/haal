@@ -15,5 +15,6 @@ import Haal.Automaton.MooreAutomaton
 -- | 'DFA' is just a synonym for a 'MooreAutomaton' with 'Bool' type of output'.
 type DFA state input = MooreAutomaton state input Bool
 
+-- | Constructor for a 'DFA' value.
 mkDFA :: (s -> i -> s) -> (s -> Bool) -> Set.Set s -> s -> DFA s i
 mkDFA = mkMooreAutomaton

@@ -14,7 +14,7 @@ import Haal.BlackBox
 import Haal.Experiment
 import System.Random (Random (randomR), StdGen)
 
--- RandomWords.hs or a shared Configs.hs if you prefer
+-- | Data type that represents the configuration for an instance of the 'RandomWords' algorithm.
 data RandomWordsConfig = RandomWordsConfig
     { rwGen :: StdGen
     , rwLimit :: Int
@@ -23,8 +23,10 @@ data RandomWordsConfig = RandomWordsConfig
     }
     deriving (Eq, Show)
 
+-- | The 'RandomWords' type is just a wrapper around the respective config type.
 newtype RandomWords = RandomWords RandomWordsConfig deriving (Show, Eq)
 
+-- | Constructor for a 'RandomWords' data type.
 mkRandomWords :: StdGen -> Int -> Int -> Int -> RandomWords
 mkRandomWords gen limit minL maxL =
     RandomWords
@@ -35,6 +37,7 @@ mkRandomWords gen limit minL maxL =
             , rwMaxLength = maxL
             }
 
+-- | Return the test suite of the 'RandomWords' algorithm.
 generateRandomWords :: (FiniteOrd a) => RandomWords -> sul a o -> (RandomWords, [[a]])
 generateRandomWords
     ( RandomWords

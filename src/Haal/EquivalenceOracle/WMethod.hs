@@ -21,6 +21,9 @@ import Haal.EquivalenceOracle.RandomWords
 import Haal.Experiment
 import System.Random (Random (randomRs), RandomGen (split), StdGen)
 
+{- | The 'WMethodConfig' type represents the configuration of the 'WMethod' algorithm.
+It is just a wrapper around an integer.
+-}
 newtype WMethodConfig = WMethodConfig
     { wmDepth :: Int
     -- ^ The maximum depth of the W-method.
@@ -33,6 +36,7 @@ the exploration depth of the method.
 -}
 newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
 
+-- | Constructor for a 'WMethod' value.
 mkWMethod :: Int -> WMethod
 mkWMethod = WMethod . WMethodConfig
 
@@ -95,6 +99,7 @@ data RandomWMethodConfig = RandomWMethodConfig
 -- | The 'RandomWMethod' type represents a random W-method equivalence oracle.
 newtype RandomWMethod = RandomWMethod RandomWMethodConfig deriving (Show, Eq)
 
+-- | Constructor for a 'RandomWMethod' value.
 mkRandomWMethod :: StdGen -> Int -> Int -> RandomWMethod
 mkRandomWMethod g l n = RandomWMethod (RandomWMethodConfig g n l)
 

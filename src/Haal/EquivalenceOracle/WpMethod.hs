@@ -13,14 +13,17 @@ module Haal.EquivalenceOracle.WpMethod (
 ) where
 
 import Control.Monad (replicateM)
+import Control.Monad.Identity (Identity (runIdentity))
 import Control.Monad.State (MonadState (state), State, runState)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Haal.BlackBox
 import Haal.Experiment
 import System.Random (Random (randomR), StdGen)
-import Control.Monad.Identity (Identity(runIdentity))
 
+{- | Type that represents the configuration of an instance of the WpMethod algorithm. It really is just
+a wrapper around an integer.
+-}
 newtype WpMethodConfig = WpMethodConfig
     { wpDepth :: Int
     -- ^ The maximum depth of the WpMethod.
@@ -30,6 +33,7 @@ newtype WpMethodConfig = WpMethodConfig
 -- | Type for the WpMethod. It simply wraps the depth of the method.
 newtype WpMethod = WpMethod WpMethodConfig deriving (Eq, Show)
 
+-- | Constructor for a 'WpMethod' value.
 mkWpMethod :: Int -> WpMethod
 mkWpMethod = WpMethod . WpMethodConfig
 
@@ -89,6 +93,9 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig{wpDepth = d})) aut = (wpm, suite)
 
     suite = firstPhase ++ secondPhase
 
+{- | The 'RandomWpMethodConfig' is a record data type that represents the configuration for an instance
+of the Random WpMethod algorithm.
+-}
 data RandomWpMethodConfig = RandomWpMethodConfig
     { rwpGen :: StdGen
     -- ^ Random generator.
@@ -101,8 +108,10 @@ data RandomWpMethodConfig = RandomWpMethodConfig
     }
     deriving (Show, Eq)
 
+-- | The 'RandomWpMethod' type is just a wrapper around the config.
 newtype RandomWpMethod = RandomWpMethod RandomWpMethodConfig deriving (Show, Eq)
 
+-- | Constructor for a 'RandomWpMethod' value.
 mkRandomWpMethod ::
     StdGen ->
     Int ->
@@ -119,6 +128,7 @@ mkRandomWpMethod g e mi lim =
             }
         )
 
+-- | Return the 'RandomWpMethod' test suite.
 randomWpMethodSuite ::
     forall aut i o s.
     ( Automaton aut s i o

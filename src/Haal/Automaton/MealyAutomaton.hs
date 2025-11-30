@@ -18,7 +18,7 @@ import qualified Data.Set as Set
 import Haal.BlackBox
 import Control.Monad.Identity (Identity)
 
-{- | The 'MealyAutomaton' data type is parameterised by the 'input', 'output' and 'state' types
+{- | The 'MealyAutomaton' data type is parameterised by the @input@, @output@ and @state@ types
  which play the role of the input alphabet, output alphabet and set of states respectively.
  The transitions of the automaton are defined by the 'mealyDelta' and 'mealyLambda' functions,
  which respectively return the new state after a transition and the produced output. Finally,

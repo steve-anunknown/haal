@@ -38,17 +38,21 @@ type StateID = Int
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
 It provides methods to step through the automaton and retrieve the current state.
-It also requires a monad 'm', that may be 'Identity' in case of a pure SUL, or 'IO'
+It also requires a monad m, that may be 'Identity' in case of a pure SUL, or 'IO'
 in case of an external program that performs IO.
 -}
 class (Monad m) => SUL sul m i o where
     step :: sul i o -> i -> m (sul i o, o)
     reset :: sul i o -> m (sul i o)
 
+-- | Finite is an alias for (Enum, Bounded).
 type Finite i = (Enum i, Bounded i)
+-- | FiniteEq is an alias for (Eq, Finite).
 type FiniteEq i = (Eq i, Finite i)
+-- | FiniteOrd is an alias for (Ord, Bounded).
 type FiniteOrd i = (Ord i, Finite i)
 
+-- | Generalization of 'step' that operates on a list of inputs.
 walk :: (SUL sul m i o) => sul i o -> [i] -> m (sul i o, [o])
 walk sul [] = pure (sul, [])
 walk sul (x : xs) = do
@@ -56,9 +60,11 @@ walk sul (x : xs) = do
     (sul'', os) <- walk sul' xs
     pure (sul'', o : os)
 
+-- | Return a Set containing only the valid inputs of the SUL.
 inputs :: (FiniteOrd i) => sul i o -> Set.Set i
 inputs _ = Set.fromList [minBound .. maxBound]
 
+-- | Return a Set containing only the valid outputs of the SUL.
 outputs :: (FiniteOrd o) => sul i o -> Set.Set o
 outputs _ = Set.fromList [minBound .. maxBound]
 
