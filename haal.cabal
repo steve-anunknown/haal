@@ -113,7 +113,6 @@ executable website
       base
     , haal
     , process
-    , tagsoup
   default-language: Haskell2010
 
 test-suite haal-test
