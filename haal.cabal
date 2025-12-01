@@ -47,9 +47,9 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      base >=4.18.3 && <4.19
     , containers >=0.6.7 && <0.7
-    , mtl >=2.2.2 && <=2.3.1
+    , mtl >=2.3.1 && <2.4
     , random
     , vector
   default-language: Haskell2010
@@ -97,7 +97,7 @@ executable io
       base
     , haal
     , mtl
-    , process
+    , process >=1.6.19 && <1.7
   default-language: Haskell2010
 
 executable website
@@ -112,7 +112,7 @@ executable website
   build-depends:
       base
     , haal
-    , process
+    , process >=1.6.19 && <1.7
   default-language: Haskell2010
 
 test-suite haal-test
@@ -130,7 +130,7 @@ test-suite haal-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       QuickCheck
-    , base >=4.7 && <5
+    , base >=4.18.3 && <4.19
     , containers
     , haal
     , hspec

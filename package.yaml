@@ -23,7 +23,7 @@ synopsis:            "A Haskell library for Active Automata Learning."
 category:            "Model Learning"
 
 dependencies:
-- base >= 4.7 && < 5
+- base >= 4.18.3 && < 4.19
 
 ghc-options:
 - -Wall
@@ -40,7 +40,7 @@ library:
   source-dirs: src
   dependencies:
     - containers >= 0.6.7 && < 0.7
-    - mtl >= 2.2.2 && <= 2.3.1
+    - mtl >= 2.3.1 && < 2.4
     - random
     - vector
 
@@ -81,7 +81,7 @@ executables:
     dependencies: 
     - haal 
     - base
-    - process
+    - process >= 1.6.19 && < 1.7
     - mtl
   website:
     main: website.hs 
@@ -89,4 +89,5 @@ executables:
     dependencies: 
     - haal 
     - base
-    - process
+    - process >= 1.6.19 && < 1.7
+
