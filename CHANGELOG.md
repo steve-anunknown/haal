@@ -8,4 +8,14 @@ and this project adheres to the
 
 ## Unreleased
 
-## 0.1.0.0 - YYYY-MM-DD
+## 0.1.0.0 - 2025-12-02
+
+- Initial release of `haal`.
+    - Support for Mealy Automata and DFAs.
+    - One learner for Mealy Automata and DFAs with 2 configurations. 
+        - LStar.
+        - LPlus.
+    - Basic equivalence oracles. 
+    - Examples that showcase usage of the library.
+
+
