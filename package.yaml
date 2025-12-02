@@ -23,7 +23,7 @@ synopsis:            "A Haskell library for Active Automata Learning."
 category:            "Model Learning"
 
 dependencies:
-- base >= 4.18.3 && < 4.19
+- base >= 4.18.3 && < 4.21
 
 ghc-options:
 - -Wall
@@ -39,10 +39,10 @@ ghc-options:
 library:
   source-dirs: src
   dependencies:
-    - containers >= 0.6.7 && < 0.7
+    - containers >= 0.6 && < 0.7
     - mtl >= 2.3.1 && < 2.4
-    - random
-    - vector
+    - random >= 1.2.1 && < 1.2.2
+    - vector >= 0.13.1 && < 0.13.2
 
 tests:
   haal-test:
@@ -55,10 +55,10 @@ tests:
     dependencies:
     - haal
     - hspec
-    - containers
+    - containers >= 0.6 && < 0.7
     - QuickCheck
-    - mtl
-    - random
+    - mtl >= 2.3.1 && < 2.4
+    - random >= 1.2.1 && < 1.2.2
 
 executables:
   div:
@@ -67,27 +67,27 @@ executables:
     dependencies: 
     - haal 
     - base
-    - mtl
+    - mtl >= 2.3.1 && < 2.4
   demo: 
     main: demo.hs 
     source-dirs: examples
     dependencies: 
     - haal 
     - base
-    - containers
+    - containers >= 0.6 && < 0.7
   io:
     main: io.hs 
     source-dirs: examples
     dependencies: 
     - haal 
     - base
-    - process >= 1.6.19 && < 1.7
-    - mtl
+    - process >= 1.6.19 && < 1.6.25
+    - mtl >= 2.3.1 && < 2.4
   website:
     main: website.hs 
     source-dirs: examples
     dependencies: 
     - haal 
     - base
-    - process >= 1.6.19 && < 1.7
+    - process >= 1.6.19 && < 1.6.25
 
