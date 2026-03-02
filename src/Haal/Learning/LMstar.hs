@@ -111,7 +111,9 @@ lmstar ::
     ExperimentT (sul i o) m (LMstar i o, MealyAutomaton StateID i o)
 lmstar (LMstar ot) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
-        ([], []) -> return (LMstar ot, makeHypothesis ot)
+        ([], []) -> case makeHypothesis ot of
+            Just hyp -> return (LMstar ot, hyp)
+            Nothing -> error "LM*: invariant violation — makeHypothesis failed on closed consistent table"
         inc' -> do
             ot' <- makeConsistent ot inc'
             lmstar (LMstar ot')
@@ -119,7 +121,9 @@ lmstar (LMstar ot) = case otIsClosed ot of
         ot' <- makeClosed ot inc
         lmstar (LMstar ot')
 lmstar (LMplus ot) = case otIsClosed ot of
-    [] -> return (LMplus ot, makeHypothesis ot)
+    [] -> case makeHypothesis ot of
+        Just hyp -> return (LMplus ot, hyp)
+        Nothing -> error "LM+: invariant violation — makeHypothesis failed on closed table"
     inc -> do
         ot' <- makeClosed ot inc
         lmstar (LMplus ot')
@@ -176,39 +180,45 @@ otRefineAngluin ot cex = do
 
 {- | The 'makeHypothesis' function constructs a Mealy automaton from the observation table. It uses
 the default 'StateID' type defined in the 'Experiment' module for representing the automaton states.
+Returns 'Nothing' if the observation table is malformed (invariant violated).
 -}
-makeHypothesis :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> MealyAutomaton StateID i o
-makeHypothesis ot = mkMealyAutomaton delta' lambda' (Set.fromList [0 .. length repList - 1]) starting
+makeHypothesis :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> Maybe (MealyAutomaton StateID i o)
+makeHypothesis ot = do
+    startId <- getStateId []
+    let stateInputPairs = [(sid, i) | sid <- [0 .. numStates - 1], i <- alphaList]
+    deltaEntries <- mapM buildDeltaEntry stateInputPairs
+    lambdaEntries <- mapM buildLambdaEntry stateInputPairs
+    let deltaMap = Map.fromList deltaEntries
+        lambdaMap = Map.fromList lambdaEntries
+        delta' sid i = deltaMap Map.! (sid, i)
+        lambda' sid i = lambdaMap Map.! (sid, i)
+    return $ mkMealyAutomaton delta' lambda' (Set.fromList [0 .. numStates - 1]) startId
   where
-    -- Equivalence classes: Map from representative prefix to class members
-    equivMap :: Map.Map [i] [[i]]
     equivMap = equivalenceClasses ot
-
-    -- Assign an integer ID to each class representative
-    repList :: [[i]]
     repList = Map.keys equivMap
-
-    repToId :: Map.Map [i] StateID
+    numStates = length repList
     repToId = Map.fromList (zip repList [0 ..])
+    alphaList = [minBound .. maxBound] :: [i]
 
-    -- Helper: get the ID for the class a string belongs to
-    getStateId :: [i] -> StateID
-    getStateId s =
-        case List.find (equivalentRows ot s) repList of
-            Just rep -> repToId Map.! rep
-            Nothing -> error "No equivalent class found for string!"
+    getStateId :: [i] -> Maybe StateID
+    getStateId s = List.find (equivalentRows ot s) repList >>= flip Map.lookup repToId
 
-    delta' :: StateID -> i -> StateID
-    delta' sid i =
-        let rep = repList !! sid
-         in getStateId (rep ++ [i])
+    repAt :: StateID -> Maybe [i]
+    repAt sid
+        | sid >= 0 && sid < numStates = Just (repList !! sid)
+        | otherwise = Nothing
 
-    lambda' :: StateID -> i -> o
-    lambda' sid i =
-        let rep = repList !! sid
-         in mappingT ot Map.! (rep, [i])
+    buildDeltaEntry :: (StateID, i) -> Maybe ((StateID, i), StateID)
+    buildDeltaEntry (sid, i) = do
+        rep <- repAt sid
+        target <- getStateId (rep ++ [i])
+        return ((sid, i), target)
 
-    starting = getStateId []
+    buildLambdaEntry :: (StateID, i) -> Maybe ((StateID, i), o)
+    buildLambdaEntry (sid, i) = do
+        rep <- repAt sid
+        o <- Map.lookup (rep, [i]) (mappingT ot)
+        return ((sid, i), o)
 
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
