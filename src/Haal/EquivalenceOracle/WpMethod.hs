@@ -27,9 +27,49 @@ newtype WpMethod = WpMethod Int deriving (Eq, Show)
 mkWpMethod :: Int -> WpMethod
 mkWpMethod = WpMethod
 
--- | The 'wpmethodSuiteSize' returns the nunmber of test cases in the test suite of WpMethod
-wpmethodSuiteSize :: a
-wpmethodSuiteSize = error "todo"
+-- | The 'wpmethodSuiteSize' returns the number of test cases in the test suite of WpMethod.
+wpmethodSuiteSize ::
+    ( Automaton aut s i o
+    , FiniteOrd i
+    , FiniteOrd s
+    , Eq o
+    ) =>
+    WpMethod ->
+    aut s i o ->
+    Int
+wpmethodSuiteSize (WpMethod d) aut = firstPhaseSize + secondPhaseSize
+  where
+    alphabetList = Set.toList (inputs aut)
+    alphabetSize = length alphabetList
+    stateCover = accessSequences aut
+    localSufSizes =
+        Map.fromAscList
+            [ (st, Set.size (localCharacterizingSet aut st))
+            | st <- Set.toAscList (states aut)
+            ]
+    globalSufSize = Set.size (globalCharacterizingSet aut)
+    transitionCover =
+        Set.fromList
+            [ acc ++ [a]
+            | acc <- Map.elems stateCover
+            , a <- alphabetList
+            ]
+    difference = Set.fromList (Map.elems stateCover) `Set.difference` transitionCover
+
+    -- Closed form: |S| * |W| * (1 + |Σ| + ... + |Σ|^d)
+    firstPhaseSize =
+        Map.size stateCover
+            * globalSufSize
+            * sum [alphabetSize ^ k | k <- [0 .. d]]
+
+    -- Walk each acc once, then enumerate middles from that state; no test strings built.
+    secondPhaseSize = sum
+        [ localSufSizes Map.! current (fst (runIdentity (walk afterAcc middle)))
+        | acc <- Set.toList difference
+        , let afterAcc = fst (runIdentity (walk aut acc))
+        , fixed <- [0 .. d]
+        , middle <- replicateM fixed alphabetList
+        ]
 
 -- | Returns the test suite for the WpMethod.
 wpmethodSuite ::
