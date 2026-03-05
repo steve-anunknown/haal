@@ -6,7 +6,7 @@
 -- | This module implements the LM* algorithm for learning Mealy automata.
 module Haal.Learning.LMstar (
     lmstar,
-    LMstar (..),
+    LMstar,
     LMstarConfig (..),
     mkLMstar,
 )
