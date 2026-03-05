@@ -2,9 +2,10 @@
 
 -- | This module implements the W-method equivalence oracle.
 module Haal.EquivalenceOracle.WMethod (
-    WMethod (..),
+    WMethod,
+    WMethodConfig (..),
     wmethodSuiteSize,
-    RandomWMethod (..),
+    RandomWMethod,
     RandomWMethodConfig (..),
     mkWMethod,
     mkRandomWMethod,
@@ -16,18 +17,24 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Vector as Vec
 import Haal.BlackBox
-import Haal.EquivalenceOracle.RandomWords
+import Haal.EquivalenceOracle.RandomWords (RandomWordsConfig (..), mkRandomWords, randomWordsConfig)
 import Haal.Experiment
 import System.Random (Random (randomRs), RandomGen (split), StdGen)
 
-{- | The 'WMethod' type represents the W-method equivalence oracle.
-It is just a wrapper around an integer, which is used for configuring
-the exploration depth of the method.
+{- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
 -}
-newtype WMethod = WMethod Int deriving (Show, Eq)
+data WMethodConfig = WMethodConfig
+    { wmDepth :: Int
+    -- ^ The number of extra states beyond the hypothesis to account for.
+    }
+    deriving (Show, Eq)
+
+{- | The 'WMethod' type represents the W-method equivalence oracle.
+-}
+newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
 
 -- | Constructor for a 'WMethod' value.
-mkWMethod :: Int -> WMethod
+mkWMethod :: WMethodConfig -> WMethod
 mkWMethod = WMethod
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
@@ -40,7 +47,7 @@ wmethodSuiteSize ::
     WMethod ->
     aut s i o ->
     Int
-wmethodSuiteSize (WMethod d) aut = size
+wmethodSuiteSize (WMethod (WMethodConfig d)) aut = size
   where
     alphabet = Set.size $ inputs aut
     accessSeqs = Map.size $ accessSequences aut
@@ -58,7 +65,7 @@ wmethodSuite ::
     WMethod ->
     aut s i o ->
     (WMethod, [[i]])
-wmethodSuite wm@(WMethod d) aut = (wm, suite)
+wmethodSuite wm@(WMethod (WMethodConfig d)) aut = (wm, suite)
   where
     alphabet = Set.toList $ inputs aut
     accessSeqs = accessSequences aut
@@ -90,8 +97,8 @@ data RandomWMethodConfig = RandomWMethodConfig
 newtype RandomWMethod = RandomWMethod RandomWMethodConfig deriving (Show, Eq)
 
 -- | Constructor for a 'RandomWMethod' value.
-mkRandomWMethod :: StdGen -> Int -> Int -> RandomWMethod
-mkRandomWMethod g l n = RandomWMethod (RandomWMethodConfig g n l)
+mkRandomWMethod :: RandomWMethodConfig -> RandomWMethod
+mkRandomWMethod = RandomWMethod
 
 -- | The 'randomWMethodSuite' function generates the test suite for the random W-method and a new oracle.
 randomWMethodSuite ::
@@ -105,20 +112,20 @@ randomWMethodSuite ::
     aut s i o ->
     (RandomWMethod, [[i]])
 randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
-    let rorc = RandomWords (RandomWordsConfig{rwMaxLength = wl, rwMinLength = 1, rwLimit = wpr, rwGen = g})
+    let rorc = mkRandomWords (RandomWordsConfig{rwMaxLength = wl, rwMinLength = 1, rwLimit = wpr, rwGen = g})
         prefixes = Map.elems $ accessSequences aut
         vecSuffixes = Vec.fromList $ Set.toList $ globalCharacterizingSet aut
 
-        (RandomWords roc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut s i o))
+        (rorc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut s i o))
         flatWords = concat wordBatches
 
-        (gen'', gen''') = split (rwGen roc')
+        (gen'', gen''') = split (rwGen (randomWordsConfig rorc'))
         samples = length prefixes * wpr
         randomSuffixes = take samples $ randomRs (0, Vec.length vecSuffixes - 1) gen''
         suffixes = map (vecSuffixes Vec.!) randomSuffixes
 
         suite = [prefix ++ rand ++ suffix | prefix <- prefixes, rand <- flatWords, suffix <- suffixes]
-     in (mkRandomWMethod gen''' wpr wl, suite)
+     in (mkRandomWMethod (RandomWMethodConfig gen''' wpr wl), suite)
 
 instance EquivalenceOracle RandomWMethod where
     testSuite = randomWMethodSuite

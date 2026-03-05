@@ -1,6 +1,6 @@
 -- | This module implements the Random Walk equivalence oracle.
 module Haal.EquivalenceOracle.RandomWalk (
-    RandomWalk (..),
+    RandomWalk,
     RandomWalkConfig (..),
     mkRandomWalk,
 )

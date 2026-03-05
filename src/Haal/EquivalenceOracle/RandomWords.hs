@@ -1,8 +1,9 @@
 -- | This module implements a simple random words equivalence oracle.
 module Haal.EquivalenceOracle.RandomWords (
-    RandomWords (..),
+    RandomWords,
     RandomWordsConfig (..),
     mkRandomWords,
+    randomWordsConfig,
 )
 where
 
@@ -29,6 +30,10 @@ newtype RandomWords = RandomWords RandomWordsConfig deriving (Show, Eq)
 -- | Constructor for a 'RandomWords' data type.
 mkRandomWords :: RandomWordsConfig -> RandomWords
 mkRandomWords = RandomWords
+
+-- | Accessor for the 'RandomWordsConfig' of a 'RandomWords' value.
+randomWordsConfig :: RandomWords -> RandomWordsConfig
+randomWordsConfig (RandomWords config) = config
 
 -- | Return the test suite of the 'RandomWords' algorithm.
 generateRandomWords :: (FiniteOrd a) => RandomWords -> sul a o -> (RandomWords, [[a]])

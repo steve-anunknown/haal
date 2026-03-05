@@ -1,6 +1,7 @@
 -- | This module implements a combined equivalence oracle for two oracles.
 module Haal.EquivalenceOracle.CombinedOracle (
-    CombinedOracle (..),
+    CombinedOracle,
+    mkCombinedOracle,
 ) where
 
 import Haal.Experiment
@@ -10,6 +11,10 @@ It is used to chain multiple oracles together by first exhausting the test suite
 of the first oracle and then using the second oracle.
 -}
 data CombinedOracle a b = CombinedOracle a b deriving (Show, Eq)
+
+-- | Constructor for a 'CombinedOracle' value.
+mkCombinedOracle :: a -> b -> CombinedOracle a b
+mkCombinedOracle = CombinedOracle
 
 instance
     ( EquivalenceOracle a

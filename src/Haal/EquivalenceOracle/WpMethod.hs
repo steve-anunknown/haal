@@ -2,11 +2,11 @@
 
 -- | This module implements the WpMethod.
 module Haal.EquivalenceOracle.WpMethod (
-    WpMethod (..),
-    RandomWpMethod (..),
+    WpMethod,
+    WpMethodConfig (..),
+    RandomWpMethod,
     RandomWpMethodConfig (..),
     wpmethodSuiteSize,
-    randomWpMethodSuite,
     mkWpMethod,
     mkRandomWpMethod,
 ) where
@@ -20,11 +20,20 @@ import Haal.BlackBox
 import Haal.Experiment
 import System.Random (Random (randomR), StdGen)
 
--- | Type for the WpMethod. It simply wraps the depth of the method.
-newtype WpMethod = WpMethod Int deriving (Eq, Show)
+{- | The 'WpMethodConfig' type is used to configure the Wp-method equivalence oracle.
+-}
+data WpMethodConfig = WpMethodConfig
+    { wpmDepth :: Int
+    -- ^ The number of extra states beyond the hypothesis to account for.
+    }
+    deriving (Show, Eq)
+
+{- | The 'WpMethod' type represents the Wp-method equivalence oracle.
+-}
+newtype WpMethod = WpMethod WpMethodConfig deriving (Eq, Show)
 
 -- | Constructor for a 'WpMethod' value.
-mkWpMethod :: Int -> WpMethod
+mkWpMethod :: WpMethodConfig -> WpMethod
 mkWpMethod = WpMethod
 
 -- | The 'wpmethodSuiteSize' returns the number of test cases in the test suite of WpMethod.
@@ -82,7 +91,7 @@ wpmethodSuite ::
     WpMethod ->
     aut s i o ->
     (WpMethod, [[i]])
-wpmethodSuite wpm@(WpMethod d) aut = (wpm, suite)
+wpmethodSuite wpm@(WpMethod (WpMethodConfig d)) aut = (wpm, suite)
   where
     alphabet = inputs aut
     stateCover = accessSequences aut
