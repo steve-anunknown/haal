@@ -20,16 +20,14 @@ import Haal.BlackBox
 import Haal.Experiment
 import System.Random (Random (randomR), StdGen)
 
-{- | The 'WpMethodConfig' type is used to configure the Wp-method equivalence oracle.
--}
+-- | The 'WpMethodConfig' type is used to configure the Wp-method equivalence oracle.
 data WpMethodConfig = WpMethodConfig
     { wpmDepth :: Int
     -- ^ The number of extra states beyond the hypothesis to account for.
     }
     deriving (Show, Eq)
 
-{- | The 'WpMethod' type represents the Wp-method equivalence oracle.
--}
+-- | The 'WpMethod' type represents the Wp-method equivalence oracle.
 newtype WpMethod = WpMethod WpMethodConfig deriving (Eq, Show)
 
 -- | Constructor for a 'WpMethod' value.
@@ -46,7 +44,7 @@ wpmethodSuiteSize ::
     WpMethod ->
     aut s i o ->
     Int
-wpmethodSuiteSize (WpMethod d) aut = firstPhaseSize + secondPhaseSize
+wpmethodSuiteSize (WpMethod (WpMethodConfig d)) aut = firstPhaseSize + secondPhaseSize
   where
     alphabetList = Set.toList (inputs aut)
     alphabetSize = length alphabetList
@@ -72,13 +70,14 @@ wpmethodSuiteSize (WpMethod d) aut = firstPhaseSize + secondPhaseSize
             * sum [alphabetSize ^ k | k <- [0 .. d]]
 
     -- Walk each acc once, then enumerate middles from that state; no test strings built.
-    secondPhaseSize = sum
-        [ localSufSizes Map.! current (fst (runIdentity (walk afterAcc middle)))
-        | acc <- Set.toList difference
-        , let afterAcc = fst (runIdentity (walk aut acc))
-        , fixed <- [0 .. d]
-        , middle <- replicateM fixed alphabetList
-        ]
+    secondPhaseSize =
+        sum
+            [ localSufSizes Map.! current (fst (runIdentity (walk afterAcc middle)))
+            | acc <- Set.toList difference
+            , let afterAcc = fst (runIdentity (walk aut acc))
+            , fixed <- [0 .. d]
+            , middle <- replicateM fixed alphabetList
+            ]
 
 -- | Returns the test suite for the WpMethod.
 wpmethodSuite ::
