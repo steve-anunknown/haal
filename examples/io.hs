@@ -77,7 +77,7 @@ learner :: LMstar Binary Bool
 learner = mkLMstar Star
 
 oracle :: WpMethod
-oracle = mkWpMethod 3
+oracle = mkWpMethod (WpMethodConfig 3)
 
 exper ::
     ExperimentT

@@ -3,7 +3,7 @@ module EquivalenceOracleSpec (
 ) where
 
 import Control.Monad.Reader
-import Haal.EquivalenceOracle.WMethod (WMethod (..), wmethodSuiteSize)
+import Haal.EquivalenceOracle.WMethod (wmethodSuiteSize)
 import Haal.Experiment
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, property, (==>))
@@ -19,8 +19,8 @@ prop_difference (Mealy aut1) (Mealy aut2) w =
 
 -- WMethod-specific cardinality law
 prop_WMethodCardinality :: ArbWMethod -> Mealy State Input Output -> Bool
-prop_WMethodCardinality (ArbWMethod (WMethod d)) (Mealy aut) =
-    length (snd (testSuite (WMethod d) aut)) == wmethodSuiteSize (WMethod d) aut
+prop_WMethodCardinality (ArbWMethod wm) (Mealy aut) =
+    length (snd (testSuite wm aut)) == wmethodSuiteSize wm aut
 
 spec :: Spec
 spec = do

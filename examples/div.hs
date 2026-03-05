@@ -3,7 +3,7 @@
 
 import Haal.Automaton.MealyAutomaton
 import Haal.BlackBox (SUL (..), StateID)
-import Haal.EquivalenceOracle.WpMethod (WpMethod, mkWpMethod)
+import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod)
 import Haal.Experiment
 import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
 import Control.Monad.Identity (Identity)
@@ -83,7 +83,7 @@ learner :: LMstar Binary Bool
 learner = mkLMstar Star
 
 oracle :: WpMethod
-oracle = mkWpMethod 3
+oracle = mkWpMethod (WpMethodConfig 3)
 
 exper :: Experiment (Program Binary Bool) (MealyAutomaton StateID Binary Bool, Statistics MealyAutomaton StateID Binary Bool)
 exper = experiment learner oracle

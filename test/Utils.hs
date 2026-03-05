@@ -24,39 +24,45 @@ import qualified Data.Map as Map
 import qualified Data.Maybe
 import qualified Data.Set as Set
 import Haal.Automaton.MealyAutomaton (
-    MealyAutomaton (..),
-    mealyDelta,
-    mealyLambda,
+    MealyAutomaton,
+    mkMealyAutomaton,
+    mealyTransitions,
  )
 import Haal.BlackBox
 import Haal.EquivalenceOracle.RandomWalk (
-    RandomWalk (RandomWalk),
-    RandomWalkConfig (RandomWalkConfig),
+    RandomWalk,
+    RandomWalkConfig (..),
+    mkRandomWalk,
  )
 import Haal.EquivalenceOracle.RandomWords (
-    RandomWords (RandomWords),
-    RandomWordsConfig (RandomWordsConfig),
+    RandomWords,
+    RandomWordsConfig (..),
+    mkRandomWords,
  )
 import Haal.EquivalenceOracle.WMethod (
-    RandomWMethod (RandomWMethod),
-    RandomWMethodConfig (RandomWMethodConfig),
-    WMethod (WMethod),
+    RandomWMethod,
+    RandomWMethodConfig (..),
+    WMethod,
+    WMethodConfig (..),
     mkWMethod,
+    mkRandomWMethod,
  )
 import Haal.EquivalenceOracle.WpMethod (
-    RandomWpMethod (RandomWpMethod),
-    RandomWpMethodConfig (RandomWpMethodConfig),
-    WpMethod (WpMethod),
+    RandomWpMethod,
+    RandomWpMethodConfig (..),
+    WpMethod,
+    WpMethodConfig (..),
     mkWpMethod,
+    mkRandomWpMethod,
  )
 import Haal.Experiment (EquivalenceOracle)
 import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 
-newtype ArbWMethodConfig = ArbWMethodConfig Int deriving (Show, Eq)
+newtype ArbWMethodConfig = ArbWMethodConfig WMethodConfig deriving (Show, Eq)
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
 
-newtype ArbWpMethodConfig = ArbWpMethodConfig Int deriving (Show, Eq)
+newtype ArbWpMethodConfig = ArbWpMethodConfig WpMethodConfig deriving (Show, Eq)
 newtype ArbWpMethod = ArbWpMethod WpMethod deriving (Show, Eq)
 
 newtype ArbRandomWordsConfig = ArbRandomWordsConfig RandomWordsConfig deriving (Show, Eq)
@@ -74,7 +80,7 @@ newtype ArbRandomWpMethod = ArbRandomWpMethod RandomWpMethod deriving (Show, Eq)
 instance Arbitrary ArbWMethodConfig where
     arbitrary = do
         d <- choose (1, 5)
-        return (ArbWMethodConfig d)
+        return (ArbWMethodConfig (WMethodConfig d))
 instance Arbitrary ArbWMethod where
     arbitrary = do
         (ArbWMethodConfig config) <- arbitrary :: Gen ArbWMethodConfig
@@ -83,7 +89,7 @@ instance Arbitrary ArbWMethod where
 instance Arbitrary ArbWpMethodConfig where
     arbitrary = do
         d <- choose (1, 5)
-        return (ArbWpMethodConfig d)
+        return (ArbWpMethodConfig (WpMethodConfig d))
 instance Arbitrary ArbWpMethod where
     arbitrary = do
         (ArbWpMethodConfig config) <- arbitrary :: Gen ArbWpMethodConfig
@@ -100,7 +106,7 @@ instance Arbitrary ArbRandomWordsConfig where
 instance Arbitrary ArbRandomWords where
     arbitrary = do
         (ArbRandomWordsConfig config) <- arbitrary :: Gen ArbRandomWordsConfig
-        return (ArbRandomWords (RandomWords config))
+        return (ArbRandomWords (mkRandomWords config))
 
 instance Arbitrary ArbRandomWalkConfig where
     arbitrary = do
@@ -112,7 +118,7 @@ instance Arbitrary ArbRandomWalkConfig where
 instance Arbitrary ArbRandomWalk where
     arbitrary = do
         (ArbRandomWalkConfig config) <- arbitrary :: Gen ArbRandomWalkConfig
-        return (ArbRandomWalk (RandomWalk config))
+        return (ArbRandomWalk (mkRandomWalk config))
 
 instance Arbitrary ArbRandomWMethodConfig where
     arbitrary = do
@@ -124,7 +130,7 @@ instance Arbitrary ArbRandomWMethodConfig where
 instance Arbitrary ArbRandomWMethod where
     arbitrary = do
         (ArbRandomWMethodConfig config) <- arbitrary :: Gen ArbRandomWMethodConfig
-        return (ArbRandomWMethod (RandomWMethod config))
+        return (ArbRandomWMethod (mkRandomWMethod config))
 
 instance Arbitrary ArbRandomWpMethodConfig where
     arbitrary = do
@@ -138,7 +144,7 @@ instance Arbitrary ArbRandomWpMethodConfig where
 instance Arbitrary ArbRandomWpMethod where
     arbitrary = do
         (ArbRandomWpMethodConfig config) <- arbitrary :: Gen ArbRandomWpMethodConfig
-        return (ArbRandomWpMethod (RandomWpMethod config))
+        return (ArbRandomWpMethod (mkRandomWpMethod config))
 
 class (EquivalenceOracle oracle) => OracleWrapper w oracle | w -> oracle where
     unwrap :: w -> oracle
@@ -183,13 +189,9 @@ instance
 
         return
             ( Mealy
-                ( MealyAutomaton
-                    { mealyDelta = delta
-                    , mealyLambda = lambda
-                    , mealyInitialS = initialState
-                    , mealyCurrentS = currentState
-                    , mealyStates = Set.fromList sts
-                    }
+                ( update
+                    (mkMealyAutomaton delta lambda (Set.fromList sts) initialState)
+                    currentState
                 )
             )
       where
@@ -246,13 +248,9 @@ instance Arbitrary NonMinimalMealy where
 
         return
             ( NonMinimalMealy
-                ( MealyAutomaton
-                    { mealyDelta = delta
-                    , mealyLambda = lambda
-                    , mealyInitialS = initialState
-                    , mealyCurrentS = currentState
-                    , mealyStates = Set.fromList sts
-                    }
+                ( update
+                    (mkMealyAutomaton delta lambda (Set.fromList sts) initialState)
+                    currentState
                 )
             )
       where
@@ -294,8 +292,6 @@ instance Arbitrary NonMinimalMealy where
 statesAreEquivalent :: MealyAutomaton State Input Output -> State -> State -> Bool
 statesAreEquivalent _ s1 s2 | s1 == s2 = True
 statesAreEquivalent automaton s1 s2 =
-    all (\i -> (delta s1 i, lambda s1 i) == (delta s2 i, lambda s2 i)) alphabet
+    all (\i -> trans Map.! (s1, i) == trans Map.! (s2, i)) (inputs automaton)
   where
-    delta = mealyDelta automaton
-    lambda = mealyLambda automaton
-    alphabet = inputs automaton
+    trans = mealyTransitions automaton

@@ -3,7 +3,7 @@
 
 import qualified Data.List as List
 import Haal.BlackBox
-import Haal.EquivalenceOracle.WMethod (mkWMethod)
+import Haal.EquivalenceOracle.WMethod (WMethodConfig (..), mkWMethod)
 import Haal.Experiment
 import Haal.Learning.LMstar
 import System.Process (readProcess)
@@ -85,7 +85,7 @@ instance SUL WebsiteSUL IO Page PageTag where
 --------------------------------------------------------------------------------
 
 learner = mkLMstar Star
-teacher = mkWMethod 2
+teacher = mkWMethod (WMethodConfig 2)
 exper = experiment learner teacher
 
 --------------------------------------------------------------------------------
