@@ -4,11 +4,11 @@
 
 -- | This module implements a Mealy automaton.
 module Haal.Automaton.MealyAutomaton (
-    MealyAutomaton (..),
+    MealyAutomaton,
     mkMealyAutomaton,
     mkMealyAutomaton2,
-    mealyStep,
-    mealyReset,
+    mealyDelta,
+    mealyLambda,
     mealyTransitions,
 )
 where

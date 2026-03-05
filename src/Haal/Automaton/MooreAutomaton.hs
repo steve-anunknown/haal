@@ -6,7 +6,6 @@
 module Haal.Automaton.MooreAutomaton (
     MooreAutomaton,
     mkMooreAutomaton,
-    mooreStep,
     mooreTransitions,
 )
 where
