@@ -39,6 +39,7 @@ ghc-options:
 library:
   source-dirs: src
   dependencies:
+    - liquidhaskell
     - containers >= 0.6 && < 0.7
     - mtl >= 2.3.1 && < 2.4
     - random >= 1.2.1 && < 1.2.2
