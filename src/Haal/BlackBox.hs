@@ -2,6 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fplugin=LiquidHaskell 
+                -fplugin-opt=LiquidHaskell:--prune-unsorted 
+                -fplugin-opt=LiquidHaskell:--no-termination #-}
 
 {- | This module defines the BlackBox type class as well as the Automaton and SUL
 sub classes.
@@ -50,12 +53,15 @@ class (Monad m) => SUL sul m where
 
 -- | Finite is an alias for (Enum, Bounded).
 type Finite i = (Enum i, Bounded i)
+
 -- | FiniteEq is an alias for (Eq, Finite).
 type FiniteEq i = (Eq i, Finite i)
+
 -- | FiniteOrd is an alias for (Ord, Bounded).
 type FiniteOrd i = (Ord i, Finite i)
 
 -- | Generalization of 'step' that operates on a list of inputs.
+{-@ walk :: (SUL sul m) => sul i o -> xs:[i] -> m (sul i o, {ys:[o] | len ys == len xs}) @-}
 walk :: (SUL sul m) => sul i o -> [i] -> m (sul i o, [o])
 walk sul [] = pure (sul, [])
 walk sul (x : xs) = do
@@ -63,13 +69,25 @@ walk sul (x : xs) = do
     (sul'', os) <- walk sul' xs
     pure (sul'', o : os)
 
+{-@ rangeIN :: (Enum i, Bounded i) => sul i o -> {is:[i] | len is > 0} @-}
+rangeIN :: (Finite i) => sul i o -> [i]
+rangeIN _ = minBound : [succ minBound .. maxBound]
+
+{-@ rangeOUT :: (Enum o, Bounded o) => sul i o -> {os:[o] | len os > 0} @-}
+rangeOUT :: (Finite o) => sul i o -> [o]
+rangeOUT _ = minBound : [succ minBound .. maxBound]
+
+{-@ assume Set.fromList :: Ord a => xs:[a] -> {s:Set.Set a | len xs > 0 => Set.size s > 0} @-}
+
 -- | Return a Set containing only the valid inputs of the SUL.
+{-@ inputs :: (Ord i, Enum i, Bounded i) => sul i o -> {is:Set.Set i | Set.size is > 0} @-}
 inputs :: (FiniteOrd i) => sul i o -> Set.Set i
-inputs _ = Set.fromList [minBound .. maxBound]
+inputs x = Set.fromList $ rangeIN x
 
 -- | Return a Set containing only the valid outputs of the SUL.
+{-@ outputs :: (Ord o, Enum o, Bounded o) => sul i o -> {os:Set.Set o | Set.size os > 0} @-}
 outputs :: (FiniteOrd o) => sul i o -> Set.Set o
-outputs _ = Set.fromList [minBound .. maxBound]
+outputs x = Set.fromList $ rangeOUT x
 
 {- | The 'Automaton' type class extends the 'SUL' type class and adds
 support for automata operations. Automatons are models, not programs,
