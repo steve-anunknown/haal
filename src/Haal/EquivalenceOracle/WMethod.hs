@@ -19,18 +19,16 @@ import qualified Data.Vector as Vec
 import Haal.BlackBox
 import Haal.EquivalenceOracle.RandomWords (RandomWordsConfig (..), mkRandomWords, randomWordsConfig)
 import Haal.Experiment
-import System.Random (Random (randomRs), RandomGen (split), StdGen)
+import System.Random (Random (randomRs), SplitGen (splitGen), StdGen)
 
-{- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
--}
-data WMethodConfig = WMethodConfig
+-- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
+newtype WMethodConfig = WMethodConfig
     { wmDepth :: Int
     -- ^ The number of extra states beyond the hypothesis to account for.
     }
     deriving (Show, Eq)
 
-{- | The 'WMethod' type represents the W-method equivalence oracle.
--}
+-- | The 'WMethod' type represents the W-method equivalence oracle.
 newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
 
 -- | Constructor for a 'WMethod' value.
@@ -119,7 +117,7 @@ randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
         (rorc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut s i o))
         flatWords = concat wordBatches
 
-        (gen'', gen''') = split (rwGen (randomWordsConfig rorc'))
+        (gen'', gen''') = splitGen (rwGen (randomWordsConfig rorc'))
         samples = length prefixes * wpr
         randomSuffixes = take samples $ randomRs (0, Vec.length vecSuffixes - 1) gen''
         suffixes = map (vecSuffixes Vec.!) randomSuffixes
