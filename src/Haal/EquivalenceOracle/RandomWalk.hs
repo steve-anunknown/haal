@@ -12,7 +12,7 @@ import Haal.BlackBox
 import Haal.Experiment
 import System.Random (
     Random (randomR, randomRs),
-    RandomGen (split),
+    SplitGen (splitGen),
     StdGen,
  )
 
@@ -34,7 +34,7 @@ mkRandomWalk = RandomWalk
 -- | Generates a random walk for the automaton.
 randomWalkSuite :: (FiniteOrd a) => RandomWalk -> sul a o -> (RandomWalk, [[a]])
 randomWalkSuite (RandomWalk (RandomWalkConfig{rwlGen = g, rwlMaxSteps = maxS, rwlRestart = restartP})) aut =
-    let (g1, g2) = split g
+    let (g1, g2) = splitGen g
         alphabet = V.fromList . Set.toList $ inputs aut
         randomInputs = take maxS $ randomRs (0, V.length alphabet - 1) g1
         inputSequence = map (alphabet V.!) randomInputs
