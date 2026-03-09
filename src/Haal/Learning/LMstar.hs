@@ -2,6 +2,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
+{-# OPTIONS_GHC -fplugin=LiquidHaskell 
+                -fplugin-opt=LiquidHaskell:--prune-unsorted 
+                -fplugin-opt=LiquidHaskell:--no-termination #-}
 
 -- | This module implements the LM* algorithm for learning Mealy automata.
 module Haal.Learning.LMstar (
@@ -22,7 +25,34 @@ import Haal.Automaton.MealyAutomaton
 import Haal.BlackBox
 import Haal.Experiment
 
+{-@ ignore otRefinePlus @-}
+{-@ ignore makeConsistent @-}
+{-@ ignore makeClosed @-}
+{-@ ignore mkLMstar @-}
+{-@ ignore lmstar @-}
+
+{-@ die :: {v:String | false} -> a @-}
+die :: String -> a
+die = error
+                
+{-@ listIndexLH :: xs:[a] -> {n:Int | 0 <= n && n < len xs} -> a @-}
+listIndexLH :: [a] -> Int -> a
+listIndexLH (x:_)  0 = x
+listIndexLH (_:xs) n = listIndexLH xs (n-1)
+listIndexLH []     _ = die "impossible: list index out of bounds"
+
+{-@ lastLH :: {xs:[a] | len xs > 0} -> a @-}
+lastLH :: [a] -> a 
+lastLH [] = die "impossible: lastLH called on empty list"
+lastLH l = last l
+
 -- | The 'ObservationTable' type is a data type for storing the observation table of the LM* algorithm.
+{-@ data ObservationTable i o = ObservationTable
+    { prefixSetS  :: Set.Set [i]
+    , suffixSetE  :: Set.Set {v:[i] | len v > 0}
+    , mappingT    :: Map.Map ([i], [i]) o
+    , prefixSetSI :: Set.Set [i]
+    } @-}
 data ObservationTable i o = ObservationTable
     { prefixSetS :: Set.Set [i]
     , suffixSetE :: Set.Set [i]
@@ -31,6 +61,9 @@ data ObservationTable i o = ObservationTable
       prefixSetSI :: Set.Set [i]
     }
     deriving (Show)
+
+{-@ assume Set.difference :: forall <p :: a -> Bool>. Ord a => Set.Set (a<p>) -> Set.Set a -> Set.Set (a<p>) @-}
+{-@ assume Set.cartesianProduct :: forall <p1 :: a -> Bool, p2 :: b -> Bool>. (Ord a, Ord b) => Set.Set (a<p1>) -> Set.Set (b<p2>) -> Set.Set (a<p1>, b<p2>) @-}
 
 {- | The 'LMstarConfig' type is a configuration type for the LM* algorithm.
 It allows the user to choose between the original LM* algorithm and the LM+ algorithm.
@@ -63,7 +96,8 @@ initializeOT ::
     ExperimentT (sul i o) m (ObservationTable i o)
 initializeOT = do
     sul <- ask
-    let alph = List.map (: []) $ Set.toList $ inputs sul
+    let 
+        alph = List.map (: []) $ Set.toList $ inputs sul
         sm = Set.singleton []
         sm_I = Set.fromList alph
         em = Set.fromList alph
@@ -72,7 +106,7 @@ initializeOT = do
     tmList <- forM domain $ \(in1, in2) -> do
         sul0 <- lift $ reset sul
         (_, outs) <- lift $ walk sul0 (in1 ++ in2)
-        pure ((in1, in2), last outs)
+        pure ((in1, in2), lastLH outs)
 
     let tm = Map.fromList tmList
 
@@ -205,7 +239,7 @@ makeHypothesis ot = do
 
     repAt :: StateID -> Maybe [i]
     repAt sid
-        | sid >= 0 && sid < numStates = Just (repList !! sid)
+        | sid >= 0 && sid < numStates = Just (repList `listIndexLH` sid)
         | otherwise = Nothing
 
     buildDeltaEntry :: (StateID, i) -> Maybe ((StateID, i), StateID)
@@ -250,7 +284,7 @@ makeConsistent ot (column, symbol) = do
     outs <- lift $ forM missing' (walk sul)
 
     let
-        outs' = map (last . snd) outs
+        outs' = map (lastLH . snd) outs
         tm' = foldr (\((a, b), o) -> Map.insert (a, b) o) tm (zip (Set.toList missing) outs')
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
@@ -272,7 +306,7 @@ makeClosed ot inc = do
         sm' = inc `Set.insert` sm
         sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- alph]
     outs <- lift $ forM (Set.toList em) (walk sul)
-    let mappings = [((inc ++ [s], e), last (snd o)) | s <- alph, (e, o) <- zip (Set.toList em) outs]
+    let mappings = [((inc ++ [s], e), lastLH (snd o)) | s <- alph, (e, o) <- zip (Set.toList em) outs]
         tm' = List.foldr (uncurry Map.insert) tm mappings
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
@@ -314,14 +348,24 @@ otRefinePlus ot cex = do
         suffixes = List.tails cex
         pairs = List.reverse $ List.zip prefixes suffixes
         wrapped = List.find (\x -> Set.member (fst x) sm || Set.member (fst x) sm_I) pairs
-        (_, suffix) = Maybe.fromMaybe (error "failed to update observation table") wrapped
+        -- (_, suffix) = Maybe.fromMaybe (error "failed to update observation table") wrapped
+        (_, suffix) = Maybe.fromMaybe ([], []) wrapped
         -- the suffix is the distinguishing suffix. insert all suffixes expect from the empty one
         newSuffixes = em `Set.difference` Set.fromList (init $ List.tails suffix)
         em' = List.foldr Set.insert em newSuffixes
         missing = (sm `Set.union` sm_I) `Set.cartesianProduct` newSuffixes
+
     tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
+-- >>> :t all 
+-- all :: Foldable t => (a -> Bool) -> t a -> Bool
+
+{-@ updateMap :: (Ord i, SUL sul m i o, Monad m)
+              => Map.Map ([i],[i]) o
+              -> Set.Set ([i], {v:[i] | len v > 0})
+              -> sul i o
+              -> m (Map.Map ([i],[i]) o) @-}
 updateMap ::
     (Ord i, SUL sul m i o, Monad m) =>
     Map.Map ([i], [i]) o ->
@@ -332,7 +376,7 @@ updateMap themap thestuff thesul =
     foldM
         ( \acc (a, b) -> do
             (_, outs) <- walk thesul (a ++ b)
-            let o = last outs
+            let o = lastLH outs
             pure (Map.insert (a, b) o acc)
         )
         themap
