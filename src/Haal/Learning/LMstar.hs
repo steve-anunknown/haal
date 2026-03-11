@@ -59,7 +59,7 @@ It must be in the 'Experiment' monad to allow queries to the SUL.
 -}
 initializeOT ::
     forall i o sul m.
-    (FiniteOrd i, SUL sul m i o) =>
+    (FiniteOrd i, SUL sul m) =>
     ExperimentT (sul i o) m (ObservationTable i o)
 initializeOT = do
     sul <- ask
@@ -106,7 +106,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 -- | The 'lmstar' function implements one iteration of the LM* algorithm.
 lmstar ::
     forall sul i o m.
-    (SUL sul m i o, FiniteOrd i, Eq o, Monad m) =>
+    (SUL sul m, FiniteOrd i, Eq o, Monad m) =>
     LMstar i o ->
     ExperimentT (sul i o) m (LMstar i o, MealyAutomaton StateID i o)
 lmstar (LMstar ot) = case otIsClosed ot of
@@ -158,7 +158,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
 -- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
 otRefineAngluin ::
     forall sul i o m.
-    (FiniteOrd i, SUL sul m i o) =>
+    (FiniteOrd i, SUL sul m) =>
     ObservationTable i o ->
     [i] ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -223,7 +223,7 @@ makeHypothesis ot = do
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 makeConsistent ::
     forall i o sul m.
-    (FiniteOrd i, SUL sul m i o) =>
+    (FiniteOrd i, SUL sul m) =>
     ObservationTable i o ->
     ([i], [i]) ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -257,7 +257,7 @@ makeConsistent ot (column, symbol) = do
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
 makeClosed ::
     forall sul i o m.
-    (FiniteOrd i, SUL sul m i o) =>
+    (FiniteOrd i, SUL sul m) =>
     ObservationTable i o ->
     [i] ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -297,7 +297,7 @@ which is an improvement over Angluin's algorithm.
 -}
 otRefinePlus ::
     forall sul i o m.
-    (FiniteOrd i, SUL sul m i o) =>
+    (FiniteOrd i, SUL sul m) =>
     ObservationTable i o ->
     [i] ->
     ExperimentT (sul i o) m (ObservationTable i o)
@@ -323,7 +323,7 @@ otRefinePlus ot cex = do
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
 updateMap ::
-    (Ord i, SUL sul m i o, Monad m) =>
+    (Ord i, SUL sul m, Monad m) =>
     Map.Map ([i], [i]) o ->
     Set.Set ([i], [i]) ->
     sul i o ->

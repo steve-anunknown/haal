@@ -39,7 +39,7 @@ mkWMethod = WMethod
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -57,7 +57,7 @@ wmethodSuiteSize (WMethod (WMethodConfig d)) aut = size
 
 -- | The 'wmethodSuite' function generates the test suite for the W-method and a new oracle.
 wmethodSuite ::
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -103,7 +103,7 @@ mkRandomWMethod = RandomWMethod
 -- | The 'randomWMethodSuite' function generates the test suite for the random W-method and a new oracle.
 randomWMethodSuite ::
     forall i o s aut.
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o

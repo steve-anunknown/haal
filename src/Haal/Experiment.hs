@@ -35,7 +35,7 @@ Instances of this class should provide methods to generate a test suite
 -}
 class EquivalenceOracle or where
     testSuite ::
-        ( Automaton aut s i o
+        ( Automaton aut s
         , FiniteOrd i
         , FiniteOrd s
         , Eq o
@@ -51,14 +51,14 @@ determines the type of automaton @aut@ that is learned.
 -}
 class Learner l aut s | l -> aut s where
     initialize ::
-        ( SUL sul m i o
+        ( SUL sul m
         , FiniteOrd i
         , Finite o
         ) =>
         l i o ->
         ExperimentT (sul i o) m (l i o)
     refine ::
-        ( SUL sul m i o
+        ( SUL sul m
         , FiniteOrd i
         , Finite o
         ) =>
@@ -66,8 +66,8 @@ class Learner l aut s | l -> aut s where
         [i] ->
         ExperimentT (sul i o) m (l i o)
     learn ::
-        ( SUL sul m i o
-        , Automaton aut s i o
+        ( SUL sul m
+        , Automaton aut s
         , FiniteOrd i
         , FiniteOrd s
         , FiniteEq o
@@ -120,8 +120,8 @@ the 'runExperiment' function. It takes a learner and an equivalence oracle
 and then requires a system under learning (SUL) to run the experiment.
 -}
 experiment ::
-    ( SUL sul m i o
-    , Automaton aut s i o
+    ( SUL sul m
+    , Automaton aut s
     , Learner learner aut s
     , EquivalenceOracle oracle
     , FiniteOrd i
@@ -149,8 +149,8 @@ experiment learner oracle = do
 
 -- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
 execute ::
-    ( SUL sul m i o
-    , Automaton aut s i o
+    ( SUL sul m
+    , Automaton aut s
     , Ord i
     , Eq o
     ) =>
@@ -171,8 +171,8 @@ execute theSul theAut (s : ss) = do
 simultaneously, checking if the outputs are the same.
 -}
 pairwiseWalk ::
-    ( SUL sul m i o
-    , Automaton aut s i o
+    ( SUL sul m
+    , Automaton aut s
     , Ord i
     , Eq o
     ) =>
@@ -191,8 +191,8 @@ pairwiseWalk theSul theAut (s : ss) = do
 and SUL.
 -}
 findCex ::
-    ( SUL sul m i o
-    , Automaton aut s i o
+    ( SUL sul m
+    , Automaton aut s
     , EquivalenceOracle or
     , FiniteOrd i
     , FiniteOrd s

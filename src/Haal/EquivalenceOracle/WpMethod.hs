@@ -36,7 +36,7 @@ mkWpMethod = WpMethod
 
 -- | The 'wpmethodSuiteSize' returns the number of test cases in the test suite of WpMethod.
 wpmethodSuiteSize ::
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -82,7 +82,7 @@ wpmethodSuiteSize (WpMethod (WpMethodConfig d)) aut = firstPhaseSize + secondPha
 -- | Returns the test suite for the WpMethod.
 wpmethodSuite ::
     forall aut i o s.
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -156,7 +156,7 @@ mkRandomWpMethod = RandomWpMethod
 -- | Return the 'RandomWpMethod' test suite.
 randomWpMethodSuite ::
     forall aut i o s.
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
