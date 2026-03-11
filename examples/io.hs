@@ -51,7 +51,7 @@ data Program i o = Program
     , buffer :: [i]
     }
 
-instance SUL Program IO Binary Bool where
+instance SUL Program IO where
     step = theStep
     reset = theReset
 

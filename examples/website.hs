@@ -24,11 +24,13 @@ data PageTag
     | NotFoundTag
     deriving (Eq, Show, Ord, Enum, Bounded)
 
-data WebsiteSUL inp out = WebsiteSUL
+data WebsiteSUL i o = WebsiteSUL
     { baseUrl :: String
     , currentUrl :: String -- current path, e.g. "/about"
+    , toPath :: i -> String
+    , fromHtml :: String -> o
+    , notFound :: o
     }
-    deriving (Eq, Show)
 
 -- Fetch + HTML processing
 --------------------------------------------------------------------------------
@@ -65,20 +67,18 @@ outputMap html
 -- SUL instance
 --------------------------------------------------------------------------------
 
-instance SUL WebsiteSUL IO Page PageTag where
-    reset sul = do
-        pure sul{currentUrl = "/"}
+instance SUL WebsiteSUL IO where
+    reset sul = pure sul{currentUrl = "/"}
 
     step sul input = do
         if currentUrl sul /= "/garbage"
             then do
-                let suffix = inputMap input
+                let suffix = toPath sul input
                 html <- fetch (baseUrl sul ++ suffix)
-                let out = outputMap html
+                let out = fromHtml sul html
                     sul' = sul{currentUrl = suffix}
                 pure (sul', out)
-            else do
-                pure (sul, NotFoundTag)
+            else pure (sul, notFound sul)
 
 --------------------------------------------------------------------------------
 -- Experiment setup
@@ -101,8 +101,11 @@ main = do
         _currentUrl = "/"
     let website =
             WebsiteSUL
-                { baseUrl = _baseUrl -- this is constant
+                { baseUrl = _baseUrl
                 , currentUrl = _currentUrl
+                , toPath = inputMap
+                , fromHtml = outputMap
+                , notFound = NotFoundTag
                 } ::
                 WebsiteSUL Page PageTag
     (model, _) <- runExperimentT exper website

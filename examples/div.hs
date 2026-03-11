@@ -50,7 +50,7 @@ data Program i o = Program
     , buffer :: [i]
     }
 
-instance SUL Program Identity i o where
+instance SUL Program Identity where
     step s i = return (theStep s i)
     reset = return . theReset
 
