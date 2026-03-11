@@ -44,7 +44,7 @@ It provides methods to step through the automaton and retrieve the current state
 It also requires a monad m, that may be 'Identity' in case of a pure SUL, or 'IO'
 in case of an external program that performs IO.
 -}
-class (Monad m) => SUL sul m i o where
+class (Monad m) => SUL sul m where
     step :: sul i o -> i -> m (sul i o, o)
     reset :: sul i o -> m (sul i o)
 
@@ -56,7 +56,7 @@ type FiniteEq i = (Eq i, Finite i)
 type FiniteOrd i = (Ord i, Finite i)
 
 -- | Generalization of 'step' that operates on a list of inputs.
-walk :: (SUL sul m i o) => sul i o -> [i] -> m (sul i o, [o])
+walk :: (SUL sul m) => sul i o -> [i] -> m (sul i o, [o])
 walk sul [] = pure (sul, [])
 walk sul (x : xs) = do
     (sul', o) <- step sul x
@@ -75,7 +75,7 @@ outputs _ = Set.fromList [minBound .. maxBound]
 support for automata operations. Automatons are models, not programs,
 so they are pure and operate in the Identity monad.
 -}
-class (SUL (aut s) Identity i o) => Automaton aut s i o where
+class (SUL (aut s) Identity) => Automaton aut s where
     transitions ::
         (FiniteOrd i, FiniteOrd s) =>
         aut s i o ->
@@ -85,23 +85,23 @@ class (SUL (aut s) Identity i o) => Automaton aut s i o where
     update :: aut s i o -> s -> aut s i o
 
 -- | Pure instance of 'step'.
-stepPure :: (SUL sul Identity i o) => sul i o -> i -> (sul i o, o)
+stepPure :: (SUL sul Identity) => sul i o -> i -> (sul i o, o)
 stepPure sul i = runIdentity (step sul i)
 
 -- | Pure instance of 'walk'.
-walkPure :: (SUL sul Identity i o) => sul i o -> [i] -> (sul i o, [o])
+walkPure :: (SUL sul Identity) => sul i o -> [i] -> (sul i o, [o])
 walkPure sul i = runIdentity (walk sul i)
 
 -- | Pure instance of 'reset'.
-resetPure :: (SUL sul Identity i o) => sul i o -> sul i o
+resetPure :: (SUL sul Identity) => sul i o -> sul i o
 resetPure sul = runIdentity (reset sul)
 
 -- | Return the initial state of an automaton.
-initial :: (Automaton aut s i o) => aut s i o -> s
+initial :: (Automaton aut s) => aut s i o -> s
 initial = current . resetPure
 
 -- | Return the set of reachable states of an automaton.
-reachable :: forall s i o aut. (Automaton aut s i o, Ord s, FiniteOrd i) => aut s i o -> Set.Set s
+reachable :: forall s i o aut. (Automaton aut s, Ord s, FiniteOrd i) => aut s i o -> Set.Set s
 reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
   where
     alphabet = inputs aut
@@ -118,7 +118,7 @@ reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
 -- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::
     forall s i o aut.
-    (Automaton aut s i o, FiniteOrd i, Ord s) =>
+    (Automaton aut s, FiniteOrd i, Ord s) =>
     aut s i o ->
     Map.Map s [i]
 accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singleton initialSt [])
@@ -147,7 +147,7 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
 the given automaton.
 -}
 distinguish ::
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , Ord s
     , Eq o
@@ -186,7 +186,7 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
  - any other state of the automaton.
 -}
 localCharacterizingSet ::
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -202,7 +202,7 @@ localCharacterizingSet m s = Set.fromList [d s sx | sx <- Set.toList $ states m,
 of the automaton.
 -}
 globalCharacterizingSet ::
-    ( Automaton aut s i o
+    ( Automaton aut s
     , FiniteOrd i
     , FiniteOrd s
     , Eq o

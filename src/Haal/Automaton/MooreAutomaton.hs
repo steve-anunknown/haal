@@ -49,7 +49,7 @@ mooreStep m i = (m{mooreCurrentS = nextState}, output)
 mooreReset :: MooreAutomaton s i o -> MooreAutomaton s i o
 mooreReset m = m{mooreCurrentS = mooreInitialS m}
 
-instance SUL (MooreAutomaton s) Identity i o where
+instance SUL (MooreAutomaton s) Identity where
     step sul i = return (mooreStep sul i)
     reset = return . mooreReset
 
@@ -68,7 +68,7 @@ mooreTransitions m = Map.fromList [((s, i), (delta s i, lambda s)) | s <- domain
     domainS = Set.toList $ mooreStates m
     domainI = Set.toList $ inputs m
 
-instance Automaton MooreAutomaton s i o where
+instance Automaton MooreAutomaton s where
     transitions = mooreTransitions
     current = mooreCurrentS
     states = mooreStates

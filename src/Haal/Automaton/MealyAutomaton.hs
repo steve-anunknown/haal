@@ -73,7 +73,7 @@ mealyStep m i = (m{mealyCurrentS = nextState}, output)
 mealyReset :: MealyAutomaton s i o -> MealyAutomaton s i o
 mealyReset m = m{mealyCurrentS = mealyInitialS m}
 
-instance SUL (MealyAutomaton s) Identity i o where
+instance SUL (MealyAutomaton s) Identity where
     step sul i = return (mealyStep sul i)
     reset = return . mealyReset
 
@@ -92,7 +92,7 @@ mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- doma
     domainS = Set.toList $ mealyStates m
     domainI = Set.toList $ inputs m
 
-instance Automaton MealyAutomaton s i o where
+instance Automaton MealyAutomaton s where
     transitions = mealyTransitions
     states = mealyStates
     current = mealyCurrentS
