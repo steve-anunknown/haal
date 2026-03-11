@@ -34,24 +34,25 @@ import Haal.Experiment
 {-@ die :: {v:String | false} -> a @-}
 die :: String -> a
 die = error
-                
+
 {-@ listIndexLH :: xs:[a] -> {n:Int | 0 <= n && n < len xs} -> a @-}
 listIndexLH :: [a] -> Int -> a
-listIndexLH (x:_)  0 = x
-listIndexLH (_:xs) n = listIndexLH xs (n-1)
-listIndexLH []     _ = die "impossible: list index out of bounds"
+listIndexLH (x : _) 0 = x
+listIndexLH (_ : xs) n = listIndexLH xs (n - 1)
+listIndexLH [] _ = die "impossible: list index out of bounds"
 
 {-@ lastLH :: {xs:[a] | len xs > 0} -> a @-}
-lastLH :: [a] -> a 
+lastLH :: [a] -> a
 lastLH [] = die "impossible: lastLH called on empty list"
 lastLH l = last l
 
 -- | The 'ObservationTable' type is a data type for storing the observation table of the LM* algorithm.
+
 {-@ data ObservationTable i o = ObservationTable
     { prefixSetS  :: Set.Set [i]
     , suffixSetE  :: Set.Set {v:[i] | len v > 0}
     , mappingT    :: Map.Map ([i], [i]) o
-    , prefixSetSI :: Set.Set [i]
+    , prefixSetSI :: Set.Set {v:[i] | len v > 0}
     } @-}
 data ObservationTable i o = ObservationTable
     { prefixSetS :: Set.Set [i]
@@ -62,8 +63,12 @@ data ObservationTable i o = ObservationTable
     }
     deriving (Show)
 
-{-@ assume Set.difference :: forall <p :: a -> Bool>. Ord a => Set.Set (a<p>) -> Set.Set a -> Set.Set (a<p>) @-}
-{-@ assume Set.cartesianProduct :: forall <p1 :: a -> Bool, p2 :: b -> Bool>. (Ord a, Ord b) => Set.Set (a<p1>) -> Set.Set (b<p2>) -> Set.Set (a<p1>, b<p2>) @-}
+{-@ assume Set.difference :: forall <p :: a -> Bool>.
+     Ord a => Set.Set (a<p>) -> Set.Set a -> Set.Set (a<p>)
+@-}
+{-@ assume Set.cartesianProduct :: forall <p1 :: a -> Bool, p2 :: b -> Bool>.
+     (Ord a, Ord b) => Set.Set (a<p1>) -> Set.Set (b<p2>) -> Set.Set (a<p1>, b<p2>)
+@-}
 
 {- | The 'LMstarConfig' type is a configuration type for the LM* algorithm.
 It allows the user to choose between the original LM* algorithm and the LM+ algorithm.
@@ -96,7 +101,7 @@ initializeOT ::
     ExperimentT (sul i o) m (ObservationTable i o)
 initializeOT = do
     sul <- ask
-    let 
+    let
         alph = List.map (: []) $ Set.toList $ inputs sul
         sm = Set.singleton []
         sm_I = Set.fromList alph
@@ -162,7 +167,13 @@ lmstar (LMplus ot) = case otIsClosed ot of
         ot' <- makeClosed ot inc
         lmstar (LMplus ot')
 
--- | The 'otIsClosed' function checks if the observation table is closed.
+{- | The 'otIsClosed' function checks if the observation table is closed.
+The observation table is closed if every prefix of `prefixSetSI` belongs
+to the same equivalence class as some prefix of `prefixSetS`. If the observation 
+table is closed, it returns an empty list, whereas if it is not, it returns the 
+problematic prefix from `prefixSetSI` that does not have the same equivalence class 
+as any prefix from `prefixSetS`.
+-}
 otIsClosed :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> [i]
 otIsClosed ot = Maybe.fromMaybe [] exists
   where
@@ -237,20 +248,18 @@ makeHypothesis ot = do
     getStateId :: [i] -> Maybe StateID
     getStateId s = List.find (equivalentRows ot s) repList >>= flip Map.lookup repToId
 
-    repAt :: StateID -> Maybe [i]
-    repAt sid
-        | sid >= 0 && sid < numStates = Just (repList `listIndexLH` sid)
-        | otherwise = Nothing
+    repAt :: StateID -> [i]
+    repAt sid = repList `listIndexLH` sid
 
     buildDeltaEntry :: (StateID, i) -> Maybe ((StateID, i), StateID)
     buildDeltaEntry (sid, i) = do
-        rep <- repAt sid
+        let rep = repAt sid
         target <- getStateId (rep ++ [i])
         return ((sid, i), target)
 
     buildLambdaEntry :: (StateID, i) -> Maybe ((StateID, i), o)
     buildLambdaEntry (sid, i) = do
-        rep <- repAt sid
+        let rep = repAt sid
         o <- Map.lookup (rep, [i]) (mappingT ot)
         return ((sid, i), o)
 
@@ -357,9 +366,6 @@ otRefinePlus ot cex = do
 
     tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
-
--- >>> :t all 
--- all :: Foldable t => (a -> Bool) -> t a -> Bool
 
 {-@ updateMap :: (Ord i, SUL sul m i o, Monad m)
               => Map.Map ([i],[i]) o
