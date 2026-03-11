@@ -8,6 +8,16 @@ and this project adheres to the
 
 ## Unreleased
 
+## 0.3.0.0 - 2026-03-11
+
+### Changed
+- `SUL` typeclass no longer takes `i` and `o` as class parameters; they are now
+  universally quantified in the method signatures. Instances should drop `i o`
+  from their instance heads: `instance SUL MyType IO` instead of
+  `instance SUL MyType IO Input Output`.
+- `Automaton` typeclass likewise drops `i` and `o` from its class head.
+  All constraint occurrences `(Automaton aut s i o)` become `(Automaton aut s)`.
+
 ## 0.2.0.0 - 2026-03-05
 
 ### Added
