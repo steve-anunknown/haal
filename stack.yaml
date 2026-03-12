@@ -8,11 +8,13 @@
 resolver: nightly-2025-12-15
 
 extra-deps:
-  - liquid-fixpoint-0.9.6.3.5
   - liquidhaskell-boot-0.9.12.2.1
   - liquidhaskell-0.9.12.2.1
   - liquid-prelude-0.9.12.2.1
   - liquid-vector-0.13.1.0.2
+#  - liquid-fixpoint-0.9.6.3.5
+  - git: https://github.com/ucsd-progsys/liquid-fixpoint.git
+    commit: '3f6f60c62de2449d6990ff1250eccffdb977bab4'
 
 notify-if-nix-on-path: false
 
