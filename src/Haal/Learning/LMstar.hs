@@ -10,6 +10,7 @@
 module Haal.Learning.LMstar (
     lmstar,
     LMstar,
+    LMstarState (..),
     LMstarConfig (..),
     mkLMstar,
 )
@@ -28,7 +29,6 @@ import Haal.Experiment
 {-@ ignore otRefinePlus @-}
 {-@ ignore makeConsistent @-}
 {-@ ignore makeClosed @-}
-{-@ ignore mkLMstar @-}
 {-@ ignore lmstar @-}
 
 {-@ die :: {v:String | false} -> a @-}
@@ -75,15 +75,28 @@ It allows the user to choose between the original LM* algorithm and the LM+ algo
 -}
 data LMstarConfig = Star | Plus
 
--- | The 'LMstar' type is a wrapper around the 'ObservationTable' type and represents the LM* algorithm.
-data LMstar i o = LMstar (ObservationTable i o) | LMplus (ObservationTable i o)
+-- | The 'LMstarState' type tracks whether the observation table has been initialized.
+data LMstarState i o = Uninit | Init (ObservationTable i o)
+    deriving (Show)
 
-{- | The 'mkLMstar' function creates a new instance of the 'LMstar' type. It holds a dummy value
-so that the user does not have to provide an initial observation table.
--}
+{-@ measure isUninit @-}
+isUninit :: LMstarState i o -> Bool
+isUninit Uninit = True 
+isUninit _ = False
+
+{-@ measure lmState @-}
+lmState :: LMstar i o -> LMstarState i o
+lmState (LMstar s) = s
+lmState (LMplus s) = s
+
+-- | The 'LMstar' type wraps an 'LMstarState' and represents the LM* algorithm.
+data LMstar i o = LMstar (LMstarState i o) | LMplus (LMstarState i o)
+
+-- | The 'mkLMstar' function creates a new uninitialized instance of the 'LMstar' type.
+{-@ mkLMstar :: LMstarConfig -> {v:LMstar i o | isUninit (lmState v)} @-}
 mkLMstar :: LMstarConfig -> LMstar i o
-mkLMstar Star = LMstar (error "this is invisible")
-mkLMstar Plus = LMplus (error "this is invisible")
+mkLMstar Star = LMstar Uninit
+mkLMstar Plus = LMplus Uninit
 
 -- | The 'equivalentRows' function checks if two rows in the observation table are equivalent.
 equivalentRows :: forall i o. (Ord i, Eq o) => ObservationTable i o -> [i] -> [i] -> Bool
@@ -148,24 +161,26 @@ lmstar ::
     (SUL sul m, FiniteOrd i, Eq o, Monad m) =>
     LMstar i o ->
     ExperimentT (sul i o) m (LMstar i o, MealyAutomaton StateID i o)
-lmstar (LMstar ot) = case otIsClosed ot of
+lmstar (LMstar (Init ot)) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
         ([], []) -> case makeHypothesis ot of
-            Just hyp -> return (LMstar ot, hyp)
-            Nothing -> error "LM*: invariant violation — makeHypothesis failed on closed consistent table"
+            Just hyp -> return (LMstar (Init ot), hyp)
+            Nothing -> die "LM*: invariant violation — makeHypothesis failed on closed consistent table"
         inc' -> do
             ot' <- makeConsistent ot inc'
-            lmstar (LMstar ot')
+            lmstar (LMstar (Init ot'))
     inc -> do
         ot' <- makeClosed ot inc
-        lmstar (LMstar ot')
-lmstar (LMplus ot) = case otIsClosed ot of
+        lmstar (LMstar (Init ot'))
+lmstar (LMplus (Init ot)) = case otIsClosed ot of
     [] -> case makeHypothesis ot of
-        Just hyp -> return (LMplus ot, hyp)
-        Nothing -> error "LM+: invariant violation — makeHypothesis failed on closed table"
+        Just hyp -> return (LMplus (Init ot), hyp)
+        Nothing -> die "LM+: invariant violation — makeHypothesis failed on closed table"
     inc -> do
         ot' <- makeClosed ot inc
-        lmstar (LMplus ot')
+        lmstar (LMplus (Init ot'))
+lmstar (LMstar Uninit) = die "lmstar called before initialize"
+lmstar (LMplus Uninit) = die "lmstar called before initialize"
 
 {- | The 'otIsClosed' function checks if the observation table is closed.
 The observation table is closed if every prefix of `prefixSetSI` belongs
@@ -321,19 +336,23 @@ makeClosed ot inc = do
 
 instance Learner LMstar MealyAutomaton StateID where
     initialize (LMstar _) = do
-        LMstar <$> initializeOT
+        LMstar . Init <$> initializeOT
     initialize (LMplus _) = do
-        LMplus <$> initializeOT
+        LMplus . Init <$> initializeOT
 
-    refine (LMstar ot) cex = do
+    refine (LMstar (Init ot)) cex = do
         ot' <- otRefineAngluin ot cex
-        return (LMstar ot')
-    refine (LMplus ot) cex = do
+        return (LMstar (Init ot'))
+    refine (LMplus (Init ot)) cex = do
         ot' <- otRefinePlus ot cex
-        return (LMplus ot')
+        return (LMplus (Init ot'))
+    refine (LMstar Uninit) _ = die "refine called before initialize"
+    refine (LMplus Uninit) _ = die "refine called before initialize"
 
-    learn (LMstar ot) = lmstar (LMstar ot)
-    learn (LMplus ot) = lmstar (LMplus ot)
+    learn (LMstar (Init ot)) = lmstar (LMstar (Init ot))
+    learn (LMplus (Init ot)) = lmstar (LMplus (Init ot))
+    learn (LMstar Uninit) = die "learn called before initialize"
+    learn (LMplus Uninit) = die "learn called before initialize"
 
 {- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the LM+ algorithm,
 which is an improvement over Angluin's algorithm.
