@@ -26,20 +26,9 @@ import Haal.Automaton.MealyAutomaton
 import Haal.BlackBox
 import Haal.Experiment
 
-{-@ ignore otRefinePlus @-}
-{-@ ignore makeConsistent @-}
-{-@ ignore makeClosed @-}
-{-@ ignore lmstar @-}
-
 {-@ die :: {v:String | false} -> a @-}
 die :: String -> a
 die = error
-
-{-@ listIndexLH :: xs:[a] -> {n:Int | 0 <= n && n < len xs} -> a @-}
-listIndexLH :: [a] -> Int -> a
-listIndexLH (x : _) 0 = x
-listIndexLH (_ : xs) n = listIndexLH xs (n - 1)
-listIndexLH [] _ = die "impossible: list index out of bounds"
 
 {-@ lastLH :: {xs:[a] | len xs > 0} -> a @-}
 lastLH :: [a] -> a
@@ -81,7 +70,7 @@ data LMstarState i o = Uninit | Init (ObservationTable i o)
 
 {-@ measure isUninit @-}
 isUninit :: LMstarState i o -> Bool
-isUninit Uninit = True 
+isUninit Uninit = True
 isUninit _ = False
 
 {-@ measure lmState @-}
@@ -93,6 +82,7 @@ lmState (LMplus s) = s
 data LMstar i o = LMstar (LMstarState i o) | LMplus (LMstarState i o)
 
 -- | The 'mkLMstar' function creates a new uninitialized instance of the 'LMstar' type.
+
 {-@ mkLMstar :: LMstarConfig -> {v:LMstar i o | isUninit (lmState v)} @-}
 mkLMstar :: LMstarConfig -> LMstar i o
 mkLMstar Star = LMstar Uninit
@@ -138,6 +128,8 @@ initializeOT = do
         )
 
 -- | The 'equivalenceClasses' function computes the equivalence classes of the observation table.
+
+{-@ equivalenceClasses :: (FiniteOrd i, Eq o) => ObservationTable i o -> Map.Map [i] [[i]] @-}
 equivalenceClasses ::
     forall i o.
     (FiniteOrd i, Eq o) =>
@@ -184,9 +176,9 @@ lmstar (LMplus Uninit) = die "lmstar called before initialize"
 
 {- | The 'otIsClosed' function checks if the observation table is closed.
 The observation table is closed if every prefix of `prefixSetSI` belongs
-to the same equivalence class as some prefix of `prefixSetS`. If the observation 
-table is closed, it returns an empty list, whereas if it is not, it returns the 
-problematic prefix from `prefixSetSI` that does not have the same equivalence class 
+to the same equivalence class as some prefix of `prefixSetS`. If the observation
+table is closed, it returns an empty list, whereas if it is not, it returns the
+problematic prefix from `prefixSetSI` that does not have the same equivalence class
 as any prefix from `prefixSetS`.
 -}
 otIsClosed :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> [i]
@@ -197,23 +189,36 @@ otIsClosed ot = Maybe.fromMaybe [] exists
 
     exists = List.find (\x -> not $ any (equivalentRows ot x) sm) sm_I
 
--- | The 'otIsConsistent' function checks if the observation table is consistent.
+{- | The 'otIsConsistent' function checks if the observation table is consistent.
+Returns @([], [])@ if consistent, otherwise returns @([a], e)@ where @a@ is the
+distinguishing letter and @e@ is an existing suffix witnessing the inconsistency,
+so that @[a] ++ e@ can be added to E.
+-}
 otIsConsistent :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> ([i], [i])
 otIsConsistent ot = Maybe.fromMaybe ([], []) condition
   where
     alph = [minBound .. maxBound] :: [i]
     sm = Set.toList $ prefixSetS ot
+    em = Set.toList $ suffixSetE ot
 
     equivalentPairs = [(r1, r2) | r1 <- sm, r2 <- sm, r1 /= r2, equivalentRows ot r1 r2]
 
-    condition =
-        List.find
-            ( \(a, b) ->
-                any
-                    (\x -> not (equivalentRows ot (a ++ [x]) (b ++ [x])))
-                    alph
-            )
-            equivalentPairs
+    condition = do
+        (s1, s2) <-
+            List.find
+                ( \(s1, s2) ->
+                    any (\x -> not (equivalentRows ot (s1 ++ [x]) (s2 ++ [x]))) alph
+                )
+                equivalentPairs
+        x <-
+            List.find
+                (\x -> not (equivalentRows ot (s1 ++ [x]) (s2 ++ [x])))
+                alph
+        e <-
+            List.find
+                (\e -> Map.lookup (s1 ++ [x], e) (mappingT ot) /= Map.lookup (s2 ++ [x], e) (mappingT ot))
+                em
+        return ([x], e)
 
 -- | The 'otRefineAngluin' function refines the observation table based on a counterexample, according to Angluin's algorithm.
 otRefineAngluin ::
@@ -242,6 +247,8 @@ otRefineAngluin ot cex = do
 the default 'StateID' type defined in the 'Experiment' module for representing the automaton states.
 Returns 'Nothing' if the observation table is malformed (invariant violated).
 -}
+
+{-@ makeHypothesis :: (FiniteOrd i, Eq o) => ObservationTable i o -> Maybe (MealyAutomaton StateID i o) @-}
 makeHypothesis :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> Maybe (MealyAutomaton StateID i o)
 makeHypothesis ot = do
     startId <- getStateId []
@@ -258,27 +265,33 @@ makeHypothesis ot = do
     repList = Map.keys equivMap
     numStates = length repList
     repToId = Map.fromList (zip repList [0 ..])
+    idToRep = Map.fromList (zip [0 ..] repList)
     alphaList = [minBound .. maxBound] :: [i]
 
     getStateId :: [i] -> Maybe StateID
     getStateId s = List.find (equivalentRows ot s) repList >>= flip Map.lookup repToId
 
-    repAt :: StateID -> [i]
-    repAt sid = repList `listIndexLH` sid
+    repAt :: StateID -> Maybe [i]
+    repAt sid = Map.lookup sid idToRep
 
     buildDeltaEntry :: (StateID, i) -> Maybe ((StateID, i), StateID)
     buildDeltaEntry (sid, i) = do
-        let rep = repAt sid
+        rep <- repAt sid
         target <- getStateId (rep ++ [i])
         return ((sid, i), target)
 
     buildLambdaEntry :: (StateID, i) -> Maybe ((StateID, i), o)
     buildLambdaEntry (sid, i) = do
-        let rep = repAt sid
+        rep <- repAt sid
         o <- Map.lookup (rep, [i]) (mappingT ot)
         return ((sid, i), o)
 
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
+
+{-@ makeConsistent :: (FiniteOrd i, SUL sul m) =>
+      ObservationTable i o ->
+      ([i], [i]) ->
+      ExperimentT (sul i o) m (ObservationTable i o) @-}
 makeConsistent ::
     forall i o sul m.
     (FiniteOrd i, SUL sul m) =>
@@ -290,29 +303,21 @@ makeConsistent ot (column, symbol) = do
     sul <- ask
     let
         query = symbol ++ column
-        -- prefices = [take n query | n <- [1 .. length query]]
-
-        -- only the query itself must be inserted.
-        -- the suffixes are already members.
         em = suffixSetE ot
         em' = query `Set.insert` em
-
         sm = prefixSetS ot
         sm_I = prefixSetSI ot
-
         tm = mappingT ot
-
-        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` em'
-        missing' = map (uncurry (++)) $ Set.toList missing
-
-    outs <- lift $ forM missing' (walk sul)
-
-    let
-        outs' = map (lastLH . snd) outs
-        tm' = foldr (\((a, b), o) -> Map.insert (a, b) o) tm (zip (Set.toList missing) outs')
+        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` Set.singleton query
+    tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
 -- | The 'makeClosed' function makes the observation table closed by adding missing suffixes.
+
+{-@ makeClosed :: (FiniteOrd i, SUL sul m) =>
+      ObservationTable i o ->
+      [i] ->
+      ExperimentT (sul i o) m (ObservationTable i o) @-}
 makeClosed ::
     forall sul i o m.
     (FiniteOrd i, SUL sul m) =>
@@ -322,16 +327,15 @@ makeClosed ::
 makeClosed ot [] = return ot
 makeClosed ot inc = do
     sul <- ask
-    let
-        alph = Set.toList $ inputs sul
+    let alph = inputs sul
         sm = prefixSetS ot
         em = suffixSetE ot
         tm = mappingT ot
         sm' = inc `Set.insert` sm
-        sm_I' = Set.fromList [w ++ [a] | w <- Set.toList sm', a <- alph]
-    outs <- lift $ forM (Set.toList em) (walk sul)
-    let mappings = [((inc ++ [s], e), lastLH (snd o)) | s <- alph, (e, o) <- zip (Set.toList em) outs]
-        tm' = List.foldr (uncurry Map.insert) tm mappings
+        sm_I' = Set.map (\(w, a) -> w ++ [a]) (sm' `Set.cartesianProduct` alph)
+        newPrefixes = Set.map (\a -> inc ++ [a]) alph
+        missing = newPrefixes `Set.cartesianProduct` em
+    tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
 instance Learner LMstar MealyAutomaton StateID where
@@ -357,6 +361,10 @@ instance Learner LMstar MealyAutomaton StateID where
 {- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the LM+ algorithm,
 which is an improvement over Angluin's algorithm.
 -}
+{-@ otRefinePlus :: (FiniteOrd i, SUL sul m) => 
+      ObservationTable i o -> 
+      [i] ->
+      ExperimentT (sul i o) m (ObservationTable i o) @-}
 otRefinePlus ::
     forall sul i o m.
     (FiniteOrd i, SUL sul m) =>
@@ -376,15 +384,15 @@ otRefinePlus ot cex = do
         suffixes = List.tails cex
         pairs = List.reverse $ List.zip prefixes suffixes
         wrapped = List.find (\x -> Set.member (fst x) sm || Set.member (fst x) sm_I) pairs
-        -- (_, suffix) = Maybe.fromMaybe (error "failed to update observation table") wrapped
-        (_, suffix) = Maybe.fromMaybe ([], []) wrapped
-        -- the suffix is the distinguishing suffix. insert all suffixes expect from the empty one
-        newSuffixes = em `Set.difference` Set.fromList (init $ List.tails suffix)
-        em' = List.foldr Set.insert em newSuffixes
-        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` newSuffixes
-
-    tm' <- lift $ updateMap tm missing sul
-    return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
+    case wrapped of
+        Nothing -> return ot
+        Just (_, suffix) -> do
+            let -- the suffix is the distinguishing suffix. insert all non-empty tails not already in E
+                newSuffixes = Set.fromList (init $ List.tails suffix) `Set.difference` em
+                em' = List.foldr Set.insert em newSuffixes
+                missing = (sm `Set.union` sm_I) `Set.cartesianProduct` newSuffixes
+            tm' <- lift $ updateMap tm missing sul
+            return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
 {-@ updateMap :: (Ord i, SUL sul m i o, Monad m)
               => Map.Map ([i],[i]) o
