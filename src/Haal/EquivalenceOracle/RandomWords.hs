@@ -28,8 +28,14 @@ data RandomWordsConfig = RandomWordsConfig
 newtype RandomWords = RandomWords RandomWordsConfig deriving (Show, Eq)
 
 -- | Constructor for a 'RandomWords' data type.
-mkRandomWords :: RandomWordsConfig -> RandomWords
-mkRandomWords = RandomWords
+mkRandomWords :: RandomWordsConfig -> Either String RandomWords
+mkRandomWords cfg
+    | 0 <= rwLimit cfg && 0 <= rwMinLength cfg && rwMinLength cfg <= rwMaxLength cfg = Right (RandomWords cfg)
+    | otherwise =
+        Left
+            ( "Must be 0 <= rwLimit, and 0 <= rwMinLength <= rwMaxLength but got"
+                ++ show cfg
+            )
 
 -- | Accessor for the 'RandomWordsConfig' of a 'RandomWords' value.
 randomWordsConfig :: RandomWords -> RandomWordsConfig
@@ -48,7 +54,7 @@ generateRandomWords
         )
     aut =
         let (ranWords, finalGen) = runState (replicateM count genWord) generator
-            oracle = mkRandomWords (RandomWordsConfig finalGen count minL maxL)
+            oracle = RandomWords (RandomWordsConfig finalGen count minL maxL)
          in (oracle, ranWords)
       where
         alphaVec = V.fromList . Set.toList $ inputs aut

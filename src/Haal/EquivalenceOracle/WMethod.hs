@@ -21,21 +21,21 @@ import Haal.EquivalenceOracle.RandomWords (RandomWordsConfig (..), mkRandomWords
 import Haal.Experiment
 import System.Random (Random (randomRs), RandomGen (split), StdGen)
 
-{- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
--}
+-- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
 data WMethodConfig = WMethodConfig
     { wmDepth :: Int
     -- ^ The number of extra states beyond the hypothesis to account for.
     }
     deriving (Show, Eq)
 
-{- | The 'WMethod' type represents the W-method equivalence oracle.
--}
+-- | The 'WMethod' type represents the W-method equivalence oracle.
 newtype WMethod = WMethod WMethodConfig deriving (Show, Eq)
 
 -- | Constructor for a 'WMethod' value.
-mkWMethod :: WMethodConfig -> WMethod
-mkWMethod = WMethod
+mkWMethod :: WMethodConfig -> Either String WMethod
+mkWMethod cfg
+    | 0 <= wmDepth cfg = Right (WMethod cfg)
+    | otherwise = Left ("Must be 0 <= wmDepth but got " ++ show cfg)
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
@@ -97,8 +97,10 @@ data RandomWMethodConfig = RandomWMethodConfig
 newtype RandomWMethod = RandomWMethod RandomWMethodConfig deriving (Show, Eq)
 
 -- | Constructor for a 'RandomWMethod' value.
-mkRandomWMethod :: RandomWMethodConfig -> RandomWMethod
-mkRandomWMethod = RandomWMethod
+mkRandomWMethod :: RandomWMethodConfig -> Either String RandomWMethod
+mkRandomWMethod cfg
+    | 0 <= rwmLimit cfg && 0 <= rwmLength cfg = Right (RandomWMethod cfg)
+    | otherwise = Left ("Must be 0 <= rwmLimit and 0 <= rwmLength but got " ++ show cfg)
 
 -- | The 'randomWMethodSuite' function generates the test suite for the random W-method and a new oracle.
 randomWMethodSuite ::
@@ -125,7 +127,7 @@ randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
         suffixes = map (vecSuffixes Vec.!) randomSuffixes
 
         suite = [prefix ++ rand ++ suffix | prefix <- prefixes, rand <- flatWords, suffix <- suffixes]
-     in (mkRandomWMethod (RandomWMethodConfig gen''' wpr wl), suite)
+     in (RandomWMethod (RandomWMethodConfig gen''' wpr wl), suite)
 
 instance EquivalenceOracle RandomWMethod where
     testSuite = randomWMethodSuite

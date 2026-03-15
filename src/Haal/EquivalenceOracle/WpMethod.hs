@@ -31,8 +31,10 @@ data WpMethodConfig = WpMethodConfig
 newtype WpMethod = WpMethod WpMethodConfig deriving (Eq, Show)
 
 -- | Constructor for a 'WpMethod' value.
-mkWpMethod :: WpMethodConfig -> WpMethod
-mkWpMethod = WpMethod
+mkWpMethod :: WpMethodConfig -> Either String WpMethod
+mkWpMethod cfg
+    | 0 <= wpmDepth cfg = Right (WpMethod cfg)
+    | otherwise = Left ("Must be 0 <= wpmDepth but got " ++ show cfg)
 
 -- | The 'wpmethodSuiteSize' returns the number of test cases in the test suite of WpMethod.
 wpmethodSuiteSize ::
@@ -150,8 +152,14 @@ data RandomWpMethodConfig = RandomWpMethodConfig
 newtype RandomWpMethod = RandomWpMethod RandomWpMethodConfig deriving (Show, Eq)
 
 -- | Constructor for a 'RandomWpMethod' value.
-mkRandomWpMethod :: RandomWpMethodConfig -> RandomWpMethod
-mkRandomWpMethod = RandomWpMethod
+mkRandomWpMethod :: RandomWpMethodConfig -> Either String RandomWpMethod
+mkRandomWpMethod cfg
+    | 0 <= rwpMin cfg && rwpMin cfg <= rwpExpected cfg && 0 <= rwpLimit cfg = Right (RandomWpMethod cfg)
+    | otherwise =
+        Left
+            ( "Must be 0 <= rwpMin <= rwpExpected and 0 <= rwpLimit but got "
+                ++ show cfg
+            )
 
 -- | Return the 'RandomWpMethod' test suite.
 randomWpMethodSuite ::
