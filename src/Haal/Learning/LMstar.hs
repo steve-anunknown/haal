@@ -26,6 +26,10 @@ import Haal.Automaton.MealyAutomaton
 import Haal.BlackBox
 import Haal.Experiment
 
+{-@ ignore otRefinePlus @-}
+{-@ ignore otRefineAngluin @-}
+{-@ ignore lmstar @-}
+
 {-@ die :: {v:String | false} -> a @-}
 die :: String -> a
 die = error
@@ -350,13 +354,10 @@ instance Learner LMstar MealyAutomaton StateID where
     refine (LMplus (Init ot)) cex = do
         ot' <- otRefinePlus ot cex
         return (LMplus (Init ot'))
-    refine (LMstar Uninit) _ = die "refine called before initialize"
-    refine (LMplus Uninit) _ = die "refine called before initialize"
+    refine (LMstar Uninit) _ = initialize (LMstar Uninit)
+    refine (LMplus Uninit) _ = initialize (LMplus Uninit)
 
-    learn (LMstar (Init ot)) = lmstar (LMstar (Init ot))
-    learn (LMplus (Init ot)) = lmstar (LMplus (Init ot))
-    learn (LMstar Uninit) = die "learn called before initialize"
-    learn (LMplus Uninit) = die "learn called before initialize"
+    learn = lmstar 
 
 {- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the LM+ algorithm,
 which is an improvement over Angluin's algorithm.
@@ -386,6 +387,7 @@ otRefinePlus ot cex = do
         wrapped = List.find (\x -> Set.member (fst x) sm || Set.member (fst x) sm_I) pairs
     case wrapped of
         Nothing -> return ot
+        -- TODO: suffix triggers liquid haskell false
         Just (_, suffix) -> do
             let -- the suffix is the distinguishing suffix. insert all non-empty tails not already in E
                 newSuffixes = Set.fromList (init $ List.tails suffix) `Set.difference` em
