@@ -72,22 +72,22 @@ data LMstarConfig = Star | Plus
 data LMstarState i o = Uninit | Init (ObservationTable i o)
     deriving (Show)
 
-{-@ measure isUninit @-}
-isUninit :: LMstarState i o -> Bool
-isUninit Uninit = True
-isUninit _ = False
+{-@ measure _isUninit @-}
+_isUninit :: LMstarState i o -> Bool
+_isUninit Uninit = True
+_isUninit _ = False
 
-{-@ measure lmState @-}
-lmState :: LMstar i o -> LMstarState i o
-lmState (LMstar s) = s
-lmState (LMplus s) = s
+{-@ measure _lmState @-}
+_lmState :: LMstar i o -> LMstarState i o
+_lmState (LMstar s) = s
+_lmState (LMplus s) = s
 
 -- | The 'LMstar' type wraps an 'LMstarState' and represents the LM* algorithm.
 data LMstar i o = LMstar (LMstarState i o) | LMplus (LMstarState i o)
 
 -- | The 'mkLMstar' function creates a new uninitialized instance of the 'LMstar' type.
 
-{-@ mkLMstar :: LMstarConfig -> {v:LMstar i o | isUninit (lmState v)} @-}
+{-@ mkLMstar :: LMstarConfig -> {v:LMstar i o | _isUninit (_lmState v)} @-}
 mkLMstar :: LMstarConfig -> LMstar i o
 mkLMstar Star = LMstar Uninit
 mkLMstar Plus = LMplus Uninit
