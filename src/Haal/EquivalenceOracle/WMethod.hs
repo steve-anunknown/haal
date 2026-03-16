@@ -12,14 +12,13 @@ module Haal.EquivalenceOracle.WMethod (
 ) where
 
 import Control.Monad (replicateM)
-import qualified Data.List as List
+import Control.Monad.State (runState, state)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Vector as Vec
 import Haal.BlackBox
-import Haal.EquivalenceOracle.RandomWords (RandomWordsConfig (..), mkRandomWords, randomWordsConfig)
 import Haal.Experiment
-import System.Random (Random (randomRs), RandomGen (split), StdGen)
+import System.Random (Random (randomR), StdGen)
 
 -- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
 data WMethodConfig = WMethodConfig
@@ -114,20 +113,24 @@ randomWMethodSuite ::
     aut s i o ->
     (RandomWMethod, [[i]])
 randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
-    let rorc = mkRandomWords (RandomWordsConfig{rwMaxLength = wl, rwMinLength = 1, rwLimit = wpr, rwGen = g})
-        prefixes = Map.elems $ accessSequences aut
-        vecSuffixes = Vec.fromList $ Set.toList $ globalCharacterizingSet aut
-
-        (rorc', wordBatches) = List.mapAccumL testSuite rorc (replicate (length prefixes) (undefined :: aut s i o))
-        flatWords = concat wordBatches
-
-        (gen'', gen''') = split (rwGen (randomWordsConfig rorc'))
-        samples = length prefixes * wpr
-        randomSuffixes = take samples $ randomRs (0, Vec.length vecSuffixes - 1) gen''
-        suffixes = map (vecSuffixes Vec.!) randomSuffixes
-
-        suite = [prefix ++ rand ++ suffix | prefix <- prefixes, rand <- flatWords, suffix <- suffixes]
-     in (RandomWMethod (RandomWMethodConfig gen''' wpr wl), suite)
+    let prefixes = Map.elems $ accessSequences aut
+        suffixes = Set.toList $ globalCharacterizingSet aut
+        alphaVec = Vec.fromList . Set.toList $ inputs aut
+        genWord =
+            if wl == 0
+                then return []
+                else do
+                    len <- state $ randomR (1, wl)
+                    replicateM
+                        len
+                        ( state $
+                            \gen ->
+                                let (ix, gen') = randomR (0, Vec.length alphaVec - 1) gen
+                                 in (alphaVec Vec.! ix, gen')
+                        )
+        (ranWords, g') = runState (replicateM wpr genWord) g
+        suite = [prefix ++ rand ++ suffix | prefix <- prefixes, rand <- ranWords, suffix <- suffixes]
+     in (RandomWMethod (RandomWMethodConfig g' wpr wl), suite)
 
 instance EquivalenceOracle RandomWMethod where
     testSuite = randomWMethodSuite
