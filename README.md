@@ -105,8 +105,11 @@ ghci|     sulTransitions S1 _ = (S2, Y)
 ghci|     sulTransitions S2 A = (S0, X)
 ghci|     sulTransitions S2 B = (S0, Y)
 
+ghci> learner = mkLMstar Star
+ghci> teacher = either error id (mkWMethod (WMethodConfig 2))
+
 -- Set up the experiment.
-ghci> myexperiment = experiment (mkLMstar Star) (mkWMethod 2)
+ghci> myexperiment = experiment learner teacher
 
 -- Define the Mealy system under learning. Remember that automata can act as suls.
 ghci> mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
