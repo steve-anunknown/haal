@@ -17,8 +17,13 @@ sulTransitions S1 _ = (S2, Y)
 sulTransitions S2 A = (S0, X)
 sulTransitions S2 B = (S0, Y)
 
+learner = mkLMstar Star
+oracle = case mkWMethod (WMethodConfig 2) of
+    Left msg -> error msg
+    Right oracle' -> oracle'
+
 -- Set up the experiment.
-myexperiment = experiment (mkLMstar Star) (mkWMethod (WMethodConfig 2))
+myexperiment = experiment learner oracle
 
 -- Define the Mealy system under learning. Remember that automata can act as suls.
 mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0

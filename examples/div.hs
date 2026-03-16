@@ -83,7 +83,9 @@ learner :: LMstar Binary Bool
 learner = mkLMstar Star
 
 oracle :: WpMethod
-oracle = mkWpMethod (WpMethodConfig 3)
+oracle = case mkWpMethod (WpMethodConfig 3) of 
+    Left msg -> error msg 
+    Right oracle' -> oracle'
 
 exper :: Experiment (Program Binary Bool) (MealyAutomaton StateID Binary Bool, Statistics MealyAutomaton StateID Binary Bool)
 exper = experiment learner oracle
