@@ -1,5 +1,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{- HLINT ignore "Use <$>" -}
 
 module Utils (
     statesAreEquivalent,
@@ -84,7 +85,7 @@ instance Arbitrary ArbWMethodConfig where
 instance Arbitrary ArbWMethod where
     arbitrary = do
         (ArbWMethodConfig config) <- arbitrary :: Gen ArbWMethodConfig
-        return (ArbWMethod (mkWMethod config))
+        return (ArbWMethod (either error id (mkWMethod config)))
 
 instance Arbitrary ArbWpMethodConfig where
     arbitrary = do
@@ -93,7 +94,7 @@ instance Arbitrary ArbWpMethodConfig where
 instance Arbitrary ArbWpMethod where
     arbitrary = do
         (ArbWpMethodConfig config) <- arbitrary :: Gen ArbWpMethodConfig
-        return (ArbWpMethod (mkWpMethod config))
+        return (ArbWpMethod (either error id (mkWpMethod config)))
 
 instance Arbitrary ArbRandomWordsConfig where
     arbitrary = do
@@ -106,7 +107,7 @@ instance Arbitrary ArbRandomWordsConfig where
 instance Arbitrary ArbRandomWords where
     arbitrary = do
         (ArbRandomWordsConfig config) <- arbitrary :: Gen ArbRandomWordsConfig
-        return (ArbRandomWords (mkRandomWords config))
+        return (ArbRandomWords (either error id (mkRandomWords config)))
 
 instance Arbitrary ArbRandomWalkConfig where
     arbitrary = do
@@ -118,7 +119,7 @@ instance Arbitrary ArbRandomWalkConfig where
 instance Arbitrary ArbRandomWalk where
     arbitrary = do
         (ArbRandomWalkConfig config) <- arbitrary :: Gen ArbRandomWalkConfig
-        return (ArbRandomWalk (mkRandomWalk config))
+        return (ArbRandomWalk (either error id (mkRandomWalk config)))
 
 instance Arbitrary ArbRandomWMethodConfig where
     arbitrary = do
@@ -130,7 +131,7 @@ instance Arbitrary ArbRandomWMethodConfig where
 instance Arbitrary ArbRandomWMethod where
     arbitrary = do
         (ArbRandomWMethodConfig config) <- arbitrary :: Gen ArbRandomWMethodConfig
-        return (ArbRandomWMethod (mkRandomWMethod config))
+        return (ArbRandomWMethod (either error id (mkRandomWMethod config)))
 
 instance Arbitrary ArbRandomWpMethodConfig where
     arbitrary = do
@@ -144,7 +145,7 @@ instance Arbitrary ArbRandomWpMethodConfig where
 instance Arbitrary ArbRandomWpMethod where
     arbitrary = do
         (ArbRandomWpMethodConfig config) <- arbitrary :: Gen ArbRandomWpMethodConfig
-        return (ArbRandomWpMethod (mkRandomWpMethod config))
+        return (ArbRandomWpMethod (either error id (mkRandomWpMethod config)))
 
 class (EquivalenceOracle oracle) => OracleWrapper w oracle | w -> oracle where
     unwrap :: w -> oracle
