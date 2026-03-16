@@ -8,6 +8,14 @@ and this project adheres to the
 
 ## Unreleased
 
+## 0.4.0.0 - 2026-03-16 
+
+### Changed 
+- Changed the types of oracles' constructors from `<Oracle>` to `Either String <Oracle>`
+  where `String` is an error message indicating invalid values to `<OracleConfig>`.
+  Now, for example, instead of `oracle = mkWMethod (WMethodConfig 2)`, one should either 
+  pattern match with `case` or do `oracle = either error id (mkWMethod (WMethodConfig 2))`.
+
 ## 0.3.0.0 - 2026-03-11
 
 ### Changed
