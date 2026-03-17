@@ -37,3 +37,28 @@ jobs:
       run: |
         stack test
 
+  verify:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Haskell (stack)
+      uses: haskell-actions/setup@v2
+      with:
+        enable-stack: true
+        stack-version: 'latest'
+
+    - name: Cache ~/.stack (liquid)
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.stack
+          .stack-work
+        key: ${{ runner.os }}-stack-liquid-${{ hashFiles('**/stack.yaml', '**/stack.yaml.lock') }}
+
+    - name: Verify with LiquidHaskell
+      run: |
+        stack build haal:lib --flag haal:liquid
+
