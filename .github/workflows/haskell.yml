@@ -58,6 +58,9 @@ jobs:
           .stack-work
         key: ${{ runner.os }}-stack-liquid-${{ hashFiles('**/stack.yaml', '**/stack.yaml.lock') }}
 
+    - name: Install Z3
+      run: sudo apt-get install -y z3
+
     - name: Verify with LiquidHaskell
       run: |
         stack build haal:lib --flag haal:liquid
