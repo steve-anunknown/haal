@@ -1,10 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -fplugin=LiquidHaskell 
-                -fplugin-opt=LiquidHaskell:--prune-unsorted 
+#ifdef LIQUID
+{-# OPTIONS_GHC -fplugin=LiquidHaskell
+                -fplugin-opt=LiquidHaskell:--prune-unsorted
                 -fplugin-opt=LiquidHaskell:--no-termination #-}
+#endif
 
 {- | This module defines the BlackBox type class as well as the Automaton and SUL
 sub classes.
