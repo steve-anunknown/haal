@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           haal
-version:        0.4.0.0
+version:        0.4.0.1
 synopsis:       A Haskell library for Active Automata Learning.
 description:    Please see the README on GitHub at <https://github.com/steve-anunknown/haal#readme>
 category:       Model Learning

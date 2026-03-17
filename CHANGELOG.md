@@ -8,7 +8,19 @@ and this project adheres to the
 
 ## Unreleased
 
-## 0.4.0.0 - 2026-03-16 
+## 0.4.0.1 - 2026-03-17
+
+### Added
+- Optional `liquid` Cabal flag (`--flag haal:liquid`) to enable LiquidHaskell
+  verification without requiring it as a dependency for normal builds.
+
+### Verified
+- `Haal.BlackBox`: `walk` produces outputs of length equal to the input length.
+- `Haal.Learning.LMstar`: `ObservationTable` invariant that all entries in
+  `mappingT` map to non-empty output lists, preserved across `updateMap`,
+  `makeConsistent`, `makeClosed`, and `initializeOT`.
+
+## 0.4.0.0 - 2026-03-16
 
 ### Changed 
 - Changed the types of oracles' constructors from `<Oracle>` to `Either String <Oracle>`
