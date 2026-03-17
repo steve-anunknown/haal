@@ -1,10 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
-{-# OPTIONS_GHC -fplugin=LiquidHaskell 
-                -fplugin-opt=LiquidHaskell:--prune-unsorted 
+#ifdef LIQUID
+{-# OPTIONS_GHC -fplugin=LiquidHaskell
+                -fplugin-opt=LiquidHaskell:--prune-unsorted
                 -fplugin-opt=LiquidHaskell:--no-termination #-}
+#endif
 
 -- | This module implements the LM* algorithm for learning Mealy automata.
 module Haal.Learning.LMstar (
@@ -16,8 +19,9 @@ module Haal.Learning.LMstar (
 )
 where
 
-import Control.Monad (foldM, forM)
+import Control.Monad (foldM)
 import Control.Monad.Reader (MonadReader (ask), MonadTrans (lift))
+import Data.Foldable (find)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -34,25 +38,34 @@ import Haal.Experiment
 die :: String -> a
 die = error
 
-{-@ lastLH :: {xs:[a] | len xs > 0} -> a @-}
-lastLH :: [a] -> a
-lastLH [] = die "impossible: lastLH called on empty list"
-lastLH l = last l
+{-@ headLH :: {v:[a] | len v > 0} -> a @-}
+headLH :: [a] -> a
+headLH [] = die "impossible: headLH called with empty list"
+headLH (x : _) = x
+
+{-@ dropLH :: xs:[a] -> {v:Int | 0 <= v && v < len xs} -> {r:[a] | len r = len xs - v} @-}
+dropLH :: [a] -> Int -> [a]
+dropLH list number
+    | number >= length list = die "impossible: dropLH called with number larger than list length"
+    | otherwise = drop number list
 
 -- | The 'ObservationTable' type is a data type for storing the observation table of the LM* algorithm.
 
 {-@ data ObservationTable i o = ObservationTable
     { prefixSetS  :: Set.Set [i]
     , suffixSetE  :: Set.Set {v:[i] | len v > 0}
-    , mappingT    :: Map.Map ([i], [i]) o
+    , mappingT    :: Map.Map ([i], [i]) {v:[o] | len v > 0}
     , prefixSetSI :: Set.Set {v:[i] | len v > 0}
     } @-}
 data ObservationTable i o = ObservationTable
     { prefixSetS :: Set.Set [i]
+    -- ^ sm = prefix closed set over @i@
     , suffixSetE :: Set.Set [i]
-    , mappingT :: Map.Map ([i], [i]) o
-    , -- more fields to avoid recomputing
-      prefixSetSI :: Set.Set [i]
+    -- ^ em = suffix closed set over @i@, excluding the empty word
+    , mappingT :: Map.Map ([i], [i]) [o]
+    -- ^ tm = finite mapping from (sm U (sm * I)) X em -> @o@+
+    , prefixSetSI :: Set.Set [i]
+    -- ^ sm * I = one-symbol extension of sm
     }
     deriving (Show)
 
@@ -111,16 +124,14 @@ initializeOT = do
     let
         alph = List.map (: []) $ Set.toList $ inputs sul
         sm = Set.singleton []
+        {-@ sm_I :: Set.Set {v:[i] | len v = 1} @-}
         sm_I = Set.fromList alph
+        {-@ em :: Set.Set {v:[i] | len v = 1} @-}
         em = Set.fromList alph
-        domain = Set.toList $ (sm `Set.union` sm_I) `Set.cartesianProduct` em
-    -- monadic mapping because walk is in m
-    tmList <- forM domain $ \(in1, in2) -> do
-        sul0 <- lift $ reset sul
-        (_, outs) <- lift $ walk sul0 (in1 ++ in2)
-        pure ((in1, in2), lastLH outs)
-
-    let tm = Map.fromList tmList
+        {-@ domain :: Set.Set ([i], {v:[i] | len v = 1}) @-}
+        domain = (sm `Set.union` sm_I) `Set.cartesianProduct` em
+    sulR <- lift $ reset sul
+    tm <- lift $ updateMap Map.empty domain sulR
 
     return
         ( ObservationTable
@@ -191,7 +202,7 @@ otIsClosed ot = Maybe.fromMaybe [] exists
     sm = prefixSetS ot
     sm_I = prefixSetSI ot
 
-    exists = List.find (\x -> not $ any (equivalentRows ot x) sm) sm_I
+    exists = find (\x -> not $ any (equivalentRows ot x) sm) sm_I
 
 {- | The 'otIsConsistent' function checks if the observation table is consistent.
 Returns @([], [])@ if consistent, otherwise returns @([a], e)@ where @a@ is the
@@ -205,21 +216,21 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
     sm = Set.toList $ prefixSetS ot
     em = Set.toList $ suffixSetE ot
 
-    equivalentPairs = [(r1, r2) | r1 <- sm, r2 <- sm, r1 /= r2, equivalentRows ot r1 r2]
+    equivalentPairs = [(r1, r2) | r1 <- sm, r2 <- sm, r1 <= r2, equivalentRows ot r1 r2]
 
     condition = do
         (s1, s2) <-
-            List.find
+            find
                 ( \(s1, s2) ->
                     any (\x -> not (equivalentRows ot (s1 ++ [x]) (s2 ++ [x]))) alph
                 )
                 equivalentPairs
         x <-
-            List.find
+            find
                 (\x -> not (equivalentRows ot (s1 ++ [x]) (s2 ++ [x])))
                 alph
         e <-
-            List.find
+            find
                 (\e -> Map.lookup (s1 ++ [x], e) (mappingT ot) /= Map.lookup (s2 ++ [x], e) (mappingT ot))
                 em
         return ([x], e)
@@ -287,14 +298,14 @@ makeHypothesis ot = do
     buildLambdaEntry :: (StateID, i) -> Maybe ((StateID, i), o)
     buildLambdaEntry (sid, i) = do
         rep <- repAt sid
-        o <- Map.lookup (rep, [i]) (mappingT ot)
-        return ((sid, i), o)
+        out <- Map.lookup (rep, [i]) (mappingT ot)
+        return ((sid, i), headLH out)
 
 -- | The 'makeConsistent' function makes the observation table consistent by adding missing prefixes.
 
 {-@ makeConsistent :: (FiniteOrd i, SUL sul m) =>
       ObservationTable i o ->
-      ([i], [i]) ->
+      ({v:[i] | len v = 1}, {v:[i] | len v >= 1}) ->
       ExperimentT (sul i o) m (ObservationTable i o) @-}
 makeConsistent ::
     forall i o sul m.
@@ -303,7 +314,7 @@ makeConsistent ::
     ([i], [i]) ->
     ExperimentT (sul i o) m (ObservationTable i o)
 makeConsistent ot ([], []) = return ot
-makeConsistent ot (column, symbol) = do
+makeConsistent ot (symbol, column) = do
     sul <- ask
     let
         query = symbol ++ column
@@ -320,7 +331,7 @@ makeConsistent ot (column, symbol) = do
 
 {-@ makeClosed :: (FiniteOrd i, SUL sul m) =>
       ObservationTable i o ->
-      [i] ->
+      {v:[i] | len v > 0} ->
       ExperimentT (sul i o) m (ObservationTable i o) @-}
 makeClosed ::
     forall sul i o m.
@@ -357,13 +368,14 @@ instance Learner LMstar MealyAutomaton StateID where
     refine (LMstar Uninit) _ = initialize (LMstar Uninit)
     refine (LMplus Uninit) _ = initialize (LMplus Uninit)
 
-    learn = lmstar 
+    learn = lmstar
 
 {- | The 'otRefinePlus' function refines the observation table based on a counterexample, according to the LM+ algorithm,
 which is an improvement over Angluin's algorithm.
 -}
-{-@ otRefinePlus :: (FiniteOrd i, SUL sul m) => 
-      ObservationTable i o -> 
+
+{-@ otRefinePlus :: (FiniteOrd i, SUL sul m) =>
+      ObservationTable i o ->
       [i] ->
       ExperimentT (sul i o) m (ObservationTable i o) @-}
 otRefinePlus ::
@@ -389,30 +401,44 @@ otRefinePlus ot cex = do
         Nothing -> return ot
         -- TODO: suffix triggers liquid haskell false
         Just (_, suffix) -> do
-            let -- the suffix is the distinguishing suffix. insert all non-empty tails not already in E
+            let
+                -- the suffix is the distinguishing suffix. insert all non-empty tails not already in E
                 newSuffixes = Set.fromList (init $ List.tails suffix) `Set.difference` em
                 em' = List.foldr Set.insert em newSuffixes
                 missing = (sm `Set.union` sm_I) `Set.cartesianProduct` newSuffixes
             tm' <- lift $ updateMap tm missing sul
             return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
-{-@ updateMap :: (Ord i, SUL sul m i o, Monad m)
-              => Map.Map ([i],[i]) o
-              -> Set.Set ([i], {v:[i] | len v > 0})
-              -> sul i o
-              -> m (Map.Map ([i],[i]) o) @-}
+{-@ insertStep
+      :: (Ord i, SUL sul m, Monad m)
+      => sul i o
+      -> Map.Map ([i],[i]) {v:[o] | len v > 0}
+      -> ([i], {b:[i] | len b > 0})
+      -> m (Map.Map ([i],[i]) {v:[o] | len v > 0}) @-}
+insertStep ::
+    (Ord i, SUL sul m, Monad m) =>
+    sul i o ->
+    Map.Map ([i], [i]) [o] ->
+    ([i], [i]) ->
+    m (Map.Map ([i], [i]) [o])
+insertStep thesul acc (a, b) = do
+    (_, outs) <- walk thesul (a ++ b)
+    -- the table is prefix closed, so no need to store
+    -- the whole length of outs, just the output that corresponds
+    -- to the suffix
+    pure (Map.insert (a, b) (dropLH outs (length a)) acc)
+
+{-@ updateMap
+      :: (Ord i, SUL sul m, Monad m)
+      => Map.Map ([i],[i]) {v:[o] | len v > 0}
+      -> Set.Set ([i], {v:[i] | len v > 0})
+      -> sul i o
+      -> m (Map.Map ([i],[i]) {v:[o] | len v > 0}) @-}
 updateMap ::
     (Ord i, SUL sul m, Monad m) =>
-    Map.Map ([i], [i]) o ->
+    Map.Map ([i], [i]) [o] ->
     Set.Set ([i], [i]) ->
     sul i o ->
-    m (Map.Map ([i], [i]) o)
+    m (Map.Map ([i], [i]) [o])
 updateMap themap thestuff thesul =
-    foldM
-        ( \acc (a, b) -> do
-            (_, outs) <- walk thesul (a ++ b)
-            let o = lastLH outs
-            pure (Map.insert (a, b) o acc)
-        )
-        themap
-        thestuff
+    foldM (insertStep thesul) themap thestuff
