@@ -29,7 +29,7 @@ flags:
     default: false
 
 dependencies:
-- base >= 4.18.3 && < 4.19
+- base
 
 ghc-options:
 - -Wall
@@ -45,10 +45,10 @@ ghc-options:
 library:
   source-dirs: src
   dependencies:
-    - containers >= 0.6.7 && < 0.7
-    - mtl >= 2.3.1 && < 2.4
-    - random >= 1.3.1 && < 1.4
-    - vector >= 0.13.2 && < 0.14
+    - containers
+    - mtl
+    - random
+    - vector
   when:
     - condition: flag(liquid)
       dependencies:
@@ -89,17 +89,17 @@ executables:
     - base
     - containers 
   io:
-    main: io.hs
+    main: io.hs 
     source-dirs: examples
-    dependencies:
-    - haal
+    dependencies: 
+    - haal 
     - base
-    - process >= 1.6.19 && < 1.7
+    - process 
     - mtl
   website:
-    main: website.hs
+    main: website.hs 
     source-dirs: examples
-    dependencies:
-    - haal
+    dependencies: 
+    - haal 
     - base
-    - process >= 1.6.19 && < 1.7
+    - process
