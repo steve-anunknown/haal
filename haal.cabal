@@ -26,6 +26,11 @@ source-repository head
   type: git
   location: https://github.com/steve-anunknown/haal
 
+flag liquid
+  description: Enable LiquidHaskell verification
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Haal.Automaton.DFA
@@ -49,11 +54,14 @@ library
   build-depends:
       base
     , containers
-    , liquidhaskell
     , mtl
     , random
     , vector
   default-language: Haskell2010
+  if flag(liquid)
+    cpp-options: -DLIQUID
+    build-depends:
+        liquidhaskell
 
 executable demo
   main-is: demo.hs
