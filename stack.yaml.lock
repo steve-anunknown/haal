@@ -3,10 +3,49 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/topics/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: liquidhaskell-boot-0.9.12.2.1@sha256:4d5eba2bb7fead5255baa073219fd24215c11a198a7f41d88e36db2946b51d4c,10251
+    pantry-tree:
+      sha256: 1308840f9df2f379b742a4ca2998437f7eb638c0a2dbb61022271164aabe93d3
+      size: 7990
+  original:
+    hackage: liquidhaskell-boot-0.9.12.2.1
+- completed:
+    hackage: liquidhaskell-0.9.12.2.1@sha256:9cc35c4179aad5b660cde4b76ad87a020b545bf96792c58fcf7cc1a389365e74,3507
+    pantry-tree:
+      sha256: 53cd2f9e69e0b0cd6af123fab46b692a314a7516010108a3ff59f315fac92b4d
+      size: 3435
+  original:
+    hackage: liquidhaskell-0.9.12.2.1
+- completed:
+    hackage: liquid-prelude-0.9.12.2.1@sha256:23e07a98074d2c8073d3fd04139382c9c142bfd97d7cb48e6795940cad7c086c,1465
+    pantry-tree:
+      sha256: 12e4f06aec222ec8a820738a1d4eaa318563316f917e2d8699ffc0cdb29d7018
+      size: 882
+  original:
+    hackage: liquid-prelude-0.9.12.2.1
+- completed:
+    hackage: liquid-vector-0.13.1.0.2@sha256:8c06d2f48bdad26e3d3d3d295242f116a54fec7a1d06a17e4b931f2b2fded8ba,1085
+    pantry-tree:
+      sha256: e55c527f60502e1ad58ae333b0c5a123ac77e156cff5d502983f755de6f2d4a4
+      size: 231
+  original:
+    hackage: liquid-vector-0.13.1.0.2
+- completed:
+    commit: 3f6f60c62de2449d6990ff1250eccffdb977bab4
+    git: https://github.com/ucsd-progsys/liquid-fixpoint.git
+    name: liquid-fixpoint
+    pantry-tree:
+      sha256: 980c47b2ce63035b19a32689435281b42b41922d151de5bd9b2aae97babeddcf
+      size: 25049
+    version: 0.9.6.3.5
+  original:
+    commit: 3f6f60c62de2449d6990ff1250eccffdb977bab4
+    git: https://github.com/ucsd-progsys/liquid-fixpoint.git
 snapshots:
 - completed:
-    sha256: 238fa745b64f91184f9aa518fe04bdde6552533d169b0da5256670df83a0f1a9
-    size: 721141
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/44.yaml
-  original: lts-22.44
+    sha256: 7aa4408bfb439dce23ccb56810769c0da44083d88fe8eb45a0371d8eab4bad61
+    size: 712840
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/12/15.yaml
+  original: nightly-2025-12-15
