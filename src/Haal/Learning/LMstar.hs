@@ -54,7 +54,7 @@ dropLH list number
 {-@ data ObservationTable i o = ObservationTable
     { prefixSetS  :: Set.Set [i]
     , suffixSetE  :: Set.Set {v:[i] | len v > 0}
-    , mappingT    :: Map.Map ([i], [i]) {v:[o] | len v > 0}
+    , mappingT    :: Map.Map ([i], {v:[i] | len v > 0}) {v:[o] | len v > 0}
     , prefixSetSI :: Set.Set {v:[i] | len v > 0}
     } @-}
 data ObservationTable i o = ObservationTable
@@ -412,9 +412,9 @@ otRefinePlus ot cex = do
 {-@ insertStep
       :: (Ord i, SUL sul m, Monad m)
       => sul i o
-      -> Map.Map ([i],[i]) {v:[o] | len v > 0}
+      -> Map.Map ([i],{v:[i] | len v > 0}) {v:[o] | len v > 0}
       -> ([i], {b:[i] | len b > 0})
-      -> m (Map.Map ([i],[i]) {v:[o] | len v > 0}) @-}
+      -> m (Map.Map ([i],{v:[i] | len v > 0}) {v:[o] | len v > 0}) @-}
 insertStep ::
     (Ord i, SUL sul m, Monad m) =>
     sul i o ->
@@ -430,10 +430,10 @@ insertStep thesul acc (a, b) = do
 
 {-@ updateMap
       :: (Ord i, SUL sul m, Monad m)
-      => Map.Map ([i],[i]) {v:[o] | len v > 0}
+      => Map.Map ([i],{v:[i] | len v > 0}) {v:[o] | len v > 0}
       -> Set.Set ([i], {v:[i] | len v > 0})
       -> sul i o
-      -> m (Map.Map ([i],[i]) {v:[o] | len v > 0}) @-}
+      -> m (Map.Map ([i],{v:[i] | len v > 0}) {v:[o] | len v > 0}) @-}
 updateMap ::
     (Ord i, SUL sul m, Monad m) =>
     Map.Map ([i], [i]) [o] ->
