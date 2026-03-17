@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           haal
-version:        0.4.0.1
+version:        0.4.0.2
 synopsis:       A Haskell library for Active Automata Learning.
 description:    Please see the README on GitHub at <https://github.com/steve-anunknown/haal#readme>
 category:       Model Learning
@@ -52,11 +52,11 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base
-    , containers
-    , mtl
-    , random
-    , vector
+      base >=4.18.3 && <5
+    , containers >=0.6.7 && <0.8
+    , mtl >=2.3.1 && <2.4
+    , random >=1.3.1 && <1.4
+    , vector >=0.13.2 && <0.14
   default-language: Haskell2010
   if flag(liquid)
     cpp-options: -DLIQUID
@@ -106,7 +106,7 @@ executable io
       base
     , haal
     , mtl
-    , process
+    , process >=1.6.19 && <1.7
   default-language: Haskell2010
 
 executable website
@@ -121,7 +121,7 @@ executable website
   build-depends:
       base
     , haal
-    , process
+    , process >=1.6.19 && <1.7
   default-language: Haskell2010
 
 test-suite haal-test
@@ -139,7 +139,7 @@ test-suite haal-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       QuickCheck
-    , base
+    , base >=4.18.3 && <5
     , containers
     , haal
     , hspec

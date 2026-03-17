@@ -8,6 +8,11 @@ and this project adheres to the
 
 ## Unreleased
 
+## 0.4.0.2 - 2026-03-17
+
+### Changed 
+- Dependency bounds.
+
 ## 0.4.0.1 - 2026-03-17
 
 ### Added
