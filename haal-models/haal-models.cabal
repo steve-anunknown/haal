@@ -1,0 +1,108 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           haal-models
+version:        0.1.0.0
+synopsis:       Pre-built Mealy automaton models for haal.
+description:    A collection of real-world Mealy automaton models (DTLS, MQTT, TCP, TLS) bundled for use with the haal library.
+category:       Model Learning
+homepage:       https://github.com/steve-anunknown/haal#readme
+bug-reports:    https://github.com/steve-anunknown/haal/issues
+author:         Stefanos Anagnostou
+maintainer:     steve.anunknown@gmail.com
+copyright:      2025 Stefanos Anagnostou
+license:        BSD-3-Clause
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/steve-anunknown/haal
+
+library
+  exposed-modules:
+      Haal.Models.DTLS.CtinydtlsEcdheCertNone
+      Haal.Models.DTLS.CtinydtlsEcdheCertReq
+      Haal.Models.DTLS.CtinydtlsPsk
+      Haal.Models.DTLS.EtinydtlsEcdheCertNone
+      Haal.Models.DTLS.EtinydtlsEcdheCertReq
+      Haal.Models.DTLS.EtinydtlsPsk
+      Haal.Models.DTLS.GnutlsV3V5V19PskRsaCertNreq
+      Haal.Models.DTLS.JsseV12RsaCertNone
+      Haal.Models.DTLS.JsseV12RsaCertNreq
+      Haal.Models.DTLS.JsseV12RsaCertReq
+      Haal.Models.DTLS.MbedtlsAllCertNone
+      Haal.Models.DTLS.MbedtlsAllCertNreq
+      Haal.Models.DTLS.MbedtlsAllCertReq
+      Haal.Models.DTLS.NssV3V6V7DheEcdheRsa
+      Haal.Models.DTLS.OpensslV1V1V1bAllCertNoneNreq
+      Haal.Models.DTLS.OpensslV1V1V1bAllCertNreq
+      Haal.Models.DTLS.OpensslV1V1V1bAllCertReq
+      Haal.Models.DTLS.PionEcdheCertNone
+      Haal.Models.DTLS.PionEcdheCertNreq
+      Haal.Models.DTLS.PionEcdheCertReq
+      Haal.Models.DTLS.PionPsk
+      Haal.Models.DTLS.ScandiumLatestEcdheCertNone
+      Haal.Models.DTLS.ScandiumLatestEcdheCertNreq
+      Haal.Models.DTLS.ScandiumLatestEcdheCertReq
+      Haal.Models.DTLS.ScandiumLatestPsk
+      Haal.Models.DTLS.ScandiumV2V0V0EcdheCertNone
+      Haal.Models.DTLS.ScandiumV2V0V0EcdheCertNreq
+      Haal.Models.DTLS.ScandiumV2V0V0EcdheCertReq
+      Haal.Models.DTLS.ScandiumV2V0V0Psk
+      Haal.Models.MQTT.ActiveMQInvalid
+      Haal.Models.MQTT.ActiveMQNonClean
+      Haal.Models.MQTT.ActiveMQSimple
+      Haal.Models.MQTT.ActiveMQSingleClient
+      Haal.Models.MQTT.ActiveMQTwoClientWillRetain
+      Haal.Models.MQTT.EmqttInvalid
+      Haal.Models.MQTT.EmqttNonClean
+      Haal.Models.MQTT.EmqttSimple
+      Haal.Models.MQTT.EmqttSingleClient
+      Haal.Models.MQTT.EmqttTwoClient
+      Haal.Models.MQTT.EmqttTwoClientSameId
+      Haal.Models.MQTT.EmqttTwoClientWillRetain
+      Haal.Models.MQTT.HbmqttInvalid
+      Haal.Models.MQTT.HbmqttNonClean
+      Haal.Models.MQTT.HbmqttSimple
+      Haal.Models.MQTT.HbmqttSingleClient
+      Haal.Models.MQTT.HbmqttTwoClient
+      Haal.Models.MQTT.HbmqttTwoClientWillRetain
+      Haal.Models.MQTT.MosquittoInvalid
+      Haal.Models.MQTT.MosquittoMosquitto
+      Haal.Models.MQTT.MosquittoNonClean
+      Haal.Models.MQTT.MosquittoSingleClient
+      Haal.Models.MQTT.MosquittoTwoClient
+      Haal.Models.MQTT.MosquittoTwoClientSameId
+      Haal.Models.MQTT.MosquittoTwoClientWillRetain
+      Haal.Models.MQTT.VerneMQInvalid
+      Haal.Models.MQTT.VerneMQNonClean
+      Haal.Models.MQTT.VerneMQSimple
+      Haal.Models.MQTT.VerneMQSingleClient
+      Haal.Models.MQTT.VerneMQTwoClient
+      Haal.Models.MQTT.VerneMQTwoClientSameId
+      Haal.Models.MQTT.VerneMQTwoClientWillRetain
+      Haal.Models.TCP.TCPLinuxClient
+      Haal.Models.TCP.TCPLinuxServer
+      Haal.Models.TCP.TcpServerBsdTrans
+      Haal.Models.TCP.TcpServerUbuntuTrans
+      Haal.Models.TCP.TcpServerWindowsTrans
+      Haal.Models.TLS.GnuTLSV3V3V12ServerRegular
+      Haal.Models.TLS.MiTLSV0V1V3ServerRegular
+      Haal.Models.TLS.NSSV3V17V4ServerRegular
+      Haal.Models.TLS.OpenSSLV1V0V2ServerRegular
+      Haal.Models.TLS.RSABSAFECV4V0V4ServerRegular
+  other-modules:
+      Paths_haal_models
+  autogen-modules:
+      Paths_haal_models
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.18.3 && <5
+    , containers >=0.6.7 && <0.8
+    , haal
+  default-language: Haskell2010
