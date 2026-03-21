@@ -8,6 +8,16 @@ and this project adheres to the
 
 ## Unreleased
 
+## 0.4.1.0 - 2026-03-21
+
+### Added 
+- Serializer from Mealy Automaton to Dot format.
+- haal-gen executable that accepts a .dot file and produces a haskell module
+  that exports a function for the specified Mealy Automaton, with specific
+  input and output types, rather than just using String for both.
+- haal-models subpackage that exports learned models of tls, mqtt, tcp and dtls
+  protocols.
+
 ## 0.4.0.2 - 2026-03-17
 
 ### Changed 
