@@ -94,6 +94,20 @@ executable div
     , mtl
   default-language: Haskell2010
 
+executable haal-gen
+  main-is: HaalGen.hs
+  other-modules:
+      Paths_haal
+  autogen-modules:
+      Paths_haal
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base
+    , haal
+  default-language: Haskell2010
+
 executable io
   main-is: io.hs
   other-modules:

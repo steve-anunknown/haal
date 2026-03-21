@@ -87,6 +87,12 @@ tests:
 
 
 executables:
+  haal-gen:
+    main: HaalGen.hs
+    source-dirs: app
+    dependencies:
+      - haal
+      - base
   div:
     main: div.hs 
     source-dirs: examples
