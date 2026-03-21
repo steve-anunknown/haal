@@ -1,11 +1,11 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.38.1.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
 name:           haal
-version:        0.4.0.2
+version:        0.4.1.0
 synopsis:       A Haskell library for Active Automata Learning.
 description:    Please see the README on GitHub at <https://github.com/steve-anunknown/haal#readme>
 category:       Model Learning
