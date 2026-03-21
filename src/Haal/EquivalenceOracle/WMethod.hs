@@ -21,7 +21,7 @@ import Haal.Experiment
 import System.Random (Random (randomR), StdGen)
 
 -- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
-data WMethodConfig = WMethodConfig
+newtype WMethodConfig = WMethodConfig
     { wmDepth :: Int
     -- ^ The number of extra states beyond the hypothesis to account for.
     }
