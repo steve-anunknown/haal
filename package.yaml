@@ -44,6 +44,19 @@ ghc-options:
 
 library:
   source-dirs: src
+  exposed-modules:
+    - Haal.Automaton.DFA
+    - Haal.Automaton.MealyAutomaton
+    - Haal.Automaton.MooreAutomaton
+    - Haal.BlackBox
+    - Haal.Dot
+    - Haal.EquivalenceOracle.CombinedOracle
+    - Haal.EquivalenceOracle.RandomWalk
+    - Haal.EquivalenceOracle.RandomWords
+    - Haal.EquivalenceOracle.WMethod
+    - Haal.EquivalenceOracle.WpMethod
+    - Haal.Experiment
+    - Haal.Learning.LMstar
   dependencies:
     - containers >= 0.6.7 && < 0.8
     - mtl >= 2.3.1 && < 2.4

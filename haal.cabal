@@ -37,6 +37,7 @@ library
       Haal.Automaton.MealyAutomaton
       Haal.Automaton.MooreAutomaton
       Haal.BlackBox
+      Haal.Dot
       Haal.EquivalenceOracle.CombinedOracle
       Haal.EquivalenceOracle.RandomWalk
       Haal.EquivalenceOracle.RandomWords
