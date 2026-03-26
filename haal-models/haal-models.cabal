@@ -104,5 +104,5 @@ library
   build-depends:
       base >=4.18.3 && <5
     , containers >=0.6.7 && <0.8
-    , haal
+    , haal >=0.4.1.0
   default-language: Haskell2010
