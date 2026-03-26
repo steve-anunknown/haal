@@ -74,16 +74,24 @@ An experiment ties all the components above together. In this library, experimen
 
 ## Installing
 
-The project is still in its early stages and has not yet been published. For now, you can clone the repository, build, and install it locally using:
+The project is available on Hackage. You can check the available version with the command:
 
 ```bash
-stack install
+stack list haal # cabal list haal
 ```
 
-Moreover, I try to add haddock comments as much as possible. Therefore, documentation can be built using:
+Given that the project is still in its early stages, you probably always want to see the latest version listed.
+
+You can clone the repo and build the library yourself with:
+
+```bash 
+stack build haal:lib
+```
+
+Moreover, given that the library makes use of LiquidHaskell annotations from v0.4.0.1 onwards, you can build with verification turned on:
 
 ```bash
-stack haddock
+stack build haal:lib --flag haal:liquid 
 ```
 
 ## Example
