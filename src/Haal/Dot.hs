@@ -9,7 +9,7 @@ module Haal.Dot (
 ) where
 
 import Data.Char (isAlphaNum, isDigit, isLower, isSpace, toUpper)
-import Data.List (intercalate, isInfixOf, isPrefixOf, nub)
+import Data.List (intercalate, isInfixOf, isPrefixOf)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
 import qualified Data.Set as Set
@@ -111,14 +111,13 @@ parseDot src = do
     let ls = lines src
     initSt <- findInit ls
     trans <- collectTrans ls
-    let allStates = nub $ concatMap (\(s, _, d, _) -> [s, d]) trans
-    if initSt `notElem` allStates
+    let allStateSet = Set.fromList $ concatMap (\(s, _, d, _) -> [s, d]) trans
+    if initSt `Set.notMember` allStateSet
         then Left ("Initial state '" ++ initSt ++ "' does not appear in any transition")
         else do
-            let otherStates = filter (/= initSt) allStates
-                stateOrder = initSt : otherStates
-                inputSyms = nub $ map (\(_, i, _, _) -> i) trans
-                outputSyms = nub $ map (\(_, _, _, o) -> o) trans
+            let stateOrder = initSt : Set.toList (Set.delete initSt allStateSet)
+                inputSyms = Set.toList . Set.fromList $ map (\(_, i, _, _) -> i) trans
+                outputSyms = Set.toList . Set.fromList $ map (\(_, _, _, o) -> o) trans
                 warnings = slashWarnings inputSyms outputSyms
             return
                 ParsedMealy
