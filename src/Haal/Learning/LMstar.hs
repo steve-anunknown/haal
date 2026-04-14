@@ -165,7 +165,7 @@ equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
 -- | The 'lmstar' function implements one iteration of the LM* algorithm.
 lmstar ::
     forall sul i o m.
-    (SUL sul m, FiniteOrd i, Eq o, Monad m) =>
+    (SUL sul m, FiniteOrd i, Ord o, Monad m) =>
     LMstar i o ->
     ExperimentT (sul i o) m (LMstar i o, MealyAutomaton StateID i o)
 lmstar (LMstar (Init ot)) = case otIsClosed ot of
@@ -209,7 +209,7 @@ Returns @([], [])@ if consistent, otherwise returns @([a], e)@ where @a@ is the
 distinguishing letter and @e@ is an existing suffix witnessing the inconsistency,
 so that @[a] ++ e@ can be added to E.
 -}
-otIsConsistent :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> ([i], [i])
+otIsConsistent :: forall i o. (FiniteOrd i, Ord o) => ObservationTable i o -> ([i], [i])
 otIsConsistent ot = Maybe.fromMaybe ([], []) condition
   where
     alph = [minBound .. maxBound] :: [i]
@@ -217,14 +217,12 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
     em = Set.toList $ suffixSetE ot
     tm = mappingT ot
 
-    -- Group prefixes by row equivalence, then only generate pairs
-    -- within the same group. This avoids calling equivalentRows on
-    -- all O(n^2) pairs when most are not equivalent.
-    groups = groupByEquiv sm
-    groupByEquiv [] = []
-    groupByEquiv (x : xs) =
-        let (same, rest) = List.partition (equivalentRows ot x) xs
-        in (x : same) : groupByEquiv rest
+    -- Group prefixes by their row signature (the sequence of outputs
+    -- for each suffix in E). Prefixes with identical signatures are
+    -- equivalent, so only pairs within the same group need checking
+    -- for consistency violations.
+    rowSig s = map (\e -> Map.lookup (s, e) tm) em
+    groups = Map.elems $ Map.fromListWith (++) [(rowSig s, [s]) | s <- sm]
     equivalentPairs = [pair | group <- groups, pair <- uniquePairs group]
     uniquePairs [] = []
     uniquePairs (x : xs) = [(x, y) | y <- xs] ++ uniquePairs xs

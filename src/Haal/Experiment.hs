@@ -70,7 +70,7 @@ class Learner l aut s | l -> aut s where
         , Automaton aut s
         , FiniteOrd i
         , FiniteOrd s
-        , FiniteEq o
+        , FiniteOrd o
         ) =>
         l i o ->
         ExperimentT (sul i o) m (l i o, aut s i o)
@@ -126,7 +126,7 @@ experiment ::
     , EquivalenceOracle oracle
     , FiniteOrd i
     , FiniteOrd s
-    , FiniteEq o
+    , FiniteOrd o
     ) =>
     learner i o ->
     oracle ->
