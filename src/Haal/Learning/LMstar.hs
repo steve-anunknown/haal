@@ -215,8 +215,19 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
     alph = [minBound .. maxBound] :: [i]
     sm = Set.toList $ prefixSetS ot
     em = Set.toList $ suffixSetE ot
+    tm = mappingT ot
 
-    equivalentPairs = [(r1, r2) | r1 <- sm, r2 <- sm, r1 <= r2, equivalentRows ot r1 r2]
+    -- Group prefixes by row equivalence, then only generate pairs
+    -- within the same group. This avoids calling equivalentRows on
+    -- all O(n^2) pairs when most are not equivalent.
+    groups = groupByEquiv sm
+    groupByEquiv [] = []
+    groupByEquiv (x : xs) =
+        let (same, rest) = List.partition (equivalentRows ot x) xs
+        in (x : same) : groupByEquiv rest
+    equivalentPairs = [pair | group <- groups, pair <- uniquePairs group]
+    uniquePairs [] = []
+    uniquePairs (x : xs) = [(x, y) | y <- xs] ++ uniquePairs xs
 
     condition = do
         (s1, s2) <-
@@ -231,7 +242,7 @@ otIsConsistent ot = Maybe.fromMaybe ([], []) condition
                 alph
         e <-
             find
-                (\e -> Map.lookup (s1 ++ [x], e) (mappingT ot) /= Map.lookup (s2 ++ [x], e) (mappingT ot))
+                (\e -> Map.lookup (s1 ++ [x], e) tm /= Map.lookup (s2 ++ [x], e) tm)
                 em
         return ([x], e)
 
