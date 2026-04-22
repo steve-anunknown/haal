@@ -106,3 +106,25 @@ library
     , containers >=0.6.7 && <0.8
     , haal >=0.4.1.0
   default-language: Haskell2010
+
+benchmark haal-models-bench
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Bench.Models
+      Bench.Scaling
+      Paths_haal_models
+  autogen-modules:
+      Paths_haal_models
+  hs-source-dirs:
+      bench
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N -O2
+  build-depends:
+      base >=4.18.3 && <5
+    , containers
+    , deepseq
+    , haal
+    , haal-models
+    , tasty
+    , tasty-bench
+  default-language: Haskell2010
