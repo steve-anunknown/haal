@@ -8,6 +8,32 @@ and this project adheres to the
 
 ## Unreleased
 
+## 0.5.0.0 - 2026-04-22
+
+### Fixed
+- `Haal.Learning.LMstar.equivalenceClasses` now iterates over `Sm` only,
+  matching Definition 2 of Shahbaz & Groz, "Inferring Mealy Machines".
+  Previously it iterated over `Sm ∪ Sm·I`, which could pick a representative
+  from `Sm·I` whose `rep++[i]` was not in the observation table, causing
+  `makeHypothesis` to fail on many real protocol models (DTLS, medium MQTT)
+  with `"invariant violation — makeHypothesis failed on closed consistent table"`.
+
+### Changed (breaking)
+- `Haal.Learning.LMstar.otIsConsistent` tightens its output constraint
+  from `Eq o` to `Ord o` to support Map-based row grouping.
+
+### Changed
+- `Haal.Learning.LMstar.otIsConsistent` groups prefixes by row signature
+  before pairwise comparison, reducing the worst-case pair enumeration.
+- `Haal.Dot.parseDot` uses `Set.fromList` instead of `nub` for deduplication
+  (O(n²) → O(n log n)).
+
+### Added
+- `tasty-bench`-based benchmark suite in `bench/` covering BlackBox
+  operations, W-method / Wp-method test-suite generation, DOT
+  serialize/parse/roundtrip, and end-to-end learning experiments.
+  Run with `stack bench haal`.
+
 ## 0.4.1.0 - 2026-03-21
 
 ### Added 
