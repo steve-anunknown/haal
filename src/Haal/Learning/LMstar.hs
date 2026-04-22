@@ -150,7 +150,7 @@ equivalenceClasses ::
     (FiniteOrd i, Eq o) =>
     ObservationTable i o ->
     Map.Map [i] [[i]]
-equivalenceClasses ot = go Map.empty (sm `Set.union` sm_I)
+equivalenceClasses ot = go Map.empty sm
   where
     sm = prefixSetS ot
     sm_I = prefixSetSI ot
