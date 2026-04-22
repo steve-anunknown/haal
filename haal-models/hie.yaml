@@ -1,0 +1,10 @@
+cradle:
+  stack:
+    stackYaml: "../stack.yaml"
+    components:
+      - path: "src"
+        component: "haal-models:lib"
+      - path: "bench"
+        component: "haal-models:bench:haal-models-bench"
+      - path: "app/bug.hs"
+        component: "haal-models:exe:bug"
