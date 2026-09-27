@@ -153,7 +153,6 @@ equivalenceClasses ::
 equivalenceClasses ot = go Map.empty sm
   where
     sm = prefixSetS ot
-    sm_I = prefixSetSI ot
     go acc s
         | Set.null s = acc
         | otherwise =
