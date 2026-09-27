@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 import Haal.Automaton.MealyAutomaton
-import Haal.BlackBox (SUL (..), StateID)
+import Haal.BlackBox (SUL (..), Int)
 import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod)
 import Haal.Experiment
 import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
@@ -87,11 +87,11 @@ oracle = case mkWpMethod (WpMethodConfig 3) of
     Left msg -> error msg 
     Right oracle' -> oracle'
 
-exper :: Experiment (Program Binary Bool) (MealyAutomaton StateID Binary Bool, Statistics MealyAutomaton StateID Binary Bool)
+exper :: Experiment (Program Binary Bool) (MealyAutomaton Int Binary Bool, Statistics MealyAutomaton Int Binary Bool)
 exper = experiment learner oracle
 
-theModel :: MealyAutomaton StateID Binary Bool
-theStats :: Statistics MealyAutomaton StateID Binary Bool
+theModel :: MealyAutomaton Int Binary Bool
+theStats :: Statistics MealyAutomaton Int Binary Bool
 (theModel, theStats) = runExperiment exper sul
 
 main :: IO ()

@@ -86,12 +86,12 @@ exper ::
         (Program Binary Bool)
         IO
         ( MealyAutomaton
-            StateID
+            Int
             Binary
             Bool
         , Statistics
             MealyAutomaton
-            StateID
+            Int
             Binary
             Bool
         )

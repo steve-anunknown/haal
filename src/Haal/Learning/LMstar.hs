@@ -167,7 +167,7 @@ lmstar ::
     forall sul i o m.
     (SUL sul m, FiniteOrd i, Ord o, Monad m) =>
     LMstar i o ->
-    ExperimentT (sul i o) m (LMstar i o, MealyAutomaton StateID i o)
+    ExperimentT (sul i o) m (LMstar i o, MealyAutomaton Int i o)
 lmstar (LMstar (Init ot)) = case otIsClosed ot of
     [] -> case otIsConsistent ot of
         ([], []) -> case makeHypothesis ot of
@@ -268,12 +268,12 @@ otRefineAngluin ot cex = do
     return ot'
 
 {- | The 'makeHypothesis' function constructs a Mealy automaton from the observation table. It uses
-the default 'StateID' type defined in the 'Experiment' module for representing the automaton states.
+the default 'Int' type defined in the 'Experiment' module for representing the automaton states.
 Returns 'Nothing' if the observation table is malformed (invariant violated).
 -}
 
-{-@ makeHypothesis :: (FiniteOrd i, Eq o) => ObservationTable i o -> Maybe (MealyAutomaton StateID i o) @-}
-makeHypothesis :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> Maybe (MealyAutomaton StateID i o)
+{-@ makeHypothesis :: (FiniteOrd i, Eq o) => ObservationTable i o -> Maybe (MealyAutomaton Int i o) @-}
+makeHypothesis :: forall i o. (FiniteOrd i, Eq o) => ObservationTable i o -> Maybe (MealyAutomaton Int i o)
 makeHypothesis ot = do
     startId <- getStateId []
     let stateInputPairs = [(sid, i) | sid <- [0 .. numStates - 1], i <- alphaList]
@@ -292,19 +292,19 @@ makeHypothesis ot = do
     idToRep = Map.fromList (zip [0 ..] repList)
     alphaList = [minBound .. maxBound] :: [i]
 
-    getStateId :: [i] -> Maybe StateID
+    getStateId :: [i] -> Maybe Int
     getStateId s = List.find (equivalentRows ot s) repList >>= flip Map.lookup repToId
 
-    repAt :: StateID -> Maybe [i]
+    repAt :: Int -> Maybe [i]
     repAt sid = Map.lookup sid idToRep
 
-    buildDeltaEntry :: (StateID, i) -> Maybe ((StateID, i), StateID)
+    buildDeltaEntry :: (Int, i) -> Maybe ((Int, i), Int)
     buildDeltaEntry (sid, i) = do
         rep <- repAt sid
         target <- getStateId (rep ++ [i])
         return ((sid, i), target)
 
-    buildLambdaEntry :: (StateID, i) -> Maybe ((StateID, i), o)
+    buildLambdaEntry :: (Int, i) -> Maybe ((Int, i), o)
     buildLambdaEntry (sid, i) = do
         rep <- repAt sid
         out <- Map.lookup (rep, [i]) (mappingT ot)
@@ -362,7 +362,7 @@ makeClosed ot inc = do
     tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
-instance Learner LMstar MealyAutomaton StateID where
+instance Learner LMstar MealyAutomaton Int where
     initialize (LMstar _) = do
         LMstar . Init <$> initializeOT
     initialize (LMplus _) = do

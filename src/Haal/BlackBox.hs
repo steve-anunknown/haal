@@ -15,7 +15,6 @@ sub classes.
 module Haal.BlackBox (
     Automaton (..),
     SUL (..),
-    StateID,
     Finite,
     FiniteEq,
     FiniteOrd,
@@ -39,11 +38,6 @@ import qualified Data.Bifunctor as Bif
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-
-{- | The 'StateID' type is an alias for an integer that represents the state of the automaton.
- - It is used as a default type for the state of learned automata.
--}
-type StateID = Int
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
 It provides methods to step through the automaton and retrieve the current state.
