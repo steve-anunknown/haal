@@ -8,6 +8,11 @@ and this project adheres to the
 
 ## Unreleased
 
+### Removed (breaking)
+- `Haal.BlackBox.StateID` type alias. Learned automata use `Int` states
+  directly, as `haal-gen` and `haal-models` already do; replace any use of
+  `StateID` with `Int`.
+
 ## 0.5.0.0 - 2026-04-22
 
 ### Fixed
