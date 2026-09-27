@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 import Haal.Automaton.MealyAutomaton
-import Haal.BlackBox (SUL (..), Int)
+import Haal.BlackBox (SUL (..))
 import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod)
 import Haal.Experiment
 import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
