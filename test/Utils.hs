@@ -4,11 +4,12 @@
 
 module Utils (
     statesAreEquivalent,
+    stateSpace,
+    genState,
     NonMinimalMealy (..),
     Mealy (..),
     Input (..),
     Output (..),
-    State (..),
     ArbWMethod (..),
     ArbWpMethod (..),
     ArbRandomWords (..),
@@ -168,25 +169,23 @@ instance OracleWrapper ArbRandomWMethod RandomWMethod where
 instance OracleWrapper ArbRandomWpMethod RandomWpMethod where
     unwrap (ArbRandomWpMethod o) = o
 
-newtype Mealy s i o = Mealy (MealyAutomaton s i o) deriving (Show)
+newtype Mealy i o = Mealy (MealyAutomaton Int i o) deriving (Show)
 
 instance
     ( Arbitrary i
     , Arbitrary o
-    , Arbitrary s
     , FiniteOrd i
     , FiniteOrd o
-    , FiniteOrd s
     ) =>
-    Arbitrary (Mealy s i o)
+    Arbitrary (Mealy i o)
     where
     arbitrary = do
-        let sts = [minBound .. maxBound]
+        let sts = stateSpace
         delta <- generateDelta sts
         lambda <- generateLambda sts
 
-        initialState <- arbitrary
-        currentState <- arbitrary
+        initialState <- elements sts
+        currentState <- elements sts
 
         return
             ( Mealy
@@ -196,23 +195,23 @@ instance
                 )
             )
       where
-        generateDelta :: [s] -> Gen (s -> i -> s)
+        generateDelta :: [Int] -> Gen (Int -> i -> Int)
         generateDelta sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton s i o)
+                ins = Set.toList $ inputs (undefined :: MealyAutomaton Int i o)
                 complete = [(st, inp) | st <- sts, inp <- ins]
                 (numS, numI) = Bif.bimap List.length List.length (sts, ins)
             matching <- vectorOf (numS * numI) (choose (0, numS - 1))
             let stateOutputs = [sts !! index | index <- matching]
                 stateMappings = Map.fromList $ List.zip complete stateOutputs
-            fallbackState <- arbitrary :: Gen s
+            fallbackState <- elements sts
             return $ \s i -> Data.Maybe.fromMaybe fallbackState (Map.lookup (s, i) stateMappings)
 
-        generateLambda :: [s] -> Gen (s -> i -> o)
+        generateLambda :: [Int] -> Gen (Int -> i -> o)
         generateLambda sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton s i o)
-                outs = Set.toList $ outputs (undefined :: MealyAutomaton s i o)
+                ins = Set.toList $ inputs (undefined :: MealyAutomaton Int i o)
+                outs = Set.toList $ outputs (undefined :: MealyAutomaton Int i o)
                 complete = [(st, inp) | st <- sts, inp <- ins]
                 (numS, numI) = Bif.bimap List.length List.length (sts, ins)
                 numO = List.length outs
@@ -224,28 +223,34 @@ instance
 
 data Input = A | B | C | D deriving (Show, Eq, Ord, Enum, Bounded)
 data Output = X | Y | Z | W deriving (Show, Eq, Ord, Enum, Bounded)
-data State = S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 deriving (Show, Eq, Ord, Enum, Bounded)
 
--- Arbitrary instances for Input, Output, and State
+{- | The states of the generated test automata. 'NonMinimalMealy' needs at
+least 6-7 states, otherwise too many test cases are discarded.
+-}
+stateSpace :: [Int]
+stateSpace = [0 .. 7]
+
+-- | Generate a state that belongs to 'stateSpace'.
+genState :: Gen Int
+genState = elements stateSpace
+
+-- Arbitrary instances for Input and Output
 instance Arbitrary Input where
     arbitrary = elements [A, B, C, D]
 
 instance Arbitrary Output where
     arbitrary = elements [X, Y, Z, W]
 
-instance Arbitrary State where
-    arbitrary = elements [S0, S1, S2, S3, S4, S5, S6, S7]
-
-newtype NonMinimalMealy = NonMinimalMealy (MealyAutomaton State Input Output) deriving (Show)
+newtype NonMinimalMealy = NonMinimalMealy (MealyAutomaton Int Input Output) deriving (Show)
 
 instance Arbitrary NonMinimalMealy where
     arbitrary = do
-        let sts = [minBound .. maxBound]
+        let sts = stateSpace
         delta <- generateDelta sts
         lambda <- generateLambda sts
 
-        initialState <- arbitrary :: Gen State
-        currentState <- arbitrary :: Gen State
+        initialState <- elements sts
+        currentState <- elements sts
 
         return
             ( NonMinimalMealy
@@ -255,10 +260,10 @@ instance Arbitrary NonMinimalMealy where
                 )
             )
       where
-        generateDelta :: [State] -> Gen (State -> Input -> State)
+        generateDelta :: [Int] -> Gen (Int -> Input -> Int)
         generateDelta sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton State Input Output)
+                ins = Set.toList $ inputs (undefined :: MealyAutomaton Int Input Output)
                 (numS, numI) = Bif.bimap List.length List.length (sts, ins)
                 same = numS `div` 2
                 nonMinimal = [(st, inp) | st <- take same sts, inp <- ins]
@@ -268,14 +273,14 @@ instance Arbitrary NonMinimalMealy where
             let stateOutputs1 = [sts !! index | index <- concat (replicate same nonMinimalMatching1)]
                 stateOutputs2 = [sts !! index | index <- nonMinimalMatching2]
                 nonMinimalMappings = Map.fromList $ List.zip (nonMinimal ++ rest) (stateOutputs1 ++ stateOutputs2)
-            fallbackState <- arbitrary :: Gen State
+            fallbackState <- elements sts
             return $ \s i -> Data.Maybe.fromMaybe fallbackState (Map.lookup (s, i) nonMinimalMappings)
 
-        generateLambda :: [State] -> Gen (State -> Input -> Output)
+        generateLambda :: [Int] -> Gen (Int -> Input -> Output)
         generateLambda sts = do
             let
-                ins = Set.toList $ inputs (undefined :: MealyAutomaton State Input Output)
-                outs = Set.toList $ outputs (undefined :: MealyAutomaton State Input Output)
+                ins = Set.toList $ inputs (undefined :: MealyAutomaton Int Input Output)
+                outs = Set.toList $ outputs (undefined :: MealyAutomaton Int Input Output)
                 same = numS `div` 2
                 nonMinimal = [(st, inp) | st <- take same sts, inp <- ins]
                 rest = [(st, inp) | st <- drop same sts, inp <- ins]
@@ -290,7 +295,7 @@ instance Arbitrary NonMinimalMealy where
             return $ \s i -> Data.Maybe.fromMaybe fallbackOutput (Map.lookup (s, i) outputMappings)
 
 -- Two states are equivalent if their delta and lambda functions are equivalent.
-statesAreEquivalent :: MealyAutomaton State Input Output -> State -> State -> Bool
+statesAreEquivalent :: MealyAutomaton Int Input Output -> Int -> Int -> Bool
 statesAreEquivalent _ s1 s2 | s1 == s2 = True
 statesAreEquivalent automaton s1 s2 =
     all (\i -> trans Map.! (s1, i) == trans Map.! (s2, i)) (inputs automaton)

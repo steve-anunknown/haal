@@ -361,7 +361,7 @@ makeClosed ot inc = do
     tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm', suffixSetE = em, mappingT = tm', prefixSetSI = sm_I'})
 
-instance Learner LMstar MealyAutomaton Int where
+instance Learner LMstar MealyAutomaton where
     initialize (LMstar _) = do
         LMstar . Init <$> initializeOT
     initialize (LMplus _) = do

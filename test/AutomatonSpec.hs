@@ -17,14 +17,14 @@ import Haal.Automaton.MealyAutomaton (
  )
 import Haal.BlackBox
 import Test.Hspec (Spec, context, describe, it)
-import Test.QuickCheck (Property, property, (==>))
-import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, State, statesAreEquivalent)
+import Test.QuickCheck (Property, forAll, property, (==>))
+import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, genState, statesAreEquivalent)
 import Control.Monad.Identity (runIdentity)
 
 -- The global characterizing set of a non minimal mealy automaton contains
--- the empty list. This will fail if the 'State' type has less than 6-7 constructors
+-- the empty list. This will fail if 'stateSpace' has fewer than 6-7 states
 -- because a lot of test cases will be discarded.
-prop_emptyListInCharacterizingSet :: NonMinimalMealy -> State -> State -> Property
+prop_emptyListInCharacterizingSet :: NonMinimalMealy -> Int -> Int -> Property
 prop_emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
     statesAreEquivalent automaton s1 s2
         && s1
@@ -33,7 +33,7 @@ prop_emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
                 `Set.member` globalCharacterizingSet automaton
 
 -- Two states that are not equivalent can be distinguished.
-prop_existsDistinguishingSequence :: Mealy State Input Output -> State -> State -> Property
+prop_existsDistinguishingSequence :: Mealy Input Output -> Int -> Int -> Property
 prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
     not (statesAreEquivalent automaton s1 s2)
         ==> output1
@@ -47,7 +47,7 @@ prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
 
 -- The map returned by 'mealyTransitions' is equivalent to the 'mealyLambda'
 -- and 'mealyDelta' functions of the automaton.
-prop_mappingEquivalentToFunctions :: Mealy State Input Output -> Bool
+prop_mappingEquivalentToFunctions :: Mealy Input Output -> Bool
 prop_mappingEquivalentToFunctions (Mealy automaton) =
     let transs = transitions automaton
         alphabet = Set.toList $ inputs automaton
@@ -62,7 +62,7 @@ prop_mappingEquivalentToFunctions (Mealy automaton) =
      in mapOutputs == funOutputs
 
 -- The access sequences returned by 'mealyAccessSequences' cover all reachable states.
-prop_completeAccessSequences :: Mealy State Input Output -> Property
+prop_completeAccessSequences :: Mealy Input Output -> Property
 prop_completeAccessSequences (Mealy automaton) = sts == rsts ==> allin
   where
     seqs = accessSequences automaton
@@ -71,7 +71,7 @@ prop_completeAccessSequences (Mealy automaton) = sts == rsts ==> allin
     allin = all (`Map.member` seqs) rsts
 
 -- The access sequences returned by 'mealyAccessSequences' are the shortest
-prop_shortestAccessSequences :: Mealy State Input Output -> State -> State -> Property
+prop_shortestAccessSequences :: Mealy Input Output -> Int -> Int -> Property
 prop_shortestAccessSequences (Mealy automaton) s1 s2 =
     s1 `Set.member` rsts
         && s2 `Set.member` rsts
@@ -96,14 +96,18 @@ spec = do
     describe "Blackbox.distinguish for MealyAutomaton" $
         context "if 2 automatons states are not equivalent" $
             it "returns an input sequence that distinguishes them" $
-                property
-                    prop_existsDistinguishingSequence
+                property $ \aut ->
+                    forAll genState $ \s1 ->
+                        forAll genState $ \s2 ->
+                            prop_existsDistinguishingSequence aut s1 s2
 
     describe "BlackBox.globalCharacterizingSet for MealyAutomaton" $
         context "if the automaton contains at least 2 equivalent states" $
             it "returns a set that contains the empty list" $
-                property
-                    prop_emptyListInCharacterizingSet
+                property $ \aut ->
+                    forAll genState $ \s1 ->
+                        forAll genState $ \s2 ->
+                            prop_emptyListInCharacterizingSet aut s1 s2
 
     describe "MealyAutomaton.mealyTransitions" $
         it "returns a map equivalent to the transition and output functions of the model" $
@@ -116,5 +120,7 @@ spec = do
                 prop_completeAccessSequences
 
         it "returns a map from reachable states to shortest list of inputs that access them" $
-            property
-                prop_shortestAccessSequences
+            property $ \aut ->
+                forAll genState $ \s1 ->
+                    forAll genState $ \s2 ->
+                        prop_shortestAccessSequences aut s1 s2

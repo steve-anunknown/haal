@@ -8,10 +8,16 @@ and this project adheres to the
 
 ## Unreleased
 
+### Changed (breaking)
+- `Haal.Experiment.Learner` drops its state parameter (`Learner l aut`);
+  learners now always produce automata with `Int` states.
+
 ### Removed (breaking)
 - `Haal.BlackBox.StateID` type alias. Learned automata use `Int` states
   directly, as `haal-gen` and `haal-models` already do; replace any use of
   `StateID` with `Int`.
+- `Haal.Experiment.pairwiseWalk` and `Haal.Experiment.execute` are no longer
+  exported; use `findCex` instead.
 
 ## 0.5.0.0 - 2026-04-22
 

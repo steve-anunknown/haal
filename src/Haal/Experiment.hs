@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 {- | This module exports the basic types, classes and functions that are required to
 easily construct and configure learning experiments.
@@ -12,10 +13,8 @@ module Haal.Experiment (
     EquivalenceOracle (..),
     Statistics (..),
     experiment,
-    runExperiment,
-    pairwiseWalk,
-    execute,
     findCex,
+    runExperiment,
     runExperimentT,
 ) where
 
@@ -49,7 +48,7 @@ Instances of this class should provide methods to initialize the learner,
 refine the learner with a counterexample, and learn an automaton. The type @l@
 determines the type of automaton @aut@ that is learned.
 -}
-class Learner l aut s | l -> aut s where
+class Learner l aut | l -> aut where
     initialize ::
         ( SUL sul m
         , FiniteOrd i
@@ -67,13 +66,12 @@ class Learner l aut s | l -> aut s where
         ExperimentT (sul i o) m (l i o)
     learn ::
         ( SUL sul m
-        , Automaton aut s
+        , Automaton aut Int
         , FiniteOrd i
-        , FiniteOrd s
         , FiniteOrd o
         ) =>
         l i o ->
-        ExperimentT (sul i o) m (l i o, aut s i o)
+        ExperimentT (sul i o) m (l i o, aut Int i o)
 
 {- | The 'ExperimentT' type is a monad transformer that allows for
 running experiments in a reader monad. This may prove useful for
@@ -121,16 +119,15 @@ and then requires a system under learning (SUL) to run the experiment.
 -}
 experiment ::
     ( SUL sul m
-    , Automaton aut s
-    , Learner learner aut s
+    , Automaton aut Int
+    , Learner learner aut
     , EquivalenceOracle oracle
     , FiniteOrd i
-    , FiniteOrd s
     , FiniteOrd o
     ) =>
     learner i o ->
     oracle ->
-    ExperimentT (sul i o) m (aut s i o, Statistics aut s i o)
+    ExperimentT (sul i o) m (aut Int i o, Statistics aut Int i o)
 experiment learner oracle = do
     initializedLearner <- initialize learner
     let inner le orc stats = do
@@ -192,7 +189,7 @@ and SUL.
 -}
 findCex ::
     ( SUL sul m
-    , Automaton aut s
+    , Automaton aut s 
     , EquivalenceOracle or
     , FiniteOrd i
     , FiniteOrd s
