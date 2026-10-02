@@ -9,10 +9,11 @@
                 -fplugin-opt=LiquidHaskell:--no-termination #-}
 #endif
 
--- | This module defines the BlackBox type class as well as the Automaton and SUL
--- sub classes.
-module Haal.BlackBox
-  ( Automaton (..),
+{- | This module defines the BlackBox type class as well as the Automaton and SUL
+sub classes.
+-}
+module Haal.BlackBox (
+    Automaton (..),
     SUL (..),
     Finite,
     FiniteEq,
@@ -29,7 +30,7 @@ module Haal.BlackBox
     localCharacterizingSet,
     globalCharacterizingSet,
     reachable,
-  )
+)
 where
 
 import Control.Monad.Identity (Identity, runIdentity)
@@ -38,13 +39,14 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
--- | The 'SUL' type class defines the basic interface for a black box automaton.
--- It provides methods to step through the automaton and retrieve the current state.
--- It also requires a monad m, that may be 'Identity' in case of a pure SUL, or 'IO'
--- in case of an external program that performs IO.
+{- | The 'SUL' type class defines the basic interface for a black box automaton.
+It provides methods to step through the automaton and retrieve the current state.
+It also requires a monad m, that may be 'Identity' in case of a pure SUL, or 'IO'
+in case of an external program that performs IO.
+-}
 class (Monad m) => SUL sul m where
-  step :: sul i o -> i -> m (sul i o, o)
-  reset :: sul i o -> m (sul i o)
+    step :: sul i o -> i -> m (sul i o, o)
+    reset :: sul i o -> m (sul i o)
 
 -- | Finite is an alias for (Enum, Bounded).
 type Finite i = (Enum i, Bounded i)
@@ -61,9 +63,9 @@ type FiniteOrd i = (Ord i, Finite i)
 walk :: (SUL sul m) => sul i o -> [i] -> m (sul i o, [o])
 walk sul [] = pure (sul, [])
 walk sul (x : xs) = do
-  (sul', o) <- step sul x
-  (sul'', os) <- walk sul' xs
-  pure (sul'', o : os)
+    (sul', o) <- step sul x
+    (sul'', os) <- walk sul' xs
+    pure (sul'', o : os)
 
 {-@ rangeIN :: (Enum i, Bounded i) => sul i o -> {is:[i] | len is > 0} @-}
 rangeIN :: (Finite i) => sul i o -> [i]
@@ -87,17 +89,18 @@ inputs x = Set.fromList $ rangeIN x
 outputs :: (FiniteOrd o) => sul i o -> Set.Set o
 outputs x = Set.fromList $ rangeOUT x
 
--- | The 'Automaton' type class extends the 'SUL' type class and adds
--- support for automata operations. Automatons are models, not programs,
--- so they are pure and operate in the Identity monad.
+{- | The 'Automaton' type class extends the 'SUL' type class and adds
+support for automata operations. Automatons are models, not programs,
+so they are pure and operate in the Identity monad.
+-}
 class (SUL (aut s) Identity) => Automaton aut s where
-  transitions ::
-    (FiniteOrd i, FiniteOrd s) =>
-    aut s i o ->
-    Map.Map (s, i) (s, o)
-  states :: (FiniteOrd s) => aut s i o -> Set.Set s
-  current :: aut s i o -> s
-  update :: aut s i o -> s -> aut s i o
+    transitions ::
+        (FiniteOrd i, FiniteOrd s) =>
+        aut s i o ->
+        Map.Map (s, i) (s, o)
+    states :: (FiniteOrd s) => aut s i o -> Set.Set s
+    current :: aut s i o -> s
+    update :: aut s i o -> s -> aut s i o
 
 -- | Pure instance of 'step'.
 stepPure :: (SUL sul Identity) => sul i o -> i -> (sul i o, o)
@@ -134,10 +137,10 @@ reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
 
 -- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::
-  forall s i o aut.
-  (Automaton aut s, FiniteOrd i, Ord s) =>
-  aut s i o ->
-  Map.Map s [i]
+    forall s i o aut.
+    (Automaton aut s, FiniteOrd i, Ord s) =>
+    aut s i o ->
+    Map.Map s [i]
 accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singleton initialSt [])
   where
     alphabet = Set.toList (inputs aut)
@@ -146,32 +149,33 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
     bfs :: [(s, [i])] -> Set.Set s -> Map.Map s [i] -> Map.Map s [i]
     bfs [] _ acc = Map.map List.reverse acc
     bfs ((_, prefix) : rest) visited acc =
-      bfs (rest ++ newQueue) newVisited newMap
+        bfs (rest ++ newQueue) newVisited newMap
       where
         mo = fst $ walkPure (resetPure aut) (reverse prefix)
         successors =
-          [ (nextState, input : prefix)
-          | input <- alphabet,
-            let nextState = current . fst $ stepPure mo input,
-            nextState `Set.notMember` visited
-          ]
+            [ (nextState, input : prefix)
+            | input <- alphabet
+            , let nextState = current . fst $ stepPure mo input
+            , nextState `Set.notMember` visited
+            ]
 
         newMap = foldr (uncurry Map.insert) acc successors
         newVisited = foldr (Set.insert . fst) visited successors
         newQueue = successors
 
--- | Returns an input sequence that distinguishes the given states in
--- the given automaton.
+{- | Returns an input sequence that distinguishes the given states in
+the given automaton.
+-}
 distinguish ::
-  ( Automaton aut s,
-    FiniteOrd i,
-    Ord s,
-    Eq o
-  ) =>
-  aut s i o ->
-  s ->
-  s ->
-  [i]
+    ( Automaton aut s
+    , FiniteOrd i
+    , Ord s
+    , Eq o
+    ) =>
+    aut s i o ->
+    s ->
+    s ->
+    [i]
 {-@ distinguish :: (Automaton aut s, FiniteOrd i, Ord s, Eq o) =>
       aut s i o ->
       s1:s ->
@@ -185,8 +189,8 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
 
     explore _ [] = []
     explore visited ((q1, q2, prefix) : queue)
-      | Just symbol <- discrepancy = reverse (symbol : prefix)
-      | otherwise = explore newVisited (queue ++ newQueue)
+        | Just symbol <- discrepancy = reverse (symbol : prefix)
+        | otherwise = explore newVisited (queue ++ newQueue)
       where
         newVisited = Map.insert (q1, q2) prefix visited
         mo1 = update m q1
@@ -205,31 +209,33 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
 
     stepAndCurrent mo i = Bif.first current (stepPure mo i)
 
--- | Returns a set of lists of inputs that can be used to distinguish between the given state and
--- - any other state of the automaton.
+{- | Returns a set of lists of inputs that can be used to distinguish between the given state and
+- any other state of the automaton.
+-}
 localCharacterizingSet ::
-  ( Automaton aut s,
-    FiniteOrd i,
-    FiniteOrd s,
-    Eq o
-  ) =>
-  aut s i o ->
-  s ->
-  Set.Set [i]
+    ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
+    , Eq o
+    ) =>
+    aut s i o ->
+    s ->
+    Set.Set [i]
 localCharacterizingSet m s = Set.fromList [d s sx | sx <- Set.toList $ states m, s /= sx]
   where
     d = distinguish m
 
--- | Returns a set of lists of inputs that can be used to distinguish between any two different states
--- of the automaton.
+{- | Returns a set of lists of inputs that can be used to distinguish between any two different states
+of the automaton.
+-}
 globalCharacterizingSet ::
-  ( Automaton aut s,
-    FiniteOrd i,
-    FiniteOrd s,
-    Eq o
-  ) =>
-  aut s i o ->
-  Set.Set [i]
+    ( Automaton aut s
+    , FiniteOrd i
+    , FiniteOrd s
+    , Eq o
+    ) =>
+    aut s i o ->
+    Set.Set [i]
 globalCharacterizingSet m = Set.fromList [d s1 s2 | s1 <- sts, s2 <- sts, s1 < s2]
   where
     sts = Set.toList $ states m
