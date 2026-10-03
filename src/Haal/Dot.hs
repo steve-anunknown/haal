@@ -5,10 +5,12 @@ module Haal.Dot (
     mealyToDot,
     ParsedMealy (..),
     parseDot,
+    MealyTable (..),
+    mealyTable,
     generateModule,
 ) where
 
-import Data.Char (isAlphaNum, isDigit, isLower, isSpace, toUpper)
+import Data.Char (chr, isAlphaNum, isDigit, isLower, isSpace, ord, toUpper)
 import Data.List (intercalate, isInfixOf, isPrefixOf)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (mapMaybe)
@@ -115,9 +117,9 @@ parseDot src = do
     if initSt `Set.notMember` allStateSet
         then Left ("Initial state '" ++ initSt ++ "' does not appear in any transition")
         else do
-            let stateOrder = initSt : Set.toList (Set.delete initSt allStateSet)
-                inputSyms = Set.toList . Set.fromList $ map (\(_, i, _, _) -> i) trans
-                outputSyms = Set.toList . Set.fromList $ map (\(_, _, _, o) -> o) trans
+            let stateOrder = ordNub (initSt : concatMap (\(s, _, d, _) -> [s, d]) trans)
+                inputSyms = ordNub $ map (\(_, i, _, _) -> i) trans
+                outputSyms = ordNub $ map (\(_, _, _, o) -> o) trans
                 warnings = slashWarnings inputSyms outputSyms
             return
                 ParsedMealy
@@ -128,6 +130,85 @@ parseDot src = do
                     , parsedTrans = trans
                     , parsedWarnings = warnings
                     }
+
+-- ---------------------------------------------------------------------------
+-- Transition tables
+-- ---------------------------------------------------------------------------
+
+{- | A complete, deterministic Mealy automaton in the table encoding expected
+  by 'Haal.Automaton.MealyAutomaton.mkMealyAutomatonTable'.
+
+  States, inputs, and outputs are numbered by their position in
+  'parsedStates', 'parsedInputs', and 'parsedOutputs', so the initial state
+  is always @0@. The entry at position @s * k + j@ of each table, where @k@
+  is the number of inputs, describes state @s@ on input @j@, encoded as the
+  'Char' with that code point.
+-}
+data MealyTable = MealyTable
+    { tableStates :: Int
+    -- ^ The number of states.
+    , tableDelta :: String
+    -- ^ The next state of each transition.
+    , tableLambda :: String
+    -- ^ The output of each transition.
+    }
+    deriving (Show, Eq)
+
+{- | Encode a 'ParsedMealy' as a 'MealyTable'.
+
+  Returns @'Left' err@ if some state has no transition, or more than one
+  distinct transition, for some input, or if the automaton is too large for
+  the encoding (every number must be a code point below @0xD800@).
+-}
+mealyTable :: ParsedMealy -> Either String MealyTable
+mealyTable pm
+    | length stateNames > maxCode || length (parsedOutputs pm) > maxCode =
+        Left ("Automaton is too large for the table encoding (at most " ++ show maxCode ++ " states and outputs)")
+    | not (null conflicts) =
+        Left ("Nondeterministic automaton:\n" ++ unlines (map describeConflict conflicts))
+    | not (null missing) =
+        Left $
+            "Incomplete automaton: "
+                ++ show (length missing)
+                ++ " missing transition(s), e.g.\n"
+                ++ unlines (map describeMissing (take 10 missing))
+    | otherwise =
+        Right
+            MealyTable
+                { tableStates = length stateNames
+                , tableDelta = map (chr . fst) entries
+                , tableLambda = map (chr . snd) entries
+                }
+  where
+    maxCode = 0xD800
+    stateNames = parsedStates pm
+    inputNames = parsedInputs pm
+    stateIdx = Map.fromList (zip stateNames [0 :: Int ..])
+    inputIdx = Map.fromList (zip inputNames [0 :: Int ..])
+    outputIdx = Map.fromList (zip (parsedOutputs pm) [0 :: Int ..])
+
+    -- Every name is in its index map, since all three lists are built from
+    -- 'parsedTrans' by 'parseDot'.
+    byKey =
+        Map.fromListWith
+            Set.union
+            [ ((stateIdx Map.! src, inputIdx Map.! inp), Set.singleton (stateIdx Map.! dst, outputIdx Map.! out))
+            | (src, inp, dst, out) <- parsedTrans pm
+            ]
+    conflicts = [(k, Set.toList ts) | (k, ts) <- Map.toList byKey, Set.size ts > 1]
+    keys = [(s, i) | s <- [0 .. length stateNames - 1], i <- [0 .. length inputNames - 1]]
+    missing = filter (`Map.notMember` byKey) keys
+    entries = [t | k <- keys, t <- take 1 (foldMap Set.toList (Map.lookup k byKey))]
+
+    nameOf names = \x -> Map.findWithDefault "?" x (Map.fromList (zip [0 :: Int ..] names))
+    stateName = nameOf stateNames
+    inputName = nameOf inputNames
+    outputName = nameOf (parsedOutputs pm)
+    describeMissing (s, i) = "  state " ++ show (stateName s) ++ ", input " ++ show (inputName i)
+    describeConflict ((s, i), ts) =
+        describeMissing (s, i)
+            ++ " → "
+            ++ intercalate ", " [show (stateName d) ++ " / " ++ show (outputName o) | (d, o) <- ts]
 
 -- ---------------------------------------------------------------------------
 -- Code generator
@@ -141,25 +222,23 @@ parseDot src = do
   * A @data \<modName\>Input@ type whose constructors are the sanitized input
     symbols, deriving @Show, Eq, Ord, Enum, Bounded@.
   * A @data \<modName\>Output@ type, similarly for output symbols.
-  * A value @valName :: MealyAutomaton Int \<modName\>Input \<modName\>Output@.
+  * A value @valName :: MealyAutomaton Int \<modName\>Input \<modName\>Output@,
+    built with 'Haal.Automaton.MealyAutomaton.mkMealyAutomatonTable' from the
+    'MealyTable' of @pm@, preceded by a comment listing every transition.
 
   Returns @'Left' err@ if two distinct symbols sanitize to the same
-  constructor name.
+  constructor name, or if 'mealyTable' rejects the automaton.
 -}
 generateModule :: String -> String -> ParsedMealy -> Either String String
 generateModule modName valName pm = do
     inputCons <- sanitizeAll "In_" "input" (parsedInputs pm)
     outputCons <- sanitizeAll "Out_" "output" (parsedOutputs pm)
-    let stateNames = parsedStates pm
-        n = length stateNames
-        stateIdx = Map.fromList (zip stateNames [0 :: Int ..])
-        inputConMap = Map.fromList (zip (parsedInputs pm) inputCons)
-        outputConMap = Map.fromList (zip (parsedOutputs pm) outputCons)
+    table <- mealyTable pm
+    let n = tableStates table
+        k = length inputCons
         modSuffix = reverse . takeWhile (/= '.') . reverse $ modName
         inputType = modSuffix ++ "Input"
         outputType = modSuffix ++ "Output"
-        deltaLines = map (mkDeltaLine stateIdx inputConMap) (parsedTrans pm)
-        lambdaLines = map (mkLambdaLine stateIdx inputConMap outputConMap) (parsedTrans pm)
     return $
         unlines $
             [ "-- Generated by haal-gen. Do not edit manually."
@@ -169,8 +248,7 @@ generateModule modName valName pm = do
             , "    , " ++ valName
             , "    ) where"
             , ""
-            , "import qualified Data.Set as Set"
-            , "import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)"
+            , "import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)"
             , ""
             , "data " ++ inputType
             ]
@@ -179,18 +257,19 @@ generateModule modName valName pm = do
                    , "data " ++ outputType
                    ]
                 ++ enumDecl outputCons
-                ++ [ ""
-                   , valName ++ " :: MealyAutomaton Int " ++ inputType ++ " " ++ outputType
-                   , valName
-                        ++ " = mkMealyAutomaton delta lambda (Set.fromList [0.."
-                        ++ show (n - 1)
-                        ++ "]) 0"
+                ++ [""]
+                ++ transitionComment inputCons outputCons table
+                ++ [ valName ++ " :: MealyAutomaton Int " ++ inputType ++ " " ++ outputType
+                   , valName ++ " ="
+                   , "    case mkMealyAutomatonTable " ++ show n ++ " 0 deltaTable lambdaTable of"
+                   , "        Right m -> m"
+                   , "        Left err -> error (\"haal-gen: invalid transition table: \" ++ err)"
                    , "  where"
+                   , "    deltaTable ="
                    ]
-                ++ map ("    " ++) deltaLines
-                ++ ["    delta _ _ = error \"haal-gen: undefined transition\""]
-                ++ map ("    " ++) lambdaLines
-                ++ ["    lambda _ _ = error \"haal-gen: undefined transition\""]
+                ++ stringRows k (tableDelta table)
+                ++ ["    lambdaTable ="]
+                ++ stringRows k (tableLambda table)
 
 -- ---------------------------------------------------------------------------
 -- Code generation helpers
@@ -203,30 +282,47 @@ enumDecl (c : cs) =
         ++ map ("    | " ++) cs
         ++ ["    deriving (Show, Eq, Ord, Enum, Bounded)"]
 
-mkDeltaLine ::
-    Map.Map String Int ->
-    Map.Map String String ->
-    (String, String, String, String) ->
-    String
-mkDeltaLine stateIdx inputConMap (src, inp, dst, _) =
-    "delta " ++ show si ++ " " ++ ic ++ " = " ++ show di
+{- | A block comment listing every transition of the table, one state at a
+  time, so that the generated module stays readable.
+-}
+transitionComment :: [String] -> [String] -> MealyTable -> [String]
+transitionComment inputCons outputCons table =
+    ["{- Transitions (state  input -> next state / output):"]
+        ++ concat (zipWith stateLines [0 :: Int ..] (chunksOf k entries))
+        ++ ["-}"]
   where
-    si = stateIdx Map.! src
-    di = stateIdx Map.! dst
-    ic = inputConMap Map.! inp
+    k = length inputCons
+    entries = zip (tableDelta table) (tableLambda table)
+    width = maximum (0 : map length inputCons)
+    stateLines s row =
+        [ "    " ++ pad 5 (if j == 0 then show s else "") ++ pad width inp ++ " -> " ++ show (ord d) ++ " / " ++ out
+        | (j, inp, (d, o)) <- zip3 [0 :: Int ..] inputCons row
+        , out <- take 1 (drop (ord o) outputCons)
+        ]
+    pad w str = str ++ replicate (w - length str + 1) ' '
 
-mkLambdaLine ::
-    Map.Map String Int ->
-    Map.Map String String ->
-    Map.Map String String ->
-    (String, String, String, String) ->
-    String
-mkLambdaLine stateIdx inputConMap outputConMap (src, inp, _, out) =
-    "lambda " ++ show si ++ " " ++ ic ++ " = " ++ oc
+{- | Render a table as an indented string literal with one row of @k@
+  entries per line, joined by string gaps. Every entry is written as a
+  numeric escape, so that each row reads as a list of numbers.
+-}
+stringRows :: Int -> String -> [String]
+stringRows k str = case chunksOf k str of
+    [] -> ["        \"\""]
+    rows ->
+        [ "        " ++ open ++ concatMap escape row ++ close
+        | (j, row) <- zip [0 :: Int ..] rows
+        , let open = if j == 0 then "\"" else "\\"
+              close = if j == length rows - 1 then "\"" else "\\"
+        ]
   where
-    si = stateIdx Map.! src
-    ic = inputConMap Map.! inp
-    oc = outputConMap Map.! out
+    escape c = '\\' : show (ord c)
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf k xs
+    | k <= 0 = []
+    | otherwise = case splitAt k xs of
+        ([], _) -> []
+        (chunk, rest) -> chunk : chunksOf k rest
 
 {- | Sanitize a list of symbols to valid Haskell constructor names using the
   given prefix, failing if two distinct symbols would produce the same name.
@@ -276,6 +372,19 @@ sanitizeName prefix s = prefix ++ base
 -- ---------------------------------------------------------------------------
 -- Parser helpers
 -- ---------------------------------------------------------------------------
+
+{- | Remove duplicates, keeping the first occurrence of each element, in
+  @O(n log n)@. Symbols and states keep the order in which they first appear
+  in the DOT file, so that regenerating a model keeps its constructor order
+  and state numbering.
+-}
+ordNub :: (Ord a) => [a] -> [a]
+ordNub = go Set.empty
+  where
+    go _ [] = []
+    go seen (x : xs)
+        | x `Set.member` seen = go seen xs
+        | otherwise = x : go (Set.insert x seen) xs
 
 slashWarnings :: [String] -> [String] -> [String]
 slashWarnings inputs outputs =

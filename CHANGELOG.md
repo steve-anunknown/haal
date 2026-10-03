@@ -8,11 +8,31 @@ and this project adheres to the
 
 ## Unreleased
 
+### Added
+- `Haal.Automaton.MealyAutomaton.mkMealyAutomatonTable` builds a Mealy
+  automaton with states `0 .. n - 1` from a transition table and an output
+  table, each encoded as a `String`, and validates both tables.
+- `Haal.Dot.MealyTable` and `Haal.Dot.mealyTable` encode a `ParsedMealy` in
+  that table form, rejecting automata with missing or conflicting
+  transitions.
+
+### Fixed
+- `Haal.Dot.parseDot` again orders states, inputs, and outputs by first
+  appearance, as documented. Since 0.5.0.0 it sorted them by name, which
+  changed the constructor order and state numbering of generated modules.
+
 ### Changed (breaking)
 - `Haal.Experiment.Learner` drops its state parameter (`Learner l aut`);
   learners now always produce automata with `Int` states.
 
 ### Changed
+- `haal-gen` (`Haal.Dot.generateModule`) emits the transition and output
+  functions as string-literal tables built with `mkMealyAutomatonTable`,
+  instead of one equation per transition, and lists every transition in a
+  comment. Generated modules have the same types and behaviour, but compile
+  about 2-3 times faster. `generateModule` now rejects incomplete or
+  nondeterministic automata, instead of generating functions that fail at
+  runtime.
 - `Haal.BlackBox.distinguish` returns `[]` immediately when both states are
   equal, instead of exploring the product automaton first. Results are
   unchanged. Its LiquidHaskell spec now states that equal states yield an

@@ -7,6 +7,7 @@ module Haal.Automaton.MealyAutomaton (
     MealyAutomaton,
     mkMealyAutomaton,
     mkMealyAutomaton2,
+    mkMealyAutomatonTable,
     mealyDelta,
     mealyLambda,
     mealyTransitions,
@@ -14,8 +15,10 @@ module Haal.Automaton.MealyAutomaton (
 where
 
 import Control.Monad.Identity (Identity)
+import Data.Char (ord)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import qualified Data.Vector.Unboxed as VU
 import Haal.BlackBox
 
 {- | The 'MealyAutomaton' data type is parameterised by the @input@, @output@ and @state@ types
@@ -59,6 +62,80 @@ mkMealyAutomaton2 transs sts initS =
         , mealyCurrentS = initS
         , mealyStates = sts
         }
+
+{- | The 'mkMealyAutomatonTable' constructor returns a 'MealyAutomaton' with states
+@0 .. n - 1@ from a transition table and an output table, each encoded as a 'String'
+in which every 'Char' stands for the number @'ord' c@.
+
+  @mkMealyAutomatonTable n initS deltaTable lambdaTable@ expects both tables to hold
+  one entry per state and input, in row-major order: the entry at position
+  @s * k + j@, where @k@ is the number of inputs and @j@ is the position of the input
+  in @[minBound .. maxBound]@, describes state @s@ on that input. An entry of
+  @deltaTable@ is the next state, and an entry of @lambdaTable@ is the position of
+  the output in @[minBound .. maxBound]@.
+
+  String literals compile far faster than large pattern matches, which is why
+  @haal-gen@ emits its models in this form.
+
+  Returns @'Left' err@ if the number of states is not positive, the initial state is
+  out of range, a table has the wrong length, or an entry is out of range. Applying
+  the resulting transition functions to a state outside @0 .. n - 1@ is an error.
+-}
+{-# INLINEABLE mkMealyAutomatonTable #-}
+mkMealyAutomatonTable ::
+    forall i o.
+    (Finite i, Finite o) =>
+    Int ->
+    Int ->
+    String ->
+    String ->
+    Either String (MealyAutomaton Int i o)
+mkMealyAutomatonTable n initS deltaTable lambdaTable = do
+    -- Only this wrapper is specialised at each use site (it is INLINABLE), so
+    -- that lookups call 'fromEnum' and 'toEnum' directly rather than through
+    -- a dictionary. Everything else happens in the monomorphic
+    -- 'decodeTables', which keeps the specialised code, and therefore the
+    -- compile time of each generated model, small.
+    (sts, deltaV, lambdaV) <- decodeTables n numI numO initS deltaTable lambdaTable
+    let index s i = s * numI + (fromEnum i - firstI)
+        delta s i = deltaV VU.! index s i
+        lambda s i = toEnum (firstO + lambdaV VU.! index s i)
+    return (mkMealyAutomaton delta lambda sts initS)
+  where
+    firstI = fromEnum (minBound :: i)
+    numI = fromEnum (maxBound :: i) - firstI + 1
+    firstO = fromEnum (minBound :: o)
+    numO = fromEnum (maxBound :: o) - firstO + 1
+
+{- | Validate and decode the tables of 'mkMealyAutomatonTable', given the
+number of states, inputs, and outputs and the initial state.
+-}
+{-# NOINLINE decodeTables #-}
+decodeTables ::
+    Int ->
+    Int ->
+    Int ->
+    Int ->
+    String ->
+    String ->
+    Either String (Set.Set Int, VU.Vector Int, VU.Vector Int)
+decodeTables n numI numO initS deltaTable lambdaTable
+    | n <= 0 = Left "the automaton must have at least one state"
+    | initS < 0 || initS >= n =
+        Left ("initial state " ++ show initS ++ " is not in 0 .. " ++ show (n - 1))
+    | VU.length deltaV /= size =
+        Left ("transition table has " ++ show (VU.length deltaV) ++ " entries, expected " ++ show size)
+    | VU.length lambdaV /= size =
+        Left ("output table has " ++ show (VU.length lambdaV) ++ " entries, expected " ++ show size)
+    | VU.any (>= n) deltaV =
+        Left "transition table refers to a state that does not exist"
+    | VU.any (>= numO) lambdaV =
+        Left "output table refers to an output that does not exist"
+    | otherwise = Right (Set.fromDistinctAscList [0 .. n - 1], deltaV, lambdaV)
+  where
+    size = n * numI
+    deltaV = VU.fromList (map ord deltaTable)
+    lambdaV = VU.fromList (map ord lambdaTable)
 
 {- | Performs a step in the automaton and returns a tuple containing the automaton with a modified
 state as well as the output produced by the transition.
