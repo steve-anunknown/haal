@@ -1,5 +1,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
 {- HLINT ignore "Use <$>" -}
 
 module Utils (
@@ -27,8 +28,8 @@ import qualified Data.Maybe
 import qualified Data.Set as Set
 import Haal.Automaton.MealyAutomaton (
     MealyAutomaton,
-    mkMealyAutomaton,
     mealyTransitions,
+    mkMealyAutomaton,
  )
 import Haal.BlackBox
 import Haal.EquivalenceOracle.RandomWalk (
@@ -46,16 +47,16 @@ import Haal.EquivalenceOracle.WMethod (
     RandomWMethodConfig (..),
     WMethod,
     WMethodConfig (..),
-    mkWMethod,
     mkRandomWMethod,
+    mkWMethod,
  )
 import Haal.EquivalenceOracle.WpMethod (
     RandomWpMethod,
     RandomWpMethodConfig (..),
     WpMethod,
     WpMethodConfig (..),
-    mkWpMethod,
     mkRandomWpMethod,
+    mkWpMethod,
  )
 import Haal.Experiment (EquivalenceOracle)
 import System.Random

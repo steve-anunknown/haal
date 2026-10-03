@@ -6,6 +6,7 @@ module AutomatonSpec (
 )
 where
 
+import Control.Monad.Identity (runIdentity)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -19,7 +20,6 @@ import Haal.BlackBox
 import Test.Hspec (Spec, context, describe, it)
 import Test.QuickCheck (Property, forAll, property, (==>))
 import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, genState, statesAreEquivalent)
-import Control.Monad.Identity (runIdentity)
 
 -- The global characterizing set of a non minimal mealy automaton contains
 -- the empty list. This will fail if 'stateSpace' has fewer than 6-7 states
@@ -29,17 +29,17 @@ prop_emptyListInCharacterizingSet (NonMinimalMealy automaton) s1 s2 =
     statesAreEquivalent automaton s1 s2
         && s1
             /= s2
-                ==> []
-                `Set.member` globalCharacterizingSet automaton
+        ==> []
+            `Set.member` globalCharacterizingSet automaton
 
 -- Two states that are not equivalent can be distinguished.
 prop_existsDistinguishingSequence :: Mealy Input Output -> Int -> Int -> Property
 prop_existsDistinguishingSequence (Mealy automaton) s1 s2 =
-    not (statesAreEquivalent automaton s1 s2)
-        ==> output1
-        /= output2
-        && output1 /= []
-        && output2 /= []
+    not (statesAreEquivalent automaton s1 s2) ==>
+        output1
+            /= output2
+            && output1 /= []
+            && output2 /= []
   where
     dist = distinguish automaton s1 s2
     (_, output1) = runIdentity $ walk (update automaton s1) dist
@@ -75,7 +75,8 @@ prop_shortestAccessSequences :: Mealy Input Output -> Int -> Int -> Property
 prop_shortestAccessSequences (Mealy automaton) s1 s2 =
     s1 `Set.member` rsts
         && s2 `Set.member` rsts
-        && existsS1toS2 ==> List.length seq2 <= List.length seq1 + 1
+        && existsS1toS2
+        ==> List.length seq2 <= List.length seq1 + 1
   where
     rsts = reachable automaton
     transs = transitions automaton

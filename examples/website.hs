@@ -85,8 +85,8 @@ instance SUL WebsiteSUL IO where
 --------------------------------------------------------------------------------
 
 learner = mkLMstar Star
-teacher = case mkWMethod (WMethodConfig 2) of 
-    Left msg -> error msg 
+teacher = case mkWMethod (WMethodConfig 2) of
+    Left msg -> error msg
     Right oracle -> oracle
 exper = experiment learner teacher
 

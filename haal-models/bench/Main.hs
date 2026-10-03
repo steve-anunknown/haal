@@ -6,7 +6,8 @@ import Bench.Models (modelBenchmarks)
 import Bench.Scaling (scalingBenchmarks)
 
 main :: IO ()
-main = defaultMain
-    [ modelBenchmarks
-    , scalingBenchmarks
-    ]
+main =
+    defaultMain
+        [ modelBenchmarks
+        , scalingBenchmarks
+        ]

@@ -77,8 +77,8 @@ learner :: LMstar Binary Bool
 learner = mkLMstar Star
 
 oracle :: WpMethod
-oracle = case mkWpMethod (WpMethodConfig 3) of 
-    Left msg -> error msg 
+oracle = case mkWpMethod (WpMethodConfig 3) of
+    Left msg -> error msg
     Right oracle' -> oracle'
 
 exper ::
@@ -96,7 +96,6 @@ exper ::
             Bool
         )
 exper = experiment learner oracle
-
 
 main :: IO ()
 main = do

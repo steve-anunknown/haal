@@ -155,8 +155,8 @@ generateModule modName valName pm = do
         stateIdx = Map.fromList (zip stateNames [0 :: Int ..])
         inputConMap = Map.fromList (zip (parsedInputs pm) inputCons)
         outputConMap = Map.fromList (zip (parsedOutputs pm) outputCons)
-        modSuffix  = reverse . takeWhile (/= '.') . reverse $ modName
-        inputType  = modSuffix ++ "Input"
+        modSuffix = reverse . takeWhile (/= '.') . reverse $ modName
+        inputType = modSuffix ++ "Input"
         outputType = modSuffix ++ "Output"
         deltaLines = map (mkDeltaLine stateIdx inputConMap) (parsedTrans pm)
         lambdaLines = map (mkLambdaLine stateIdx inputConMap outputConMap) (parsedTrans pm)

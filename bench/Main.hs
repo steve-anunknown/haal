@@ -8,9 +8,10 @@ import Bench.EndToEnd (endToEndBenchmarks)
 import Bench.EquivalenceOracle (equivalenceOracleBenchmarks)
 
 main :: IO ()
-main = defaultMain
-    [ blackBoxBenchmarks
-    , equivalenceOracleBenchmarks
-    , dotBenchmarks
-    , endToEndBenchmarks
-    ]
+main =
+    defaultMain
+        [ blackBoxBenchmarks
+        , equivalenceOracleBenchmarks
+        , dotBenchmarks
+        , endToEndBenchmarks
+        ]

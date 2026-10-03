@@ -10,9 +10,7 @@ readInteger = do
     maybe readInteger return maybeNum
 
 divisible3 :: Int -> IO Bool
-divisible3 num = do 
-    if num `mod` 3 == 0 
-    then print True >> return True 
-    else print False >> return False
-
-
+divisible3 num = do
+    if num `mod` 3 == 0
+        then print True >> return True
+        else print False >> return False

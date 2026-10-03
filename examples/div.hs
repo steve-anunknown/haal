@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+import Control.Monad.Identity (Identity)
 import Haal.Automaton.MealyAutomaton
 import Haal.BlackBox (SUL (..))
 import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod)
 import Haal.Experiment
 import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
-import Control.Monad.Identity (Identity)
 
 -- main logic
 divisible :: Integer -> Bool
@@ -83,8 +83,8 @@ learner :: LMstar Binary Bool
 learner = mkLMstar Star
 
 oracle :: WpMethod
-oracle = case mkWpMethod (WpMethodConfig 3) of 
-    Left msg -> error msg 
+oracle = case mkWpMethod (WpMethodConfig 3) of
+    Left msg -> error msg
     Right oracle' -> oracle'
 
 exper :: Experiment (Program Binary Bool) (MealyAutomaton Int Binary Bool, Statistics MealyAutomaton Int Binary Bool)

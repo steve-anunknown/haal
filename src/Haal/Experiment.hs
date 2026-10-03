@@ -1,7 +1,7 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 {- | This module exports the basic types, classes and functions that are required to
 easily construct and configure learning experiments.
@@ -189,7 +189,7 @@ and SUL.
 -}
 findCex ::
     ( SUL sul m
-    , Automaton aut s 
+    , Automaton aut s
     , EquivalenceOracle or
     , FiniteOrd i
     , FiniteOrd s

@@ -10,10 +10,10 @@ module Haal.Automaton.MooreAutomaton (
 )
 where
 
+import Control.Monad.Identity (Identity)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Haal.BlackBox
-import Control.Monad.Identity (Identity)
 
 data MooreAutomaton state input output = MooreAutomaton
     { mooreDelta :: state -> input -> state
