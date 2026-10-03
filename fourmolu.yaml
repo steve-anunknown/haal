@@ -1,0 +1,5 @@
+indentation: 4
+comma-style: leading
+import-export-style: diff-friendly
+haddock-style: multi-line
+haddock-style-module: multi-line
