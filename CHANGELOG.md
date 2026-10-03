@@ -12,6 +12,12 @@ and this project adheres to the
 - `Haal.Experiment.Learner` drops its state parameter (`Learner l aut`);
   learners now always produce automata with `Int` states.
 
+### Changed
+- `Haal.BlackBox.distinguish` returns `[]` immediately when both states are
+  equal, instead of exploring the product automaton first. Results are
+  unchanged. Its LiquidHaskell spec now states that equal states yield an
+  empty word.
+
 ### Removed (breaking)
 - `Haal.BlackBox.StateID` type alias. Learned automata use `Int` states
   directly, as `haal-gen` and `haal-models` already do; replace any use of
