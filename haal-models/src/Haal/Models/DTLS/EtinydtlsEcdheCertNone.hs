@@ -5,8 +5,7 @@ module Haal.Models.DTLS.EtinydtlsEcdheCertNone
     , etinydtlsEcdheCertNone
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data EtinydtlsEcdheCertNoneInput
     = In_ECDH_CLIENT_HELLO
@@ -33,448 +32,277 @@ data EtinydtlsEcdheCertNoneOutput
     | Out_APPLICATION
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_ECDH_CLIENT_HELLO               -> 1 / Out_HELLO_VERIFY_REQUEST
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 2 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 0 / Out_TIMEOUT
+          In_APPLICATION                     -> 0 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 0 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 0 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 0 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 0 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 0 / Out_TIMEOUT
+    1     In_ECDH_CLIENT_HELLO               -> 4 / Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 5 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 1 / Out_TIMEOUT
+          In_APPLICATION                     -> 1 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 1 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 1 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 1 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 1 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 1 / Out_TIMEOUT
+    2     In_ECDH_CLIENT_HELLO               -> 5 / Out_HELLO_VERIFY_REQUEST
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 2 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 2 / Out_TIMEOUT
+          In_APPLICATION                     -> 2 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 2 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 2 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 2 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 2 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 2 / Out_TIMEOUT
+    3     In_ECDH_CLIENT_HELLO               -> 3 / Out_SOCKET_CLOSED
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 3 / Out_SOCKET_CLOSED
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_SOCKET_CLOSED
+          In_FINISHED                        -> 3 / Out_SOCKET_CLOSED
+          In_APPLICATION                     -> 3 / Out_SOCKET_CLOSED
+          In_CERTIFICATE                     -> 3 / Out_SOCKET_CLOSED
+          In_EMPTY_CERTIFICATE               -> 3 / Out_SOCKET_CLOSED
+          In_CERTIFICATE_VERIFY              -> 3 / Out_SOCKET_CLOSED
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 3 / Out_SOCKET_CLOSED
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 3 / Out_SOCKET_CLOSED
+    4     In_ECDH_CLIENT_HELLO               -> 6 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 7 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 8 / Out_TIMEOUT
+          In_FINISHED                        -> 6 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_APPLICATION                     -> 4 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 6 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_EMPTY_CERTIFICATE               -> 6 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CERTIFICATE_VERIFY              -> 6 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 1 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 1 / Out_TIMEOUT
+    5     In_ECDH_CLIENT_HELLO               -> 16 / Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 5 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 5 / Out_TIMEOUT
+          In_APPLICATION                     -> 5 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 5 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 5 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 5 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 5 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 5 / Out_TIMEOUT
+    6     In_ECDH_CLIENT_HELLO               -> 6 / Out_TIMEOUT
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 9 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 10 / Out_TIMEOUT
+          In_FINISHED                        -> 6 / Out_TIMEOUT
+          In_APPLICATION                     -> 6 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 6 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 6 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 6 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 1 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 1 / Out_TIMEOUT
+    7     In_ECDH_CLIENT_HELLO               -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CHANGE_CIPHER_SPEC              -> 13 / Out_TIMEOUT
+          In_FINISHED                        -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_APPLICATION                     -> 7 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_EMPTY_CERTIFICATE               -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CERTIFICATE_VERIFY              -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 5 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 5 / Out_TIMEOUT
+    8     In_ECDH_CLIENT_HELLO               -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CHANGE_CIPHER_SPEC              -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_FINISHED                        -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_APPLICATION                     -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CERTIFICATE                     -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_EMPTY_CERTIFICATE               -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CERTIFICATE_VERIFY              -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 11 / Out_Alert_FATAL_DECRYPT_ERROR
+    9     In_ECDH_CLIENT_HELLO               -> 9 / Out_TIMEOUT
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 9 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 10 / Out_TIMEOUT
+          In_FINISHED                        -> 9 / Out_TIMEOUT
+          In_APPLICATION                     -> 9 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 9 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 9 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 9 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 5 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 5 / Out_TIMEOUT
+    10    In_ECDH_CLIENT_HELLO               -> 10 / Out_TIMEOUT
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 10 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 10 / Out_TIMEOUT
+          In_FINISHED                        -> 10 / Out_TIMEOUT
+          In_APPLICATION                     -> 10 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 10 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 10 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 10 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 10 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 10 / Out_TIMEOUT
+    11    In_ECDH_CLIENT_HELLO               -> 8 / Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 12 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 11 / Out_TIMEOUT
+          In_APPLICATION                     -> 11 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 11 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 11 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 11 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 11 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 11 / Out_TIMEOUT
+    12    In_ECDH_CLIENT_HELLO               -> 14 / Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 12 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 12 / Out_TIMEOUT
+          In_APPLICATION                     -> 12 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 12 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 12 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 12 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 12 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 12 / Out_TIMEOUT
+    13    In_ECDH_CLIENT_HELLO               -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CHANGE_CIPHER_SPEC              -> 17 / Out_TIMEOUT
+          In_FINISHED                        -> 19 / Out_CHANGE_CIPHER_SPEC_FINISHED
+          In_APPLICATION                     -> 13 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_EMPTY_CERTIFICATE               -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CERTIFICATE_VERIFY              -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 15 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 15 / Out_TIMEOUT
+    14    In_ECDH_CLIENT_HELLO               -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CHANGE_CIPHER_SPEC              -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_FINISHED                        -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_APPLICATION                     -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CERTIFICATE                     -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_EMPTY_CERTIFICATE               -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CERTIFICATE_VERIFY              -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 12 / Out_Alert_FATAL_DECRYPT_ERROR
+    15    In_ECDH_CLIENT_HELLO               -> 15 / Out_TIMEOUT
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 15 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 15 / Out_TIMEOUT
+          In_APPLICATION                     -> 15 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 15 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 15 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 15 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 15 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 15 / Out_TIMEOUT
+    16    In_ECDH_CLIENT_HELLO               -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 7 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 17 / Out_TIMEOUT
+          In_FINISHED                        -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_APPLICATION                     -> 16 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_EMPTY_CERTIFICATE               -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CERTIFICATE_VERIFY              -> 9 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 5 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 5 / Out_TIMEOUT
+    17    In_ECDH_CLIENT_HELLO               -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CHANGE_CIPHER_SPEC              -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_FINISHED                        -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_APPLICATION                     -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CERTIFICATE                     -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_EMPTY_CERTIFICATE               -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_CERTIFICATE_VERIFY              -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 15 / Out_Alert_FATAL_DECRYPT_ERROR
+    18    In_ECDH_CLIENT_HELLO               -> 18 / Out_TIMEOUT
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 18 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 10 / Out_TIMEOUT
+          In_FINISHED                        -> 18 / Out_TIMEOUT
+          In_APPLICATION                     -> 18 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 18 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 18 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 18 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 15 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 15 / Out_TIMEOUT
+    19    In_ECDH_CLIENT_HELLO               -> 20 / Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 19 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 10 / Out_TIMEOUT
+          In_FINISHED                        -> 19 / Out_TIMEOUT
+          In_APPLICATION                     -> 19 / Out_APPLICATION
+          In_CERTIFICATE                     -> 19 / Out_TIMEOUT
+          In_EMPTY_CERTIFICATE               -> 19 / Out_TIMEOUT
+          In_CERTIFICATE_VERIFY              -> 19 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 15 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 15 / Out_TIMEOUT
+    20    In_ECDH_CLIENT_HELLO               -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 21 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 17 / Out_TIMEOUT
+          In_FINISHED                        -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_APPLICATION                     -> 20 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_EMPTY_CERTIFICATE               -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CERTIFICATE_VERIFY              -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 15 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 15 / Out_TIMEOUT
+    21    In_ECDH_CLIENT_HELLO               -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_ECDH_CLIENT_KEY_EXCHANGE        -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CHANGE_CIPHER_SPEC              -> 13 / Out_TIMEOUT
+          In_FINISHED                        -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_APPLICATION                     -> 21 / Out_TIMEOUT
+          In_CERTIFICATE                     -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_EMPTY_CERTIFICATE               -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_CERTIFICATE_VERIFY              -> 18 / Out_Alert_FATAL_UNEXPECTED_MESSAGE
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 15 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 15 / Out_TIMEOUT
+-}
 etinydtlsEcdheCertNone :: MealyAutomaton Int EtinydtlsEcdheCertNoneInput EtinydtlsEcdheCertNoneOutput
-etinydtlsEcdheCertNone = mkMealyAutomaton delta lambda (Set.fromList [0..21]) 0
+etinydtlsEcdheCertNone =
+    case mkMealyAutomatonTable 22 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_ECDH_CLIENT_HELLO = 1
-    delta 0 In_ECDH_CLIENT_KEY_EXCHANGE = 2
-    delta 0 In_CHANGE_CIPHER_SPEC = 3
-    delta 0 In_FINISHED = 0
-    delta 0 In_APPLICATION = 0
-    delta 0 In_CERTIFICATE = 0
-    delta 0 In_EMPTY_CERTIFICATE = 0
-    delta 0 In_CERTIFICATE_VERIFY = 0
-    delta 0 In_Alert_WARNING_CLOSE_NOTIFY = 0
-    delta 0 In_Alert_FATAL_UNEXPECTED_MESSAGE = 0
-    delta 3 In_ECDH_CLIENT_HELLO = 3
-    delta 3 In_ECDH_CLIENT_KEY_EXCHANGE = 3
-    delta 3 In_CHANGE_CIPHER_SPEC = 3
-    delta 3 In_FINISHED = 3
-    delta 3 In_APPLICATION = 3
-    delta 3 In_CERTIFICATE = 3
-    delta 3 In_EMPTY_CERTIFICATE = 3
-    delta 3 In_CERTIFICATE_VERIFY = 3
-    delta 3 In_Alert_WARNING_CLOSE_NOTIFY = 3
-    delta 3 In_Alert_FATAL_UNEXPECTED_MESSAGE = 3
-    delta 1 In_ECDH_CLIENT_HELLO = 4
-    delta 1 In_ECDH_CLIENT_KEY_EXCHANGE = 5
-    delta 1 In_CHANGE_CIPHER_SPEC = 3
-    delta 1 In_FINISHED = 1
-    delta 1 In_APPLICATION = 1
-    delta 1 In_CERTIFICATE = 1
-    delta 1 In_EMPTY_CERTIFICATE = 1
-    delta 1 In_CERTIFICATE_VERIFY = 1
-    delta 1 In_Alert_WARNING_CLOSE_NOTIFY = 1
-    delta 1 In_Alert_FATAL_UNEXPECTED_MESSAGE = 1
-    delta 4 In_ECDH_CLIENT_HELLO = 6
-    delta 4 In_ECDH_CLIENT_KEY_EXCHANGE = 7
-    delta 4 In_CHANGE_CIPHER_SPEC = 8
-    delta 4 In_FINISHED = 6
-    delta 4 In_APPLICATION = 4
-    delta 4 In_CERTIFICATE = 6
-    delta 4 In_EMPTY_CERTIFICATE = 6
-    delta 4 In_CERTIFICATE_VERIFY = 6
-    delta 4 In_Alert_WARNING_CLOSE_NOTIFY = 1
-    delta 4 In_Alert_FATAL_UNEXPECTED_MESSAGE = 1
-    delta 6 In_ECDH_CLIENT_HELLO = 6
-    delta 6 In_ECDH_CLIENT_KEY_EXCHANGE = 9
-    delta 6 In_CHANGE_CIPHER_SPEC = 10
-    delta 6 In_FINISHED = 6
-    delta 6 In_APPLICATION = 6
-    delta 6 In_CERTIFICATE = 6
-    delta 6 In_EMPTY_CERTIFICATE = 6
-    delta 6 In_CERTIFICATE_VERIFY = 6
-    delta 6 In_Alert_WARNING_CLOSE_NOTIFY = 1
-    delta 6 In_Alert_FATAL_UNEXPECTED_MESSAGE = 1
-    delta 8 In_ECDH_CLIENT_HELLO = 11
-    delta 8 In_ECDH_CLIENT_KEY_EXCHANGE = 12
-    delta 8 In_CHANGE_CIPHER_SPEC = 11
-    delta 8 In_FINISHED = 11
-    delta 8 In_APPLICATION = 11
-    delta 8 In_CERTIFICATE = 11
-    delta 8 In_EMPTY_CERTIFICATE = 11
-    delta 8 In_CERTIFICATE_VERIFY = 11
-    delta 8 In_Alert_WARNING_CLOSE_NOTIFY = 11
-    delta 8 In_Alert_FATAL_UNEXPECTED_MESSAGE = 11
-    delta 11 In_ECDH_CLIENT_HELLO = 8
-    delta 11 In_ECDH_CLIENT_KEY_EXCHANGE = 12
-    delta 11 In_CHANGE_CIPHER_SPEC = 3
-    delta 11 In_FINISHED = 11
-    delta 11 In_APPLICATION = 11
-    delta 11 In_CERTIFICATE = 11
-    delta 11 In_EMPTY_CERTIFICATE = 11
-    delta 11 In_CERTIFICATE_VERIFY = 11
-    delta 11 In_Alert_WARNING_CLOSE_NOTIFY = 11
-    delta 11 In_Alert_FATAL_UNEXPECTED_MESSAGE = 11
-    delta 10 In_ECDH_CLIENT_HELLO = 10
-    delta 10 In_ECDH_CLIENT_KEY_EXCHANGE = 10
-    delta 10 In_CHANGE_CIPHER_SPEC = 10
-    delta 10 In_FINISHED = 10
-    delta 10 In_APPLICATION = 10
-    delta 10 In_CERTIFICATE = 10
-    delta 10 In_EMPTY_CERTIFICATE = 10
-    delta 10 In_CERTIFICATE_VERIFY = 10
-    delta 10 In_Alert_WARNING_CLOSE_NOTIFY = 10
-    delta 10 In_Alert_FATAL_UNEXPECTED_MESSAGE = 10
-    delta 7 In_ECDH_CLIENT_HELLO = 9
-    delta 7 In_ECDH_CLIENT_KEY_EXCHANGE = 9
-    delta 7 In_CHANGE_CIPHER_SPEC = 13
-    delta 7 In_FINISHED = 9
-    delta 7 In_APPLICATION = 7
-    delta 7 In_CERTIFICATE = 9
-    delta 7 In_EMPTY_CERTIFICATE = 9
-    delta 7 In_CERTIFICATE_VERIFY = 9
-    delta 7 In_Alert_WARNING_CLOSE_NOTIFY = 5
-    delta 7 In_Alert_FATAL_UNEXPECTED_MESSAGE = 5
-    delta 12 In_ECDH_CLIENT_HELLO = 14
-    delta 12 In_ECDH_CLIENT_KEY_EXCHANGE = 12
-    delta 12 In_CHANGE_CIPHER_SPEC = 3
-    delta 12 In_FINISHED = 12
-    delta 12 In_APPLICATION = 12
-    delta 12 In_CERTIFICATE = 12
-    delta 12 In_EMPTY_CERTIFICATE = 12
-    delta 12 In_CERTIFICATE_VERIFY = 12
-    delta 12 In_Alert_WARNING_CLOSE_NOTIFY = 12
-    delta 12 In_Alert_FATAL_UNEXPECTED_MESSAGE = 12
-    delta 14 In_ECDH_CLIENT_HELLO = 12
-    delta 14 In_ECDH_CLIENT_KEY_EXCHANGE = 12
-    delta 14 In_CHANGE_CIPHER_SPEC = 15
-    delta 14 In_FINISHED = 12
-    delta 14 In_APPLICATION = 12
-    delta 14 In_CERTIFICATE = 12
-    delta 14 In_EMPTY_CERTIFICATE = 12
-    delta 14 In_CERTIFICATE_VERIFY = 12
-    delta 14 In_Alert_WARNING_CLOSE_NOTIFY = 12
-    delta 14 In_Alert_FATAL_UNEXPECTED_MESSAGE = 12
-    delta 15 In_ECDH_CLIENT_HELLO = 15
-    delta 15 In_ECDH_CLIENT_KEY_EXCHANGE = 15
-    delta 15 In_CHANGE_CIPHER_SPEC = 3
-    delta 15 In_FINISHED = 15
-    delta 15 In_APPLICATION = 15
-    delta 15 In_CERTIFICATE = 15
-    delta 15 In_EMPTY_CERTIFICATE = 15
-    delta 15 In_CERTIFICATE_VERIFY = 15
-    delta 15 In_Alert_WARNING_CLOSE_NOTIFY = 15
-    delta 15 In_Alert_FATAL_UNEXPECTED_MESSAGE = 15
-    delta 5 In_ECDH_CLIENT_HELLO = 16
-    delta 5 In_ECDH_CLIENT_KEY_EXCHANGE = 5
-    delta 5 In_CHANGE_CIPHER_SPEC = 3
-    delta 5 In_FINISHED = 5
-    delta 5 In_APPLICATION = 5
-    delta 5 In_CERTIFICATE = 5
-    delta 5 In_EMPTY_CERTIFICATE = 5
-    delta 5 In_CERTIFICATE_VERIFY = 5
-    delta 5 In_Alert_WARNING_CLOSE_NOTIFY = 5
-    delta 5 In_Alert_FATAL_UNEXPECTED_MESSAGE = 5
-    delta 16 In_ECDH_CLIENT_HELLO = 9
-    delta 16 In_ECDH_CLIENT_KEY_EXCHANGE = 7
-    delta 16 In_CHANGE_CIPHER_SPEC = 17
-    delta 16 In_FINISHED = 9
-    delta 16 In_APPLICATION = 16
-    delta 16 In_CERTIFICATE = 9
-    delta 16 In_EMPTY_CERTIFICATE = 9
-    delta 16 In_CERTIFICATE_VERIFY = 9
-    delta 16 In_Alert_WARNING_CLOSE_NOTIFY = 5
-    delta 16 In_Alert_FATAL_UNEXPECTED_MESSAGE = 5
-    delta 17 In_ECDH_CLIENT_HELLO = 15
-    delta 17 In_ECDH_CLIENT_KEY_EXCHANGE = 15
-    delta 17 In_CHANGE_CIPHER_SPEC = 15
-    delta 17 In_FINISHED = 15
-    delta 17 In_APPLICATION = 15
-    delta 17 In_CERTIFICATE = 15
-    delta 17 In_EMPTY_CERTIFICATE = 15
-    delta 17 In_CERTIFICATE_VERIFY = 15
-    delta 17 In_Alert_WARNING_CLOSE_NOTIFY = 15
-    delta 17 In_Alert_FATAL_UNEXPECTED_MESSAGE = 15
-    delta 9 In_ECDH_CLIENT_HELLO = 9
-    delta 9 In_ECDH_CLIENT_KEY_EXCHANGE = 9
-    delta 9 In_CHANGE_CIPHER_SPEC = 10
-    delta 9 In_FINISHED = 9
-    delta 9 In_APPLICATION = 9
-    delta 9 In_CERTIFICATE = 9
-    delta 9 In_EMPTY_CERTIFICATE = 9
-    delta 9 In_CERTIFICATE_VERIFY = 9
-    delta 9 In_Alert_WARNING_CLOSE_NOTIFY = 5
-    delta 9 In_Alert_FATAL_UNEXPECTED_MESSAGE = 5
-    delta 13 In_ECDH_CLIENT_HELLO = 18
-    delta 13 In_ECDH_CLIENT_KEY_EXCHANGE = 18
-    delta 13 In_CHANGE_CIPHER_SPEC = 17
-    delta 13 In_FINISHED = 19
-    delta 13 In_APPLICATION = 13
-    delta 13 In_CERTIFICATE = 18
-    delta 13 In_EMPTY_CERTIFICATE = 18
-    delta 13 In_CERTIFICATE_VERIFY = 18
-    delta 13 In_Alert_WARNING_CLOSE_NOTIFY = 15
-    delta 13 In_Alert_FATAL_UNEXPECTED_MESSAGE = 15
-    delta 18 In_ECDH_CLIENT_HELLO = 18
-    delta 18 In_ECDH_CLIENT_KEY_EXCHANGE = 18
-    delta 18 In_CHANGE_CIPHER_SPEC = 10
-    delta 18 In_FINISHED = 18
-    delta 18 In_APPLICATION = 18
-    delta 18 In_CERTIFICATE = 18
-    delta 18 In_EMPTY_CERTIFICATE = 18
-    delta 18 In_CERTIFICATE_VERIFY = 18
-    delta 18 In_Alert_WARNING_CLOSE_NOTIFY = 15
-    delta 18 In_Alert_FATAL_UNEXPECTED_MESSAGE = 15
-    delta 19 In_ECDH_CLIENT_HELLO = 20
-    delta 19 In_ECDH_CLIENT_KEY_EXCHANGE = 19
-    delta 19 In_CHANGE_CIPHER_SPEC = 10
-    delta 19 In_FINISHED = 19
-    delta 19 In_APPLICATION = 19
-    delta 19 In_CERTIFICATE = 19
-    delta 19 In_EMPTY_CERTIFICATE = 19
-    delta 19 In_CERTIFICATE_VERIFY = 19
-    delta 19 In_Alert_WARNING_CLOSE_NOTIFY = 15
-    delta 19 In_Alert_FATAL_UNEXPECTED_MESSAGE = 15
-    delta 20 In_ECDH_CLIENT_HELLO = 18
-    delta 20 In_ECDH_CLIENT_KEY_EXCHANGE = 21
-    delta 20 In_CHANGE_CIPHER_SPEC = 17
-    delta 20 In_FINISHED = 18
-    delta 20 In_APPLICATION = 20
-    delta 20 In_CERTIFICATE = 18
-    delta 20 In_EMPTY_CERTIFICATE = 18
-    delta 20 In_CERTIFICATE_VERIFY = 18
-    delta 20 In_Alert_WARNING_CLOSE_NOTIFY = 15
-    delta 20 In_Alert_FATAL_UNEXPECTED_MESSAGE = 15
-    delta 21 In_ECDH_CLIENT_HELLO = 18
-    delta 21 In_ECDH_CLIENT_KEY_EXCHANGE = 18
-    delta 21 In_CHANGE_CIPHER_SPEC = 13
-    delta 21 In_FINISHED = 18
-    delta 21 In_APPLICATION = 21
-    delta 21 In_CERTIFICATE = 18
-    delta 21 In_EMPTY_CERTIFICATE = 18
-    delta 21 In_CERTIFICATE_VERIFY = 18
-    delta 21 In_Alert_WARNING_CLOSE_NOTIFY = 15
-    delta 21 In_Alert_FATAL_UNEXPECTED_MESSAGE = 15
-    delta 2 In_ECDH_CLIENT_HELLO = 5
-    delta 2 In_ECDH_CLIENT_KEY_EXCHANGE = 2
-    delta 2 In_CHANGE_CIPHER_SPEC = 3
-    delta 2 In_FINISHED = 2
-    delta 2 In_APPLICATION = 2
-    delta 2 In_CERTIFICATE = 2
-    delta 2 In_EMPTY_CERTIFICATE = 2
-    delta 2 In_CERTIFICATE_VERIFY = 2
-    delta 2 In_Alert_WARNING_CLOSE_NOTIFY = 2
-    delta 2 In_Alert_FATAL_UNEXPECTED_MESSAGE = 2
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_ECDH_CLIENT_HELLO = Out_HELLO_VERIFY_REQUEST
-    lambda 0 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 0 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 0 In_FINISHED = Out_TIMEOUT
-    lambda 0 In_APPLICATION = Out_TIMEOUT
-    lambda 0 In_CERTIFICATE = Out_TIMEOUT
-    lambda 0 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 0 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 0 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 0 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 3 In_ECDH_CLIENT_HELLO = Out_SOCKET_CLOSED
-    lambda 3 In_ECDH_CLIENT_KEY_EXCHANGE = Out_SOCKET_CLOSED
-    lambda 3 In_CHANGE_CIPHER_SPEC = Out_SOCKET_CLOSED
-    lambda 3 In_FINISHED = Out_SOCKET_CLOSED
-    lambda 3 In_APPLICATION = Out_SOCKET_CLOSED
-    lambda 3 In_CERTIFICATE = Out_SOCKET_CLOSED
-    lambda 3 In_EMPTY_CERTIFICATE = Out_SOCKET_CLOSED
-    lambda 3 In_CERTIFICATE_VERIFY = Out_SOCKET_CLOSED
-    lambda 3 In_Alert_WARNING_CLOSE_NOTIFY = Out_SOCKET_CLOSED
-    lambda 3 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_SOCKET_CLOSED
-    lambda 1 In_ECDH_CLIENT_HELLO = Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
-    lambda 1 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 1 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 1 In_FINISHED = Out_TIMEOUT
-    lambda 1 In_APPLICATION = Out_TIMEOUT
-    lambda 1 In_CERTIFICATE = Out_TIMEOUT
-    lambda 1 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 1 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 1 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 1 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 4 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 4 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 4 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 4 In_FINISHED = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 4 In_APPLICATION = Out_TIMEOUT
-    lambda 4 In_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 4 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 4 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 4 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 4 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 6 In_ECDH_CLIENT_HELLO = Out_TIMEOUT
-    lambda 6 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 6 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 6 In_FINISHED = Out_TIMEOUT
-    lambda 6 In_APPLICATION = Out_TIMEOUT
-    lambda 6 In_CERTIFICATE = Out_TIMEOUT
-    lambda 6 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 6 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 6 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 6 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 8 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_ECDH_CLIENT_KEY_EXCHANGE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_CHANGE_CIPHER_SPEC = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_FINISHED = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_APPLICATION = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_CERTIFICATE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 8 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 11 In_ECDH_CLIENT_HELLO = Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
-    lambda 11 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 11 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 11 In_FINISHED = Out_TIMEOUT
-    lambda 11 In_APPLICATION = Out_TIMEOUT
-    lambda 11 In_CERTIFICATE = Out_TIMEOUT
-    lambda 11 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 11 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 11 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 11 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 10 In_ECDH_CLIENT_HELLO = Out_TIMEOUT
-    lambda 10 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 10 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 10 In_FINISHED = Out_TIMEOUT
-    lambda 10 In_APPLICATION = Out_TIMEOUT
-    lambda 10 In_CERTIFICATE = Out_TIMEOUT
-    lambda 10 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 10 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 10 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 10 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 7 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 7 In_ECDH_CLIENT_KEY_EXCHANGE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 7 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 7 In_FINISHED = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 7 In_APPLICATION = Out_TIMEOUT
-    lambda 7 In_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 7 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 7 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 7 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 7 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 12 In_ECDH_CLIENT_HELLO = Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
-    lambda 12 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 12 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 12 In_FINISHED = Out_TIMEOUT
-    lambda 12 In_APPLICATION = Out_TIMEOUT
-    lambda 12 In_CERTIFICATE = Out_TIMEOUT
-    lambda 12 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 12 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 12 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 12 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 14 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_ECDH_CLIENT_KEY_EXCHANGE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_CHANGE_CIPHER_SPEC = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_FINISHED = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_APPLICATION = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_CERTIFICATE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 14 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 15 In_ECDH_CLIENT_HELLO = Out_TIMEOUT
-    lambda 15 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 15 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 15 In_FINISHED = Out_TIMEOUT
-    lambda 15 In_APPLICATION = Out_TIMEOUT
-    lambda 15 In_CERTIFICATE = Out_TIMEOUT
-    lambda 15 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 15 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 15 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 15 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 5 In_ECDH_CLIENT_HELLO = Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
-    lambda 5 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 5 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 5 In_FINISHED = Out_TIMEOUT
-    lambda 5 In_APPLICATION = Out_TIMEOUT
-    lambda 5 In_CERTIFICATE = Out_TIMEOUT
-    lambda 5 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 5 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 5 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 5 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 16 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 16 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 16 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 16 In_FINISHED = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 16 In_APPLICATION = Out_TIMEOUT
-    lambda 16 In_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 16 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 16 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 16 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 16 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 17 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_ECDH_CLIENT_KEY_EXCHANGE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_CHANGE_CIPHER_SPEC = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_FINISHED = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_APPLICATION = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_CERTIFICATE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 17 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_Alert_FATAL_DECRYPT_ERROR
-    lambda 9 In_ECDH_CLIENT_HELLO = Out_TIMEOUT
-    lambda 9 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 9 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 9 In_FINISHED = Out_TIMEOUT
-    lambda 9 In_APPLICATION = Out_TIMEOUT
-    lambda 9 In_CERTIFICATE = Out_TIMEOUT
-    lambda 9 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 9 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 9 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 9 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 13 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 13 In_ECDH_CLIENT_KEY_EXCHANGE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 13 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 13 In_FINISHED = Out_CHANGE_CIPHER_SPEC_FINISHED
-    lambda 13 In_APPLICATION = Out_TIMEOUT
-    lambda 13 In_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 13 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 13 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 13 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 13 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 18 In_ECDH_CLIENT_HELLO = Out_TIMEOUT
-    lambda 18 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 18 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 18 In_FINISHED = Out_TIMEOUT
-    lambda 18 In_APPLICATION = Out_TIMEOUT
-    lambda 18 In_CERTIFICATE = Out_TIMEOUT
-    lambda 18 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 18 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 18 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 18 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 19 In_ECDH_CLIENT_HELLO = Out_SERVER_HELLO_CERTIFICATE_ECDHE_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
-    lambda 19 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 19 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 19 In_FINISHED = Out_TIMEOUT
-    lambda 19 In_APPLICATION = Out_APPLICATION
-    lambda 19 In_CERTIFICATE = Out_TIMEOUT
-    lambda 19 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 19 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 19 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 19 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 20 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 20 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 20 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 20 In_FINISHED = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 20 In_APPLICATION = Out_TIMEOUT
-    lambda 20 In_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 20 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 20 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 20 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 20 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 21 In_ECDH_CLIENT_HELLO = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 21 In_ECDH_CLIENT_KEY_EXCHANGE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 21 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 21 In_FINISHED = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 21 In_APPLICATION = Out_TIMEOUT
-    lambda 21 In_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 21 In_EMPTY_CERTIFICATE = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 21 In_CERTIFICATE_VERIFY = Out_Alert_FATAL_UNEXPECTED_MESSAGE
-    lambda 21 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 21 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 2 In_ECDH_CLIENT_HELLO = Out_HELLO_VERIFY_REQUEST
-    lambda 2 In_ECDH_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 2 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 2 In_FINISHED = Out_TIMEOUT
-    lambda 2 In_APPLICATION = Out_TIMEOUT
-    lambda 2 In_CERTIFICATE = Out_TIMEOUT
-    lambda 2 In_EMPTY_CERTIFICATE = Out_TIMEOUT
-    lambda 2 In_CERTIFICATE_VERIFY = Out_TIMEOUT
-    lambda 2 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 2 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\2\3\0\0\0\0\0\0\0\
+        \\4\5\3\1\1\1\1\1\1\1\
+        \\5\2\3\2\2\2\2\2\2\2\
+        \\3\3\3\3\3\3\3\3\3\3\
+        \\6\7\8\6\4\6\6\6\1\1\
+        \\16\5\3\5\5\5\5\5\5\5\
+        \\6\9\10\6\6\6\6\6\1\1\
+        \\9\9\13\9\7\9\9\9\5\5\
+        \\11\12\11\11\11\11\11\11\11\11\
+        \\9\9\10\9\9\9\9\9\5\5\
+        \\10\10\10\10\10\10\10\10\10\10\
+        \\8\12\3\11\11\11\11\11\11\11\
+        \\14\12\3\12\12\12\12\12\12\12\
+        \\18\18\17\19\13\18\18\18\15\15\
+        \\12\12\15\12\12\12\12\12\12\12\
+        \\15\15\3\15\15\15\15\15\15\15\
+        \\9\7\17\9\16\9\9\9\5\5\
+        \\15\15\15\15\15\15\15\15\15\15\
+        \\18\18\10\18\18\18\18\18\15\15\
+        \\20\19\10\19\19\19\19\19\15\15\
+        \\18\21\17\18\20\18\18\18\15\15\
+        \\18\18\13\18\21\18\18\18\15\15"
+    lambdaTable =
+        "\0\1\1\1\1\1\1\1\1\1\
+        \\3\1\1\1\1\1\1\1\1\1\
+        \\0\1\1\1\1\1\1\1\1\1\
+        \\2\2\2\2\2\2\2\2\2\2\
+        \\4\1\1\4\1\4\4\4\5\1\
+        \\3\1\1\1\1\1\1\1\1\1\
+        \\1\1\1\1\1\1\1\1\1\1\
+        \\4\4\1\4\1\4\4\4\5\1\
+        \\6\6\6\6\6\6\6\6\6\6\
+        \\1\1\1\1\1\1\1\1\1\1\
+        \\1\1\1\1\1\1\1\1\1\1\
+        \\3\1\1\1\1\1\1\1\1\1\
+        \\3\1\1\1\1\1\1\1\1\1\
+        \\4\4\1\7\1\4\4\4\5\1\
+        \\6\6\6\6\6\6\6\6\6\6\
+        \\1\1\1\1\1\1\1\1\1\1\
+        \\4\1\1\4\1\4\4\4\5\1\
+        \\6\6\6\6\6\6\6\6\6\6\
+        \\1\1\1\1\1\1\1\1\1\1\
+        \\3\1\1\1\8\1\1\1\5\1\
+        \\4\1\1\4\1\4\4\4\5\1\
+        \\4\4\1\4\1\4\4\4\5\1"

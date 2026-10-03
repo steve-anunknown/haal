@@ -5,8 +5,7 @@ module Haal.Models.DTLS.PionPsk
     , pionPsk
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data PionPskInput
     = In_PSK_CLIENT_HELLO
@@ -30,204 +29,139 @@ data PionPskOutput
     | Out_Alert_FATAL_DECODE_ERROR
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_PSK_CLIENT_HELLO                -> 1 / Out_HELLO_VERIFY_REQUEST
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 2 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 2 / Out_TIMEOUT
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    1     In_PSK_CLIENT_HELLO                -> 5 / Out_SERVER_HELLO_PSK_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 2 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 2 / Out_TIMEOUT
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    2     In_PSK_CLIENT_HELLO                -> 2 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 2 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 2 / Out_TIMEOUT
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    3     In_PSK_CLIENT_HELLO                -> 3 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 3 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 3 / Out_TIMEOUT
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 3 / Out_TIMEOUT
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 3 / Out_TIMEOUT
+    4     In_PSK_CLIENT_HELLO                -> 4 / Out_SOCKET_CLOSED
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 4 / Out_SOCKET_CLOSED
+          In_CHANGE_CIPHER_SPEC              -> 4 / Out_SOCKET_CLOSED
+          In_FINISHED                        -> 4 / Out_SOCKET_CLOSED
+          In_APPLICATION                     -> 4 / Out_SOCKET_CLOSED
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_SOCKET_CLOSED
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_SOCKET_CLOSED
+    5     In_PSK_CLIENT_HELLO                -> 6 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 7 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 8 / Out_TIMEOUT
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    6     In_PSK_CLIENT_HELLO                -> 6 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 9 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 8 / Out_TIMEOUT
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    7     In_PSK_CLIENT_HELLO                -> 9 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 9 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 10 / Out_TIMEOUT
+          In_FINISHED                        -> 11 / Out_CHANGE_CIPHER_SPEC_FINISHED
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    8     In_PSK_CLIENT_HELLO                -> 8 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 4 / Out_Alert_FATAL_HANDSHAKE_FAILURE
+          In_CHANGE_CIPHER_SPEC              -> 3 / Out_TIMEOUT
+          In_FINISHED                        -> 8 / Out_TIMEOUT
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    9     In_PSK_CLIENT_HELLO                -> 9 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 9 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 12 / Out_TIMEOUT
+          In_FINISHED                        -> 4 / Out_Alert_FATAL_HANDSHAKE_FAILURE
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    10    In_PSK_CLIENT_HELLO                -> 12 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 12 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 4 / Out_Alert_FATAL_DECODE_ERROR
+          In_FINISHED                        -> 13 / Out_CHANGE_CIPHER_SPEC_FINISHED
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    11    In_PSK_CLIENT_HELLO                -> 11 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 11 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 13 / Out_TIMEOUT
+          In_FINISHED                        -> 11 / Out_TIMEOUT
+          In_APPLICATION                     -> 4 / Out_APPLICATION
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    12    In_PSK_CLIENT_HELLO                -> 12 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 12 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 4 / Out_Alert_FATAL_DECODE_ERROR
+          In_FINISHED                        -> 4 / Out_Alert_FATAL_HANDSHAKE_FAILURE
+          In_APPLICATION                     -> 3 / Out_TIMEOUT
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+    13    In_PSK_CLIENT_HELLO                -> 13 / Out_TIMEOUT
+          In_PSK_CLIENT_KEY_EXCHANGE         -> 13 / Out_TIMEOUT
+          In_CHANGE_CIPHER_SPEC              -> 4 / Out_Alert_FATAL_DECODE_ERROR
+          In_FINISHED                        -> 13 / Out_TIMEOUT
+          In_APPLICATION                     -> 4 / Out_APPLICATION
+          In_Alert_WARNING_CLOSE_NOTIFY      -> 4 / Out_Alert_FATAL_CLOSE_NOTIFY
+          In_Alert_FATAL_UNEXPECTED_MESSAGE  -> 4 / Out_TIMEOUT
+-}
 pionPsk :: MealyAutomaton Int PionPskInput PionPskOutput
-pionPsk = mkMealyAutomaton delta lambda (Set.fromList [0..13]) 0
+pionPsk =
+    case mkMealyAutomatonTable 14 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_PSK_CLIENT_HELLO = 1
-    delta 0 In_PSK_CLIENT_KEY_EXCHANGE = 2
-    delta 0 In_CHANGE_CIPHER_SPEC = 3
-    delta 0 In_FINISHED = 2
-    delta 0 In_APPLICATION = 3
-    delta 0 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 0 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 3 In_PSK_CLIENT_HELLO = 3
-    delta 3 In_PSK_CLIENT_KEY_EXCHANGE = 3
-    delta 3 In_CHANGE_CIPHER_SPEC = 3
-    delta 3 In_FINISHED = 3
-    delta 3 In_APPLICATION = 3
-    delta 3 In_Alert_WARNING_CLOSE_NOTIFY = 3
-    delta 3 In_Alert_FATAL_UNEXPECTED_MESSAGE = 3
-    delta 1 In_PSK_CLIENT_HELLO = 5
-    delta 1 In_PSK_CLIENT_KEY_EXCHANGE = 2
-    delta 1 In_CHANGE_CIPHER_SPEC = 3
-    delta 1 In_FINISHED = 2
-    delta 1 In_APPLICATION = 3
-    delta 1 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 1 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 4 In_PSK_CLIENT_HELLO = 4
-    delta 4 In_PSK_CLIENT_KEY_EXCHANGE = 4
-    delta 4 In_CHANGE_CIPHER_SPEC = 4
-    delta 4 In_FINISHED = 4
-    delta 4 In_APPLICATION = 4
-    delta 4 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 4 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 2 In_PSK_CLIENT_HELLO = 2
-    delta 2 In_PSK_CLIENT_KEY_EXCHANGE = 2
-    delta 2 In_CHANGE_CIPHER_SPEC = 3
-    delta 2 In_FINISHED = 2
-    delta 2 In_APPLICATION = 3
-    delta 2 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 2 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 5 In_PSK_CLIENT_HELLO = 6
-    delta 5 In_PSK_CLIENT_KEY_EXCHANGE = 7
-    delta 5 In_CHANGE_CIPHER_SPEC = 3
-    delta 5 In_FINISHED = 8
-    delta 5 In_APPLICATION = 3
-    delta 5 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 5 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 8 In_PSK_CLIENT_HELLO = 8
-    delta 8 In_PSK_CLIENT_KEY_EXCHANGE = 4
-    delta 8 In_CHANGE_CIPHER_SPEC = 3
-    delta 8 In_FINISHED = 8
-    delta 8 In_APPLICATION = 3
-    delta 8 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 8 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 7 In_PSK_CLIENT_HELLO = 9
-    delta 7 In_PSK_CLIENT_KEY_EXCHANGE = 9
-    delta 7 In_CHANGE_CIPHER_SPEC = 10
-    delta 7 In_FINISHED = 11
-    delta 7 In_APPLICATION = 3
-    delta 7 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 7 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 9 In_PSK_CLIENT_HELLO = 9
-    delta 9 In_PSK_CLIENT_KEY_EXCHANGE = 9
-    delta 9 In_CHANGE_CIPHER_SPEC = 12
-    delta 9 In_FINISHED = 4
-    delta 9 In_APPLICATION = 3
-    delta 9 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 9 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 11 In_PSK_CLIENT_HELLO = 11
-    delta 11 In_PSK_CLIENT_KEY_EXCHANGE = 11
-    delta 11 In_CHANGE_CIPHER_SPEC = 13
-    delta 11 In_FINISHED = 11
-    delta 11 In_APPLICATION = 4
-    delta 11 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 11 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 13 In_PSK_CLIENT_HELLO = 13
-    delta 13 In_PSK_CLIENT_KEY_EXCHANGE = 13
-    delta 13 In_CHANGE_CIPHER_SPEC = 4
-    delta 13 In_FINISHED = 13
-    delta 13 In_APPLICATION = 4
-    delta 13 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 13 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 12 In_PSK_CLIENT_HELLO = 12
-    delta 12 In_PSK_CLIENT_KEY_EXCHANGE = 12
-    delta 12 In_CHANGE_CIPHER_SPEC = 4
-    delta 12 In_FINISHED = 4
-    delta 12 In_APPLICATION = 3
-    delta 12 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 12 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 10 In_PSK_CLIENT_HELLO = 12
-    delta 10 In_PSK_CLIENT_KEY_EXCHANGE = 12
-    delta 10 In_CHANGE_CIPHER_SPEC = 4
-    delta 10 In_FINISHED = 13
-    delta 10 In_APPLICATION = 3
-    delta 10 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 10 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta 6 In_PSK_CLIENT_HELLO = 6
-    delta 6 In_PSK_CLIENT_KEY_EXCHANGE = 9
-    delta 6 In_CHANGE_CIPHER_SPEC = 3
-    delta 6 In_FINISHED = 8
-    delta 6 In_APPLICATION = 3
-    delta 6 In_Alert_WARNING_CLOSE_NOTIFY = 4
-    delta 6 In_Alert_FATAL_UNEXPECTED_MESSAGE = 4
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_PSK_CLIENT_HELLO = Out_HELLO_VERIFY_REQUEST
-    lambda 0 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 0 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 0 In_FINISHED = Out_TIMEOUT
-    lambda 0 In_APPLICATION = Out_TIMEOUT
-    lambda 0 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 0 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 3 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 3 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 3 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 3 In_FINISHED = Out_TIMEOUT
-    lambda 3 In_APPLICATION = Out_TIMEOUT
-    lambda 3 In_Alert_WARNING_CLOSE_NOTIFY = Out_TIMEOUT
-    lambda 3 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 1 In_PSK_CLIENT_HELLO = Out_SERVER_HELLO_PSK_SERVER_KEY_EXCHANGE_SERVER_HELLO_DONE
-    lambda 1 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 1 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 1 In_FINISHED = Out_TIMEOUT
-    lambda 1 In_APPLICATION = Out_TIMEOUT
-    lambda 1 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 1 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 4 In_PSK_CLIENT_HELLO = Out_SOCKET_CLOSED
-    lambda 4 In_PSK_CLIENT_KEY_EXCHANGE = Out_SOCKET_CLOSED
-    lambda 4 In_CHANGE_CIPHER_SPEC = Out_SOCKET_CLOSED
-    lambda 4 In_FINISHED = Out_SOCKET_CLOSED
-    lambda 4 In_APPLICATION = Out_SOCKET_CLOSED
-    lambda 4 In_Alert_WARNING_CLOSE_NOTIFY = Out_SOCKET_CLOSED
-    lambda 4 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_SOCKET_CLOSED
-    lambda 2 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 2 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 2 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 2 In_FINISHED = Out_TIMEOUT
-    lambda 2 In_APPLICATION = Out_TIMEOUT
-    lambda 2 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 2 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 5 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 5 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 5 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 5 In_FINISHED = Out_TIMEOUT
-    lambda 5 In_APPLICATION = Out_TIMEOUT
-    lambda 5 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 5 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 8 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 8 In_PSK_CLIENT_KEY_EXCHANGE = Out_Alert_FATAL_HANDSHAKE_FAILURE
-    lambda 8 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 8 In_FINISHED = Out_TIMEOUT
-    lambda 8 In_APPLICATION = Out_TIMEOUT
-    lambda 8 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 8 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 7 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 7 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 7 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 7 In_FINISHED = Out_CHANGE_CIPHER_SPEC_FINISHED
-    lambda 7 In_APPLICATION = Out_TIMEOUT
-    lambda 7 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 7 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 9 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 9 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 9 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 9 In_FINISHED = Out_Alert_FATAL_HANDSHAKE_FAILURE
-    lambda 9 In_APPLICATION = Out_TIMEOUT
-    lambda 9 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 9 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 11 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 11 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 11 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 11 In_FINISHED = Out_TIMEOUT
-    lambda 11 In_APPLICATION = Out_APPLICATION
-    lambda 11 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 11 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 13 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 13 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 13 In_CHANGE_CIPHER_SPEC = Out_Alert_FATAL_DECODE_ERROR
-    lambda 13 In_FINISHED = Out_TIMEOUT
-    lambda 13 In_APPLICATION = Out_APPLICATION
-    lambda 13 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 13 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 12 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 12 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 12 In_CHANGE_CIPHER_SPEC = Out_Alert_FATAL_DECODE_ERROR
-    lambda 12 In_FINISHED = Out_Alert_FATAL_HANDSHAKE_FAILURE
-    lambda 12 In_APPLICATION = Out_TIMEOUT
-    lambda 12 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 12 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 10 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 10 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 10 In_CHANGE_CIPHER_SPEC = Out_Alert_FATAL_DECODE_ERROR
-    lambda 10 In_FINISHED = Out_CHANGE_CIPHER_SPEC_FINISHED
-    lambda 10 In_APPLICATION = Out_TIMEOUT
-    lambda 10 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 10 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda 6 In_PSK_CLIENT_HELLO = Out_TIMEOUT
-    lambda 6 In_PSK_CLIENT_KEY_EXCHANGE = Out_TIMEOUT
-    lambda 6 In_CHANGE_CIPHER_SPEC = Out_TIMEOUT
-    lambda 6 In_FINISHED = Out_TIMEOUT
-    lambda 6 In_APPLICATION = Out_TIMEOUT
-    lambda 6 In_Alert_WARNING_CLOSE_NOTIFY = Out_Alert_FATAL_CLOSE_NOTIFY
-    lambda 6 In_Alert_FATAL_UNEXPECTED_MESSAGE = Out_TIMEOUT
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\2\3\2\3\4\4\
+        \\5\2\3\2\3\4\4\
+        \\2\2\3\2\3\4\4\
+        \\3\3\3\3\3\3\3\
+        \\4\4\4\4\4\4\4\
+        \\6\7\3\8\3\4\4\
+        \\6\9\3\8\3\4\4\
+        \\9\9\10\11\3\4\4\
+        \\8\4\3\8\3\4\4\
+        \\9\9\12\4\3\4\4\
+        \\12\12\4\13\3\4\4\
+        \\11\11\13\11\4\4\4\
+        \\12\12\4\4\3\4\4\
+        \\13\13\4\13\4\4\4"
+    lambdaTable =
+        "\0\1\1\1\1\2\1\
+        \\3\1\1\1\1\2\1\
+        \\1\1\1\1\1\2\1\
+        \\1\1\1\1\1\1\1\
+        \\4\4\4\4\4\4\4\
+        \\1\1\1\1\1\2\1\
+        \\1\1\1\1\1\2\1\
+        \\1\1\1\6\1\2\1\
+        \\1\5\1\1\1\2\1\
+        \\1\1\1\5\1\2\1\
+        \\1\1\8\6\1\2\1\
+        \\1\1\1\1\7\2\1\
+        \\1\1\8\5\1\2\1\
+        \\1\1\8\1\7\2\1"

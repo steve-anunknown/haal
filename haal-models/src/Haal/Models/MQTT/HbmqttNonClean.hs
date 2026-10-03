@@ -5,8 +5,7 @@ module Haal.Models.MQTT.HbmqttNonClean
     , hbmqttNonClean
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data HbmqttNonCleanInput
     = In_ConnectC2
@@ -37,128 +36,93 @@ data HbmqttNonCleanOutput
     | Out_Empty__c2_Pub_my_topic_messageQos1_1___c2_Pub_my_topic_messageQos1_1___c2_ConnAck
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_ConnectC2        -> 1 / Out_C1_ConnectionClosed__c2_ConnAck
+          In_ConnectC1        -> 2 / Out_C1_ConnAck__c2_ConnectionClosed
+          In_PublishQoS1C1    -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_SubscribeC2QoS1  -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_UnSubscribeC2    -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC2     -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    1     In_ConnectC2        -> 1 / Out_C1_ConnectionClosed__Empty
+          In_ConnectC1        -> 3 / Out_C1_ConnAck__Empty
+          In_PublishQoS1C1    -> 1 / Out_C1_ConnectionClosed__Empty
+          In_SubscribeC2QoS1  -> 5 / Out_C1_ConnectionClosed__c2_SubAck
+          In_UnSubscribeC2    -> 1 / Out_C1_ConnectionClosed__c2_UnSubAck
+          In_DisconnectC2     -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    2     In_ConnectC2        -> 3 / Out_Empty__c2_ConnAck
+          In_ConnectC1        -> 2 / Out_Empty__c2_ConnectionClosed
+          In_PublishQoS1C1    -> 2 / Out_C1_PubAck__c2_ConnectionClosed
+          In_SubscribeC2QoS1  -> 2 / Out_Empty__c2_ConnectionClosed
+          In_UnSubscribeC2    -> 2 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectC2     -> 2 / Out_Empty__c2_ConnectionClosed
+    3     In_ConnectC2        -> 3 / Out_Empty__Empty
+          In_ConnectC1        -> 3 / Out_Empty__Empty
+          In_PublishQoS1C1    -> 3 / Out_C1_PubAck__Empty
+          In_SubscribeC2QoS1  -> 4 / Out_Empty__c2_SubAck
+          In_UnSubscribeC2    -> 3 / Out_Empty__c2_UnSubAck
+          In_DisconnectC2     -> 2 / Out_Empty__c2_ConnectionClosed
+    4     In_ConnectC2        -> 4 / Out_Empty__Empty
+          In_ConnectC1        -> 4 / Out_Empty__Empty
+          In_PublishQoS1C1    -> 4 / Out_C1_PubAck__c2_Pub_my_topic_messageQos1_1
+          In_SubscribeC2QoS1  -> 4 / Out_Empty__c2_SubAck
+          In_UnSubscribeC2    -> 3 / Out_Empty__c2_UnSubAck
+          In_DisconnectC2     -> 6 / Out_Empty__c2_ConnectionClosed
+    5     In_ConnectC2        -> 5 / Out_C1_ConnectionClosed__Empty
+          In_ConnectC1        -> 4 / Out_C1_ConnAck__Empty
+          In_PublishQoS1C1    -> 5 / Out_C1_ConnectionClosed__Empty
+          In_SubscribeC2QoS1  -> 5 / Out_C1_ConnectionClosed__c2_SubAck
+          In_UnSubscribeC2    -> 1 / Out_C1_ConnectionClosed__c2_UnSubAck
+          In_DisconnectC2     -> 9 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    6     In_ConnectC2        -> 4 / Out_Empty__c2_ConnAck
+          In_ConnectC1        -> 6 / Out_Empty__c2_ConnectionClosed
+          In_PublishQoS1C1    -> 7 / Out_C1_PubAck__c2_ConnectionClosed
+          In_SubscribeC2QoS1  -> 6 / Out_Empty__c2_ConnectionClosed
+          In_UnSubscribeC2    -> 6 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectC2     -> 6 / Out_Empty__c2_ConnectionClosed
+    7     In_ConnectC2        -> 4 / Out_Empty__c2_Pub_my_topic_messageQos1_1___c2_ConnAck
+          In_ConnectC1        -> 7 / Out_Empty__c2_ConnectionClosed
+          In_PublishQoS1C1    -> 8 / Out_C1_PubAck__c2_ConnectionClosed
+          In_SubscribeC2QoS1  -> 7 / Out_Empty__c2_ConnectionClosed
+          In_UnSubscribeC2    -> 7 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectC2     -> 7 / Out_Empty__c2_ConnectionClosed
+    8     In_ConnectC2        -> 4 / Out_Empty__c2_Pub_my_topic_messageQos1_1___c2_Pub_my_topic_messageQos1_1___c2_ConnAck
+          In_ConnectC1        -> 8 / Out_Empty__c2_ConnectionClosed
+          In_PublishQoS1C1    -> 8 / Out_C1_PubAck__c2_ConnectionClosed
+          In_SubscribeC2QoS1  -> 8 / Out_Empty__c2_ConnectionClosed
+          In_UnSubscribeC2    -> 8 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectC2     -> 8 / Out_Empty__c2_ConnectionClosed
+    9     In_ConnectC2        -> 5 / Out_C1_ConnectionClosed__c2_ConnAck
+          In_ConnectC1        -> 6 / Out_C1_ConnAck__c2_ConnectionClosed
+          In_PublishQoS1C1    -> 9 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_SubscribeC2QoS1  -> 9 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_UnSubscribeC2    -> 9 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC2     -> 9 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+-}
 hbmqttNonClean :: MealyAutomaton Int HbmqttNonCleanInput HbmqttNonCleanOutput
-hbmqttNonClean = mkMealyAutomaton delta lambda (Set.fromList [0..9]) 0
+hbmqttNonClean =
+    case mkMealyAutomatonTable 10 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_ConnectC2 = 1
-    delta 0 In_ConnectC1 = 2
-    delta 0 In_PublishQoS1C1 = 0
-    delta 0 In_SubscribeC2QoS1 = 0
-    delta 0 In_UnSubscribeC2 = 0
-    delta 0 In_DisconnectC2 = 0
-    delta 2 In_ConnectC2 = 3
-    delta 2 In_ConnectC1 = 2
-    delta 2 In_PublishQoS1C1 = 2
-    delta 2 In_SubscribeC2QoS1 = 2
-    delta 2 In_UnSubscribeC2 = 2
-    delta 2 In_DisconnectC2 = 2
-    delta 3 In_ConnectC2 = 3
-    delta 3 In_ConnectC1 = 3
-    delta 3 In_PublishQoS1C1 = 3
-    delta 3 In_SubscribeC2QoS1 = 4
-    delta 3 In_UnSubscribeC2 = 3
-    delta 3 In_DisconnectC2 = 2
-    delta 1 In_ConnectC2 = 1
-    delta 1 In_ConnectC1 = 3
-    delta 1 In_PublishQoS1C1 = 1
-    delta 1 In_SubscribeC2QoS1 = 5
-    delta 1 In_UnSubscribeC2 = 1
-    delta 1 In_DisconnectC2 = 0
-    delta 4 In_ConnectC2 = 4
-    delta 4 In_ConnectC1 = 4
-    delta 4 In_PublishQoS1C1 = 4
-    delta 4 In_SubscribeC2QoS1 = 4
-    delta 4 In_UnSubscribeC2 = 3
-    delta 4 In_DisconnectC2 = 6
-    delta 6 In_ConnectC2 = 4
-    delta 6 In_ConnectC1 = 6
-    delta 6 In_PublishQoS1C1 = 7
-    delta 6 In_SubscribeC2QoS1 = 6
-    delta 6 In_UnSubscribeC2 = 6
-    delta 6 In_DisconnectC2 = 6
-    delta 7 In_ConnectC2 = 4
-    delta 7 In_ConnectC1 = 7
-    delta 7 In_PublishQoS1C1 = 8
-    delta 7 In_SubscribeC2QoS1 = 7
-    delta 7 In_UnSubscribeC2 = 7
-    delta 7 In_DisconnectC2 = 7
-    delta 8 In_ConnectC2 = 4
-    delta 8 In_ConnectC1 = 8
-    delta 8 In_PublishQoS1C1 = 8
-    delta 8 In_SubscribeC2QoS1 = 8
-    delta 8 In_UnSubscribeC2 = 8
-    delta 8 In_DisconnectC2 = 8
-    delta 5 In_ConnectC2 = 5
-    delta 5 In_ConnectC1 = 4
-    delta 5 In_PublishQoS1C1 = 5
-    delta 5 In_SubscribeC2QoS1 = 5
-    delta 5 In_UnSubscribeC2 = 1
-    delta 5 In_DisconnectC2 = 9
-    delta 9 In_ConnectC2 = 5
-    delta 9 In_ConnectC1 = 6
-    delta 9 In_PublishQoS1C1 = 9
-    delta 9 In_SubscribeC2QoS1 = 9
-    delta 9 In_UnSubscribeC2 = 9
-    delta 9 In_DisconnectC2 = 9
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_ConnectC2 = Out_C1_ConnectionClosed__c2_ConnAck
-    lambda 0 In_ConnectC1 = Out_C1_ConnAck__c2_ConnectionClosed
-    lambda 0 In_PublishQoS1C1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_SubscribeC2QoS1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_UnSubscribeC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_DisconnectC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 2 In_ConnectC2 = Out_Empty__c2_ConnAck
-    lambda 2 In_ConnectC1 = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_PublishQoS1C1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 2 In_SubscribeC2QoS1 = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_UnSubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_DisconnectC2 = Out_Empty__c2_ConnectionClosed
-    lambda 3 In_ConnectC2 = Out_Empty__Empty
-    lambda 3 In_ConnectC1 = Out_Empty__Empty
-    lambda 3 In_PublishQoS1C1 = Out_C1_PubAck__Empty
-    lambda 3 In_SubscribeC2QoS1 = Out_Empty__c2_SubAck
-    lambda 3 In_UnSubscribeC2 = Out_Empty__c2_UnSubAck
-    lambda 3 In_DisconnectC2 = Out_Empty__c2_ConnectionClosed
-    lambda 1 In_ConnectC2 = Out_C1_ConnectionClosed__Empty
-    lambda 1 In_ConnectC1 = Out_C1_ConnAck__Empty
-    lambda 1 In_PublishQoS1C1 = Out_C1_ConnectionClosed__Empty
-    lambda 1 In_SubscribeC2QoS1 = Out_C1_ConnectionClosed__c2_SubAck
-    lambda 1 In_UnSubscribeC2 = Out_C1_ConnectionClosed__c2_UnSubAck
-    lambda 1 In_DisconnectC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 4 In_ConnectC2 = Out_Empty__Empty
-    lambda 4 In_ConnectC1 = Out_Empty__Empty
-    lambda 4 In_PublishQoS1C1 = Out_C1_PubAck__c2_Pub_my_topic_messageQos1_1
-    lambda 4 In_SubscribeC2QoS1 = Out_Empty__c2_SubAck
-    lambda 4 In_UnSubscribeC2 = Out_Empty__c2_UnSubAck
-    lambda 4 In_DisconnectC2 = Out_Empty__c2_ConnectionClosed
-    lambda 6 In_ConnectC2 = Out_Empty__c2_ConnAck
-    lambda 6 In_ConnectC1 = Out_Empty__c2_ConnectionClosed
-    lambda 6 In_PublishQoS1C1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 6 In_SubscribeC2QoS1 = Out_Empty__c2_ConnectionClosed
-    lambda 6 In_UnSubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 6 In_DisconnectC2 = Out_Empty__c2_ConnectionClosed
-    lambda 7 In_ConnectC2 = Out_Empty__c2_Pub_my_topic_messageQos1_1___c2_ConnAck
-    lambda 7 In_ConnectC1 = Out_Empty__c2_ConnectionClosed
-    lambda 7 In_PublishQoS1C1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 7 In_SubscribeC2QoS1 = Out_Empty__c2_ConnectionClosed
-    lambda 7 In_UnSubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 7 In_DisconnectC2 = Out_Empty__c2_ConnectionClosed
-    lambda 8 In_ConnectC2 = Out_Empty__c2_Pub_my_topic_messageQos1_1___c2_Pub_my_topic_messageQos1_1___c2_ConnAck
-    lambda 8 In_ConnectC1 = Out_Empty__c2_ConnectionClosed
-    lambda 8 In_PublishQoS1C1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 8 In_SubscribeC2QoS1 = Out_Empty__c2_ConnectionClosed
-    lambda 8 In_UnSubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 8 In_DisconnectC2 = Out_Empty__c2_ConnectionClosed
-    lambda 5 In_ConnectC2 = Out_C1_ConnectionClosed__Empty
-    lambda 5 In_ConnectC1 = Out_C1_ConnAck__Empty
-    lambda 5 In_PublishQoS1C1 = Out_C1_ConnectionClosed__Empty
-    lambda 5 In_SubscribeC2QoS1 = Out_C1_ConnectionClosed__c2_SubAck
-    lambda 5 In_UnSubscribeC2 = Out_C1_ConnectionClosed__c2_UnSubAck
-    lambda 5 In_DisconnectC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 9 In_ConnectC2 = Out_C1_ConnectionClosed__c2_ConnAck
-    lambda 9 In_ConnectC1 = Out_C1_ConnAck__c2_ConnectionClosed
-    lambda 9 In_PublishQoS1C1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 9 In_SubscribeC2QoS1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 9 In_UnSubscribeC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 9 In_DisconnectC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\2\0\0\0\0\
+        \\1\3\1\5\1\0\
+        \\3\2\2\2\2\2\
+        \\3\3\3\4\3\2\
+        \\4\4\4\4\3\6\
+        \\5\4\5\5\1\9\
+        \\4\6\7\6\6\6\
+        \\4\7\8\7\7\7\
+        \\4\8\8\8\8\8\
+        \\5\6\9\9\9\9"
+    lambdaTable =
+        "\0\1\2\2\2\2\
+        \\10\11\10\12\13\2\
+        \\3\4\5\4\4\4\
+        \\6\6\7\8\9\4\
+        \\6\6\14\8\9\4\
+        \\10\11\10\12\13\2\
+        \\3\4\5\4\4\4\
+        \\15\4\5\4\4\4\
+        \\16\4\5\4\4\4\
+        \\0\1\2\2\2\2"

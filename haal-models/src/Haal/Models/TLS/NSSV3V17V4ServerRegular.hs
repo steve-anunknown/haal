@@ -5,8 +5,7 @@ module Haal.Models.TLS.NSSV3V17V4ServerRegular
     , nSSV3V17V4ServerRegular
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data NSSV3V17V4ServerRegularInput
     = In_ApplicationData
@@ -31,136 +30,93 @@ data NSSV3V17V4ServerRegularOutput
     | Out_Alert_Warning__Close_notify____ConnectionClosed
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_ApplicationData       -> 1 / Out_Empty
+          In_ApplicationDataEmpty  -> 1 / Out_Empty
+          In_ChangeCipherSpec      -> 1 / Out_Empty
+          In_ClientHelloRSA        -> 2 / Out_ServerHello_Certificate___CertificateRequest___ServerHelloDone
+          In_ClientKeyExchange     -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_EmptyCertificate      -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_Finished              -> 3 / Out_ConnectionClosed
+          In_HeartbeatRequest      -> 1 / Out_Empty
+    1     In_ApplicationData       -> 1 / Out_Empty
+          In_ApplicationDataEmpty  -> 1 / Out_Empty
+          In_ChangeCipherSpec      -> 1 / Out_Empty
+          In_ClientHelloRSA        -> 1 / Out_Empty
+          In_ClientKeyExchange     -> 1 / Out_Empty
+          In_EmptyCertificate      -> 1 / Out_Empty
+          In_Finished              -> 1 / Out_Empty
+          In_HeartbeatRequest      -> 1 / Out_Empty
+    2     In_ApplicationData       -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ApplicationDataEmpty  -> 3 / Out_Empty
+          In_ChangeCipherSpec      -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ClientHelloRSA        -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ClientKeyExchange     -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_EmptyCertificate      -> 6 / Out_Empty
+          In_Finished              -> 3 / Out_ConnectionClosed
+          In_HeartbeatRequest      -> 3 / Out_ConnectionClosed
+    3     In_ApplicationData       -> 3 / Out_ConnectionClosed
+          In_ApplicationDataEmpty  -> 3 / Out_ConnectionClosed
+          In_ChangeCipherSpec      -> 3 / Out_ConnectionClosed
+          In_ClientHelloRSA        -> 3 / Out_ConnectionClosed
+          In_ClientKeyExchange     -> 3 / Out_ConnectionClosed
+          In_EmptyCertificate      -> 3 / Out_ConnectionClosed
+          In_Finished              -> 3 / Out_ConnectionClosed
+          In_HeartbeatRequest      -> 3 / Out_ConnectionClosed
+    4     In_ApplicationData       -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ApplicationDataEmpty  -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ChangeCipherSpec      -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ClientHelloRSA        -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ClientKeyExchange     -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_EmptyCertificate      -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_Finished              -> 5 / Out_ChangeCipherSpec___Finished
+          In_HeartbeatRequest      -> 3 / Out_ConnectionClosed
+    5     In_ApplicationData       -> 3 / Out_ApplicationData___Alert_Warning__Close_notify____ConnectionClosed
+          In_ApplicationDataEmpty  -> 5 / Out_Empty
+          In_ChangeCipherSpec      -> 3 / Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
+          In_ClientHelloRSA        -> 3 / Out_Alert_Fatal__Handshake_failure_Alert_Warning__No_renegotiation_Alert_Warning__Close_notify____ConnectionClosed
+          In_ClientKeyExchange     -> 3 / Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
+          In_EmptyCertificate      -> 3 / Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
+          In_Finished              -> 3 / Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
+          In_HeartbeatRequest      -> 3 / Out_Alert_Warning__Close_notify____ConnectionClosed
+    6     In_ApplicationData       -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ApplicationDataEmpty  -> 3 / Out_Empty
+          In_ChangeCipherSpec      -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ClientHelloRSA        -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ClientKeyExchange     -> 7 / Out_Empty
+          In_EmptyCertificate      -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_Finished              -> 3 / Out_ConnectionClosed
+          In_HeartbeatRequest      -> 3 / Out_ConnectionClosed
+    7     In_ApplicationData       -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ApplicationDataEmpty  -> 3 / Out_Empty
+          In_ChangeCipherSpec      -> 4 / Out_Empty
+          In_ClientHelloRSA        -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_ClientKeyExchange     -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_EmptyCertificate      -> 3 / Out_Alert_Fatal__Unexpected_message____ConnectionClosed
+          In_Finished              -> 3 / Out_ConnectionClosed
+          In_HeartbeatRequest      -> 3 / Out_ConnectionClosed
+-}
 nSSV3V17V4ServerRegular :: MealyAutomaton Int NSSV3V17V4ServerRegularInput NSSV3V17V4ServerRegularOutput
-nSSV3V17V4ServerRegular = mkMealyAutomaton delta lambda (Set.fromList [0..7]) 0
+nSSV3V17V4ServerRegular =
+    case mkMealyAutomatonTable 8 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_ApplicationData = 1
-    delta 0 In_ApplicationDataEmpty = 1
-    delta 0 In_ChangeCipherSpec = 1
-    delta 0 In_ClientHelloRSA = 2
-    delta 0 In_ClientKeyExchange = 3
-    delta 0 In_EmptyCertificate = 3
-    delta 0 In_Finished = 3
-    delta 0 In_HeartbeatRequest = 1
-    delta 4 In_ApplicationData = 3
-    delta 4 In_ApplicationDataEmpty = 3
-    delta 4 In_ChangeCipherSpec = 3
-    delta 4 In_ClientHelloRSA = 3
-    delta 4 In_ClientKeyExchange = 3
-    delta 4 In_EmptyCertificate = 3
-    delta 4 In_Finished = 5
-    delta 4 In_HeartbeatRequest = 3
-    delta 2 In_ApplicationData = 3
-    delta 2 In_ApplicationDataEmpty = 3
-    delta 2 In_ChangeCipherSpec = 3
-    delta 2 In_ClientHelloRSA = 3
-    delta 2 In_ClientKeyExchange = 3
-    delta 2 In_EmptyCertificate = 6
-    delta 2 In_Finished = 3
-    delta 2 In_HeartbeatRequest = 3
-    delta 6 In_ApplicationData = 3
-    delta 6 In_ApplicationDataEmpty = 3
-    delta 6 In_ChangeCipherSpec = 3
-    delta 6 In_ClientHelloRSA = 3
-    delta 6 In_ClientKeyExchange = 7
-    delta 6 In_EmptyCertificate = 3
-    delta 6 In_Finished = 3
-    delta 6 In_HeartbeatRequest = 3
-    delta 7 In_ApplicationData = 3
-    delta 7 In_ApplicationDataEmpty = 3
-    delta 7 In_ChangeCipherSpec = 4
-    delta 7 In_ClientHelloRSA = 3
-    delta 7 In_ClientKeyExchange = 3
-    delta 7 In_EmptyCertificate = 3
-    delta 7 In_Finished = 3
-    delta 7 In_HeartbeatRequest = 3
-    delta 5 In_ApplicationData = 3
-    delta 5 In_ApplicationDataEmpty = 5
-    delta 5 In_ChangeCipherSpec = 3
-    delta 5 In_ClientHelloRSA = 3
-    delta 5 In_ClientKeyExchange = 3
-    delta 5 In_EmptyCertificate = 3
-    delta 5 In_Finished = 3
-    delta 5 In_HeartbeatRequest = 3
-    delta 3 In_ApplicationData = 3
-    delta 3 In_ApplicationDataEmpty = 3
-    delta 3 In_ChangeCipherSpec = 3
-    delta 3 In_ClientHelloRSA = 3
-    delta 3 In_ClientKeyExchange = 3
-    delta 3 In_EmptyCertificate = 3
-    delta 3 In_Finished = 3
-    delta 3 In_HeartbeatRequest = 3
-    delta 1 In_ApplicationData = 1
-    delta 1 In_ApplicationDataEmpty = 1
-    delta 1 In_ChangeCipherSpec = 1
-    delta 1 In_ClientHelloRSA = 1
-    delta 1 In_ClientKeyExchange = 1
-    delta 1 In_EmptyCertificate = 1
-    delta 1 In_Finished = 1
-    delta 1 In_HeartbeatRequest = 1
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_ApplicationData = Out_Empty
-    lambda 0 In_ApplicationDataEmpty = Out_Empty
-    lambda 0 In_ChangeCipherSpec = Out_Empty
-    lambda 0 In_ClientHelloRSA = Out_ServerHello_Certificate___CertificateRequest___ServerHelloDone
-    lambda 0 In_ClientKeyExchange = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 0 In_EmptyCertificate = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 0 In_Finished = Out_ConnectionClosed
-    lambda 0 In_HeartbeatRequest = Out_Empty
-    lambda 4 In_ApplicationData = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 4 In_ApplicationDataEmpty = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 4 In_ChangeCipherSpec = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 4 In_ClientHelloRSA = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 4 In_ClientKeyExchange = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 4 In_EmptyCertificate = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 4 In_Finished = Out_ChangeCipherSpec___Finished
-    lambda 4 In_HeartbeatRequest = Out_ConnectionClosed
-    lambda 2 In_ApplicationData = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 2 In_ApplicationDataEmpty = Out_Empty
-    lambda 2 In_ChangeCipherSpec = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 2 In_ClientHelloRSA = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 2 In_ClientKeyExchange = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 2 In_EmptyCertificate = Out_Empty
-    lambda 2 In_Finished = Out_ConnectionClosed
-    lambda 2 In_HeartbeatRequest = Out_ConnectionClosed
-    lambda 6 In_ApplicationData = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 6 In_ApplicationDataEmpty = Out_Empty
-    lambda 6 In_ChangeCipherSpec = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 6 In_ClientHelloRSA = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 6 In_ClientKeyExchange = Out_Empty
-    lambda 6 In_EmptyCertificate = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 6 In_Finished = Out_ConnectionClosed
-    lambda 6 In_HeartbeatRequest = Out_ConnectionClosed
-    lambda 7 In_ApplicationData = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 7 In_ApplicationDataEmpty = Out_Empty
-    lambda 7 In_ChangeCipherSpec = Out_Empty
-    lambda 7 In_ClientHelloRSA = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 7 In_ClientKeyExchange = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 7 In_EmptyCertificate = Out_Alert_Fatal__Unexpected_message____ConnectionClosed
-    lambda 7 In_Finished = Out_ConnectionClosed
-    lambda 7 In_HeartbeatRequest = Out_ConnectionClosed
-    lambda 5 In_ApplicationData = Out_ApplicationData___Alert_Warning__Close_notify____ConnectionClosed
-    lambda 5 In_ApplicationDataEmpty = Out_Empty
-    lambda 5 In_ChangeCipherSpec = Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
-    lambda 5 In_ClientHelloRSA = Out_Alert_Fatal__Handshake_failure_Alert_Warning__No_renegotiation_Alert_Warning__Close_notify____ConnectionClosed
-    lambda 5 In_ClientKeyExchange = Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
-    lambda 5 In_EmptyCertificate = Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
-    lambda 5 In_Finished = Out_Alert_Fatal__Unexpected_message_Alert_Warning__Close_notify____ConnectionClosed
-    lambda 5 In_HeartbeatRequest = Out_Alert_Warning__Close_notify____ConnectionClosed
-    lambda 3 In_ApplicationData = Out_ConnectionClosed
-    lambda 3 In_ApplicationDataEmpty = Out_ConnectionClosed
-    lambda 3 In_ChangeCipherSpec = Out_ConnectionClosed
-    lambda 3 In_ClientHelloRSA = Out_ConnectionClosed
-    lambda 3 In_ClientKeyExchange = Out_ConnectionClosed
-    lambda 3 In_EmptyCertificate = Out_ConnectionClosed
-    lambda 3 In_Finished = Out_ConnectionClosed
-    lambda 3 In_HeartbeatRequest = Out_ConnectionClosed
-    lambda 1 In_ApplicationData = Out_Empty
-    lambda 1 In_ApplicationDataEmpty = Out_Empty
-    lambda 1 In_ChangeCipherSpec = Out_Empty
-    lambda 1 In_ClientHelloRSA = Out_Empty
-    lambda 1 In_ClientKeyExchange = Out_Empty
-    lambda 1 In_EmptyCertificate = Out_Empty
-    lambda 1 In_Finished = Out_Empty
-    lambda 1 In_HeartbeatRequest = Out_Empty
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\1\1\2\3\3\3\1\
+        \\1\1\1\1\1\1\1\1\
+        \\3\3\3\3\3\6\3\3\
+        \\3\3\3\3\3\3\3\3\
+        \\3\3\3\3\3\3\5\3\
+        \\3\5\3\3\3\3\3\3\
+        \\3\3\3\3\7\3\3\3\
+        \\3\3\4\3\3\3\3\3"
+    lambdaTable =
+        "\0\0\0\1\2\2\3\0\
+        \\0\0\0\0\0\0\0\0\
+        \\2\0\2\2\2\0\3\3\
+        \\3\3\3\3\3\3\3\3\
+        \\2\2\2\2\2\2\4\3\
+        \\5\0\6\7\6\6\6\8\
+        \\2\0\2\2\0\2\3\3\
+        \\2\0\0\2\2\2\3\3"

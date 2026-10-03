@@ -5,8 +5,7 @@ module Haal.Models.TCP.TCPLinuxClient
     , tCPLinuxClient
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data TCPLinuxClientInput
     = In_ACK_RST_V_V_0
@@ -35,308 +34,193 @@ data TCPLinuxClientOutput
     | Out_ACK_RST_NEXT_CURRENT_0
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_ACK_RST_V_V_0  -> 0 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 0 / Out_RST_ZERO_ZERO_0
+          In_SYN_ACK_V_V_0  -> 0 / Out_RST_ZERO_ZERO_0
+          In_RST_V_V_0      -> 0 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 0 / Out_RST_ZERO_ZERO_0
+          In_FIN_ACK_V_V_0  -> 0 / Out_RST_ZERO_ZERO_0
+          In_SYN_V_V_0      -> 0 / Out_ACK_RST_ZERO_NEXT_0
+          In_RCV            -> 0 / Out_TIMEOUT
+          In_CLOSE          -> 1 / Out_TIMEOUT
+          In_CONNECT        -> 2 / Out_SYN_FRESH_ZERO_0
+    1     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 1 / Out_RST_ZERO_ZERO_0
+          In_SYN_ACK_V_V_0  -> 1 / Out_RST_ZERO_ZERO_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 1 / Out_RST_ZERO_ZERO_0
+          In_FIN_ACK_V_V_0  -> 1 / Out_RST_ZERO_ZERO_0
+          In_SYN_V_V_0      -> 1 / Out_ACK_RST_ZERO_NEXT_0
+          In_RCV            -> 1 / Out_TIMEOUT
+          In_CLOSE          -> 1 / Out_TIMEOUT
+          In_CONNECT        -> 1 / Out_TIMEOUT
+    2     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 2 / Out_TIMEOUT
+          In_SYN_ACK_V_V_0  -> 4 / Out_ACK_NEXT_NEXT_0
+          In_RST_V_V_0      -> 5 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 2 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 2 / Out_TIMEOUT
+          In_SYN_V_V_0      -> 6 / Out_ACK_SYN_CURRENT_NEXT_0
+          In_RCV            -> 2 / Out_TIMEOUT
+          In_CLOSE          -> 3 / Out_TIMEOUT
+          In_CONNECT        -> 2 / Out_TIMEOUT
+    3     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 1 / Out_RST_NEXT_ZERO_0
+          In_SYN_ACK_V_V_0  -> 1 / Out_RST_NEXT_ZERO_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 1 / Out_RST_NEXT_ZERO_0
+          In_FIN_ACK_V_V_0  -> 1 / Out_RST_NEXT_ZERO_0
+          In_SYN_V_V_0      -> 1 / Out_ACK_RST_ZERO_NEXT_0
+          In_RCV            -> 3 / Out_TIMEOUT
+          In_CLOSE          -> 3 / Out_TIMEOUT
+          In_CONNECT        -> 3 / Out_TIMEOUT
+    4     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 8 / Out_ACK_NEXT_NEXT_0
+          In_SYN_ACK_V_V_0  -> 4 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 4 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 9 / Out_ACK_NEXT_NEXT_0
+          In_SYN_V_V_0      -> 4 / Out_TIMEOUT
+          In_RCV            -> 10 / Out_TIMEOUT
+          In_CLOSE          -> 7 / Out_ACK_FIN_NEXT_CURRENT_0
+          In_CONNECT        -> 4 / Out_TIMEOUT
+    5     In_ACK_RST_V_V_0  -> 5 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 5 / Out_RST_ZERO_ZERO_0
+          In_SYN_ACK_V_V_0  -> 5 / Out_RST_ZERO_ZERO_0
+          In_RST_V_V_0      -> 5 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 5 / Out_RST_ZERO_ZERO_0
+          In_FIN_ACK_V_V_0  -> 5 / Out_RST_ZERO_ZERO_0
+          In_SYN_V_V_0      -> 6 / Out_ACK_SYN_FRESH_NEXT_0
+          In_RCV            -> 5 / Out_TIMEOUT
+          In_CLOSE          -> 1 / Out_TIMEOUT
+          In_CONNECT        -> 5 / Out_TIMEOUT
+    6     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 8 / Out_ACK_NEXT_NEXT_0
+          In_SYN_ACK_V_V_0  -> 6 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 4 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 9 / Out_ACK_NEXT_NEXT_0
+          In_SYN_V_V_0      -> 6 / Out_TIMEOUT
+          In_RCV            -> 6 / Out_TIMEOUT
+          In_CLOSE          -> 7 / Out_ACK_FIN_NEXT_CURRENT_0
+          In_CONNECT        -> 6 / Out_TIMEOUT
+    7     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 1 / Out_RST_NEXT_ZERO_0
+          In_SYN_ACK_V_V_0  -> 7 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 12 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 13 / Out_ACK_NEXT_NEXT_0
+          In_SYN_V_V_0      -> 7 / Out_TIMEOUT
+          In_RCV            -> 7 / Out_TIMEOUT
+          In_CLOSE          -> 7 / Out_TIMEOUT
+          In_CONNECT        -> 7 / Out_TIMEOUT
+    8     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 8 / Out_ACK_NEXT_NEXT_0
+          In_SYN_ACK_V_V_0  -> 8 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 8 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 11 / Out_ACK_NEXT_NEXT_0
+          In_SYN_V_V_0      -> 8 / Out_TIMEOUT
+          In_RCV            -> 4 / Out_TIMEOUT
+          In_CLOSE          -> 1 / Out_ACK_RST_NEXT_CURRENT_0
+          In_CONNECT        -> 8 / Out_TIMEOUT
+    9     In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 9 / Out_TIMEOUT
+          In_SYN_ACK_V_V_0  -> 9 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 9 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 9 / Out_TIMEOUT
+          In_SYN_V_V_0      -> 9 / Out_TIMEOUT
+          In_RCV            -> 9 / Out_TIMEOUT
+          In_CLOSE          -> 14 / Out_ACK_FIN_NEXT_CURRENT_0
+          In_CONNECT        -> 9 / Out_TIMEOUT
+    10    In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 4 / Out_ACK_NEXT_NEXT_0
+          In_SYN_ACK_V_V_0  -> 10 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 10 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 9 / Out_ACK_NEXT_NEXT_0
+          In_SYN_V_V_0      -> 10 / Out_TIMEOUT
+          In_RCV            -> 10 / Out_TIMEOUT
+          In_CLOSE          -> 7 / Out_ACK_FIN_NEXT_CURRENT_0
+          In_CONNECT        -> 10 / Out_TIMEOUT
+    11    In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 11 / Out_TIMEOUT
+          In_SYN_ACK_V_V_0  -> 11 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 11 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 11 / Out_TIMEOUT
+          In_SYN_V_V_0      -> 11 / Out_TIMEOUT
+          In_RCV            -> 9 / Out_TIMEOUT
+          In_CLOSE          -> 1 / Out_ACK_RST_NEXT_CURRENT_0
+          In_CONNECT        -> 11 / Out_TIMEOUT
+    12    In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 1 / Out_RST_NEXT_ZERO_0
+          In_SYN_ACK_V_V_0  -> 1 / Out_RST_NEXT_ZERO_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 12 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 13 / Out_ACK_NEXT_NEXT_0
+          In_SYN_V_V_0      -> 1 / Out_ACK_RST_ZERO_NEXT_0
+          In_RCV            -> 12 / Out_TIMEOUT
+          In_CLOSE          -> 12 / Out_TIMEOUT
+          In_CONNECT        -> 12 / Out_TIMEOUT
+    13    In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 13 / Out_ACK_NEXT_CURRENT_0
+          In_SYN_ACK_V_V_0  -> 13 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 13 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 13 / Out_ACK_NEXT_CURRENT_0
+          In_SYN_V_V_0      -> 13 / Out_ACK_NEXT_CURRENT_0
+          In_RCV            -> 13 / Out_TIMEOUT
+          In_CLOSE          -> 13 / Out_TIMEOUT
+          In_CONNECT        -> 13 / Out_TIMEOUT
+    14    In_ACK_RST_V_V_0  -> 1 / Out_TIMEOUT
+          In_ACK_PSH_V_V_1  -> 3 / Out_TIMEOUT
+          In_SYN_ACK_V_V_0  -> 14 / Out_ACK_NEXT_CURRENT_0
+          In_RST_V_V_0      -> 1 / Out_TIMEOUT
+          In_ACK_V_V_0      -> 3 / Out_TIMEOUT
+          In_FIN_ACK_V_V_0  -> 3 / Out_TIMEOUT
+          In_SYN_V_V_0      -> 14 / Out_TIMEOUT
+          In_RCV            -> 14 / Out_TIMEOUT
+          In_CLOSE          -> 14 / Out_TIMEOUT
+          In_CONNECT        -> 14 / Out_TIMEOUT
+-}
 tCPLinuxClient :: MealyAutomaton Int TCPLinuxClientInput TCPLinuxClientOutput
-tCPLinuxClient = mkMealyAutomaton delta lambda (Set.fromList [0..14]) 0
+tCPLinuxClient =
+    case mkMealyAutomatonTable 15 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_ACK_RST_V_V_0 = 0
-    delta 0 In_ACK_PSH_V_V_1 = 0
-    delta 0 In_SYN_ACK_V_V_0 = 0
-    delta 0 In_RST_V_V_0 = 0
-    delta 0 In_ACK_V_V_0 = 0
-    delta 0 In_FIN_ACK_V_V_0 = 0
-    delta 0 In_SYN_V_V_0 = 0
-    delta 0 In_RCV = 0
-    delta 0 In_CLOSE = 1
-    delta 0 In_CONNECT = 2
-    delta 1 In_ACK_RST_V_V_0 = 1
-    delta 1 In_CLOSE = 1
-    delta 1 In_CONNECT = 1
-    delta 1 In_ACK_PSH_V_V_1 = 1
-    delta 1 In_SYN_ACK_V_V_0 = 1
-    delta 1 In_RST_V_V_0 = 1
-    delta 1 In_ACK_V_V_0 = 1
-    delta 1 In_FIN_ACK_V_V_0 = 1
-    delta 1 In_SYN_V_V_0 = 1
-    delta 1 In_RCV = 1
-    delta 2 In_ACK_RST_V_V_0 = 1
-    delta 2 In_CLOSE = 3
-    delta 2 In_CONNECT = 2
-    delta 2 In_ACK_PSH_V_V_1 = 2
-    delta 2 In_ACK_V_V_0 = 2
-    delta 2 In_FIN_ACK_V_V_0 = 2
-    delta 2 In_RCV = 2
-    delta 2 In_SYN_ACK_V_V_0 = 4
-    delta 2 In_RST_V_V_0 = 5
-    delta 2 In_SYN_V_V_0 = 6
-    delta 6 In_ACK_RST_V_V_0 = 1
-    delta 6 In_RST_V_V_0 = 1
-    delta 6 In_CLOSE = 7
-    delta 6 In_CONNECT = 6
-    delta 6 In_SYN_ACK_V_V_0 = 6
-    delta 6 In_SYN_V_V_0 = 6
-    delta 6 In_RCV = 6
-    delta 6 In_ACK_PSH_V_V_1 = 8
-    delta 6 In_ACK_V_V_0 = 4
-    delta 6 In_FIN_ACK_V_V_0 = 9
-    delta 4 In_ACK_RST_V_V_0 = 1
-    delta 4 In_RST_V_V_0 = 1
-    delta 4 In_CLOSE = 7
-    delta 4 In_CONNECT = 4
-    delta 4 In_SYN_ACK_V_V_0 = 4
-    delta 4 In_ACK_V_V_0 = 4
-    delta 4 In_SYN_V_V_0 = 4
-    delta 4 In_ACK_PSH_V_V_1 = 8
-    delta 4 In_FIN_ACK_V_V_0 = 9
-    delta 4 In_RCV = 10
-    delta 3 In_ACK_RST_V_V_0 = 1
-    delta 3 In_ACK_PSH_V_V_1 = 1
-    delta 3 In_SYN_ACK_V_V_0 = 1
-    delta 3 In_RST_V_V_0 = 1
-    delta 3 In_ACK_V_V_0 = 1
-    delta 3 In_FIN_ACK_V_V_0 = 1
-    delta 3 In_SYN_V_V_0 = 1
-    delta 3 In_CLOSE = 3
-    delta 3 In_CONNECT = 3
-    delta 3 In_RCV = 3
-    delta 5 In_ACK_RST_V_V_0 = 5
-    delta 5 In_CONNECT = 5
-    delta 5 In_ACK_PSH_V_V_1 = 5
-    delta 5 In_SYN_ACK_V_V_0 = 5
-    delta 5 In_RST_V_V_0 = 5
-    delta 5 In_ACK_V_V_0 = 5
-    delta 5 In_FIN_ACK_V_V_0 = 5
-    delta 5 In_RCV = 5
-    delta 5 In_CLOSE = 1
-    delta 5 In_SYN_V_V_0 = 6
-    delta 8 In_ACK_RST_V_V_0 = 1
-    delta 8 In_CLOSE = 1
-    delta 8 In_RST_V_V_0 = 1
-    delta 8 In_CONNECT = 8
-    delta 8 In_ACK_PSH_V_V_1 = 8
-    delta 8 In_SYN_ACK_V_V_0 = 8
-    delta 8 In_ACK_V_V_0 = 8
-    delta 8 In_SYN_V_V_0 = 8
-    delta 8 In_FIN_ACK_V_V_0 = 11
-    delta 8 In_RCV = 4
-    delta 7 In_ACK_RST_V_V_0 = 1
-    delta 7 In_ACK_PSH_V_V_1 = 1
-    delta 7 In_RST_V_V_0 = 1
-    delta 7 In_CLOSE = 7
-    delta 7 In_CONNECT = 7
-    delta 7 In_SYN_ACK_V_V_0 = 7
-    delta 7 In_SYN_V_V_0 = 7
-    delta 7 In_RCV = 7
-    delta 7 In_ACK_V_V_0 = 12
-    delta 7 In_FIN_ACK_V_V_0 = 13
-    delta 9 In_ACK_RST_V_V_0 = 1
-    delta 9 In_RST_V_V_0 = 1
-    delta 9 In_CLOSE = 14
-    delta 9 In_CONNECT = 9
-    delta 9 In_ACK_PSH_V_V_1 = 9
-    delta 9 In_SYN_ACK_V_V_0 = 9
-    delta 9 In_ACK_V_V_0 = 9
-    delta 9 In_FIN_ACK_V_V_0 = 9
-    delta 9 In_SYN_V_V_0 = 9
-    delta 9 In_RCV = 9
-    delta 10 In_ACK_RST_V_V_0 = 1
-    delta 10 In_RST_V_V_0 = 1
-    delta 10 In_CLOSE = 7
-    delta 10 In_CONNECT = 10
-    delta 10 In_SYN_ACK_V_V_0 = 10
-    delta 10 In_ACK_V_V_0 = 10
-    delta 10 In_SYN_V_V_0 = 10
-    delta 10 In_RCV = 10
-    delta 10 In_ACK_PSH_V_V_1 = 4
-    delta 10 In_FIN_ACK_V_V_0 = 9
-    delta 11 In_ACK_RST_V_V_0 = 1
-    delta 11 In_CLOSE = 1
-    delta 11 In_RST_V_V_0 = 1
-    delta 11 In_CONNECT = 11
-    delta 11 In_ACK_PSH_V_V_1 = 11
-    delta 11 In_SYN_ACK_V_V_0 = 11
-    delta 11 In_ACK_V_V_0 = 11
-    delta 11 In_FIN_ACK_V_V_0 = 11
-    delta 11 In_SYN_V_V_0 = 11
-    delta 11 In_RCV = 9
-    delta 12 In_ACK_RST_V_V_0 = 1
-    delta 12 In_ACK_PSH_V_V_1 = 1
-    delta 12 In_SYN_ACK_V_V_0 = 1
-    delta 12 In_RST_V_V_0 = 1
-    delta 12 In_SYN_V_V_0 = 1
-    delta 12 In_CLOSE = 12
-    delta 12 In_CONNECT = 12
-    delta 12 In_ACK_V_V_0 = 12
-    delta 12 In_RCV = 12
-    delta 12 In_FIN_ACK_V_V_0 = 13
-    delta 13 In_ACK_RST_V_V_0 = 1
-    delta 13 In_RST_V_V_0 = 1
-    delta 13 In_CLOSE = 13
-    delta 13 In_CONNECT = 13
-    delta 13 In_ACK_PSH_V_V_1 = 13
-    delta 13 In_SYN_ACK_V_V_0 = 13
-    delta 13 In_ACK_V_V_0 = 13
-    delta 13 In_FIN_ACK_V_V_0 = 13
-    delta 13 In_SYN_V_V_0 = 13
-    delta 13 In_RCV = 13
-    delta 14 In_ACK_RST_V_V_0 = 1
-    delta 14 In_RST_V_V_0 = 1
-    delta 14 In_CLOSE = 14
-    delta 14 In_CONNECT = 14
-    delta 14 In_SYN_ACK_V_V_0 = 14
-    delta 14 In_SYN_V_V_0 = 14
-    delta 14 In_RCV = 14
-    delta 14 In_ACK_PSH_V_V_1 = 3
-    delta 14 In_ACK_V_V_0 = 3
-    delta 14 In_FIN_ACK_V_V_0 = 3
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 0 In_ACK_PSH_V_V_1 = Out_RST_ZERO_ZERO_0
-    lambda 0 In_SYN_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 0 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 0 In_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 0 In_FIN_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 0 In_SYN_V_V_0 = Out_ACK_RST_ZERO_NEXT_0
-    lambda 0 In_RCV = Out_TIMEOUT
-    lambda 0 In_CLOSE = Out_TIMEOUT
-    lambda 0 In_CONNECT = Out_SYN_FRESH_ZERO_0
-    lambda 1 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 1 In_CLOSE = Out_TIMEOUT
-    lambda 1 In_CONNECT = Out_TIMEOUT
-    lambda 1 In_ACK_PSH_V_V_1 = Out_RST_ZERO_ZERO_0
-    lambda 1 In_SYN_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 1 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 1 In_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 1 In_FIN_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 1 In_SYN_V_V_0 = Out_ACK_RST_ZERO_NEXT_0
-    lambda 1 In_RCV = Out_TIMEOUT
-    lambda 2 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 2 In_CLOSE = Out_TIMEOUT
-    lambda 2 In_CONNECT = Out_TIMEOUT
-    lambda 2 In_ACK_PSH_V_V_1 = Out_TIMEOUT
-    lambda 2 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 2 In_FIN_ACK_V_V_0 = Out_TIMEOUT
-    lambda 2 In_RCV = Out_TIMEOUT
-    lambda 2 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_NEXT_0
-    lambda 2 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 2 In_SYN_V_V_0 = Out_ACK_SYN_CURRENT_NEXT_0
-    lambda 6 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 6 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 6 In_CLOSE = Out_ACK_FIN_NEXT_CURRENT_0
-    lambda 6 In_CONNECT = Out_TIMEOUT
-    lambda 6 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 6 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 6 In_RCV = Out_TIMEOUT
-    lambda 6 In_ACK_PSH_V_V_1 = Out_ACK_NEXT_NEXT_0
-    lambda 6 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 6 In_FIN_ACK_V_V_0 = Out_ACK_NEXT_NEXT_0
-    lambda 4 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 4 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 4 In_CLOSE = Out_ACK_FIN_NEXT_CURRENT_0
-    lambda 4 In_CONNECT = Out_TIMEOUT
-    lambda 4 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 4 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 4 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 4 In_ACK_PSH_V_V_1 = Out_ACK_NEXT_NEXT_0
-    lambda 4 In_FIN_ACK_V_V_0 = Out_ACK_NEXT_NEXT_0
-    lambda 4 In_RCV = Out_TIMEOUT
-    lambda 3 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 3 In_ACK_PSH_V_V_1 = Out_RST_NEXT_ZERO_0
-    lambda 3 In_SYN_ACK_V_V_0 = Out_RST_NEXT_ZERO_0
-    lambda 3 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 3 In_ACK_V_V_0 = Out_RST_NEXT_ZERO_0
-    lambda 3 In_FIN_ACK_V_V_0 = Out_RST_NEXT_ZERO_0
-    lambda 3 In_SYN_V_V_0 = Out_ACK_RST_ZERO_NEXT_0
-    lambda 3 In_CLOSE = Out_TIMEOUT
-    lambda 3 In_CONNECT = Out_TIMEOUT
-    lambda 3 In_RCV = Out_TIMEOUT
-    lambda 5 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 5 In_CONNECT = Out_TIMEOUT
-    lambda 5 In_ACK_PSH_V_V_1 = Out_RST_ZERO_ZERO_0
-    lambda 5 In_SYN_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 5 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 5 In_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 5 In_FIN_ACK_V_V_0 = Out_RST_ZERO_ZERO_0
-    lambda 5 In_RCV = Out_TIMEOUT
-    lambda 5 In_CLOSE = Out_TIMEOUT
-    lambda 5 In_SYN_V_V_0 = Out_ACK_SYN_FRESH_NEXT_0
-    lambda 8 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 8 In_CLOSE = Out_ACK_RST_NEXT_CURRENT_0
-    lambda 8 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 8 In_CONNECT = Out_TIMEOUT
-    lambda 8 In_ACK_PSH_V_V_1 = Out_ACK_NEXT_NEXT_0
-    lambda 8 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 8 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 8 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 8 In_FIN_ACK_V_V_0 = Out_ACK_NEXT_NEXT_0
-    lambda 8 In_RCV = Out_TIMEOUT
-    lambda 7 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 7 In_ACK_PSH_V_V_1 = Out_RST_NEXT_ZERO_0
-    lambda 7 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 7 In_CLOSE = Out_TIMEOUT
-    lambda 7 In_CONNECT = Out_TIMEOUT
-    lambda 7 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 7 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 7 In_RCV = Out_TIMEOUT
-    lambda 7 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 7 In_FIN_ACK_V_V_0 = Out_ACK_NEXT_NEXT_0
-    lambda 9 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 9 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 9 In_CLOSE = Out_ACK_FIN_NEXT_CURRENT_0
-    lambda 9 In_CONNECT = Out_TIMEOUT
-    lambda 9 In_ACK_PSH_V_V_1 = Out_TIMEOUT
-    lambda 9 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 9 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 9 In_FIN_ACK_V_V_0 = Out_TIMEOUT
-    lambda 9 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 9 In_RCV = Out_TIMEOUT
-    lambda 10 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 10 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 10 In_CLOSE = Out_ACK_FIN_NEXT_CURRENT_0
-    lambda 10 In_CONNECT = Out_TIMEOUT
-    lambda 10 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 10 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 10 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 10 In_RCV = Out_TIMEOUT
-    lambda 10 In_ACK_PSH_V_V_1 = Out_ACK_NEXT_NEXT_0
-    lambda 10 In_FIN_ACK_V_V_0 = Out_ACK_NEXT_NEXT_0
-    lambda 11 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 11 In_CLOSE = Out_ACK_RST_NEXT_CURRENT_0
-    lambda 11 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 11 In_CONNECT = Out_TIMEOUT
-    lambda 11 In_ACK_PSH_V_V_1 = Out_TIMEOUT
-    lambda 11 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 11 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 11 In_FIN_ACK_V_V_0 = Out_TIMEOUT
-    lambda 11 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 11 In_RCV = Out_TIMEOUT
-    lambda 12 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 12 In_ACK_PSH_V_V_1 = Out_RST_NEXT_ZERO_0
-    lambda 12 In_SYN_ACK_V_V_0 = Out_RST_NEXT_ZERO_0
-    lambda 12 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 12 In_SYN_V_V_0 = Out_ACK_RST_ZERO_NEXT_0
-    lambda 12 In_CLOSE = Out_TIMEOUT
-    lambda 12 In_CONNECT = Out_TIMEOUT
-    lambda 12 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 12 In_RCV = Out_TIMEOUT
-    lambda 12 In_FIN_ACK_V_V_0 = Out_ACK_NEXT_NEXT_0
-    lambda 13 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 13 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 13 In_CLOSE = Out_TIMEOUT
-    lambda 13 In_CONNECT = Out_TIMEOUT
-    lambda 13 In_ACK_PSH_V_V_1 = Out_ACK_NEXT_CURRENT_0
-    lambda 13 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 13 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 13 In_FIN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 13 In_SYN_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 13 In_RCV = Out_TIMEOUT
-    lambda 14 In_ACK_RST_V_V_0 = Out_TIMEOUT
-    lambda 14 In_RST_V_V_0 = Out_TIMEOUT
-    lambda 14 In_CLOSE = Out_TIMEOUT
-    lambda 14 In_CONNECT = Out_TIMEOUT
-    lambda 14 In_SYN_ACK_V_V_0 = Out_ACK_NEXT_CURRENT_0
-    lambda 14 In_SYN_V_V_0 = Out_TIMEOUT
-    lambda 14 In_RCV = Out_TIMEOUT
-    lambda 14 In_ACK_PSH_V_V_1 = Out_TIMEOUT
-    lambda 14 In_ACK_V_V_0 = Out_TIMEOUT
-    lambda 14 In_FIN_ACK_V_V_0 = Out_TIMEOUT
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\0\0\0\0\0\0\0\0\1\2\
+        \\1\1\1\1\1\1\1\1\1\1\
+        \\1\2\4\5\2\2\6\2\3\2\
+        \\1\1\1\1\1\1\1\3\3\3\
+        \\1\8\4\1\4\9\4\10\7\4\
+        \\5\5\5\5\5\5\6\5\1\5\
+        \\1\8\6\1\4\9\6\6\7\6\
+        \\1\1\7\1\12\13\7\7\7\7\
+        \\1\8\8\1\8\11\8\4\1\8\
+        \\1\9\9\1\9\9\9\9\14\9\
+        \\1\4\10\1\10\9\10\10\7\10\
+        \\1\11\11\1\11\11\11\9\1\11\
+        \\1\1\1\1\12\13\1\12\12\12\
+        \\1\13\13\1\13\13\13\13\13\13\
+        \\1\3\14\1\3\3\14\14\14\14"
+    lambdaTable =
+        "\0\1\1\0\1\1\2\0\0\3\
+        \\0\1\1\0\1\1\2\0\0\0\
+        \\0\0\4\0\0\0\5\0\0\0\
+        \\0\8\8\0\8\8\2\0\0\0\
+        \\0\4\7\0\0\4\0\0\6\0\
+        \\0\1\1\0\1\1\9\0\0\0\
+        \\0\4\7\0\0\4\0\0\6\0\
+        \\0\8\7\0\0\4\0\0\0\0\
+        \\0\4\7\0\0\4\0\0\10\0\
+        \\0\0\7\0\0\0\0\0\6\0\
+        \\0\4\7\0\0\4\0\0\6\0\
+        \\0\0\7\0\0\0\0\0\10\0\
+        \\0\8\8\0\0\4\2\0\0\0\
+        \\0\7\7\0\0\7\7\0\0\0\
+        \\0\0\7\0\0\0\0\0\0\0"

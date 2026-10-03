@@ -5,8 +5,7 @@ module Haal.Models.MQTT.EmqttInvalid
     , emqttInvalid
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data EmqttInvalidInput
     = In_Connect
@@ -31,74 +30,52 @@ data EmqttInvalidOutput
     | Out_Pub_my_topic_messageQos0
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_Connect               -> 1 / Out_ConnAckPacket_false_0
+          In_ConnectNonClean       -> 1 / Out_ConnAckPacket_false_0
+          In_PublishQoS0Dup        -> 0 / Out_ConnectionClosed
+          In_PublishQoSMinus1      -> 0 / Out_ConnectionClosed
+          In_PublishWildCard       -> 0 / Out_ConnectionClosed
+          In_SubscribeWildMatch    -> 0 / Out_ConnectionClosed
+          In_UnSubscribeWildMatch  -> 0 / Out_ConnectionClosed
+          In_Subscribe             -> 0 / Out_ConnectionClosed
+          In_SubscribeMinus1       -> 0 / Out_ConnectionClosed
+          In_UnSubScribe           -> 0 / Out_ConnectionClosed
+          In_Disconnect            -> 0 / Out_ConnectionClosed
+    1     In_Connect               -> 0 / Out_ConnectionClosed
+          In_ConnectNonClean       -> 0 / Out_ConnectionClosed
+          In_PublishQoS0Dup        -> 1 / Out_Empty
+          In_PublishQoSMinus1      -> 0 / Out_ConnectionClosed
+          In_PublishWildCard       -> 0 / Out_ConnectionClosed
+          In_SubscribeWildMatch    -> 1 / Out_SubAck
+          In_UnSubscribeWildMatch  -> 1 / Out_UnSubAck
+          In_Subscribe             -> 2 / Out_SubAck
+          In_SubscribeMinus1       -> 0 / Out_ConnectionClosed
+          In_UnSubScribe           -> 1 / Out_UnSubAck
+          In_Disconnect            -> 0 / Out_ConnectionClosed
+    2     In_Connect               -> 0 / Out_ConnectionClosed
+          In_ConnectNonClean       -> 0 / Out_ConnectionClosed
+          In_PublishQoS0Dup        -> 2 / Out_Pub_my_topic_messageQos0
+          In_PublishQoSMinus1      -> 0 / Out_ConnectionClosed
+          In_PublishWildCard       -> 0 / Out_ConnectionClosed
+          In_SubscribeWildMatch    -> 2 / Out_SubAck
+          In_UnSubscribeWildMatch  -> 2 / Out_UnSubAck
+          In_Subscribe             -> 2 / Out_SubAck
+          In_SubscribeMinus1       -> 0 / Out_ConnectionClosed
+          In_UnSubScribe           -> 1 / Out_UnSubAck
+          In_Disconnect            -> 0 / Out_ConnectionClosed
+-}
 emqttInvalid :: MealyAutomaton Int EmqttInvalidInput EmqttInvalidOutput
-emqttInvalid = mkMealyAutomaton delta lambda (Set.fromList [0..2]) 0
+emqttInvalid =
+    case mkMealyAutomatonTable 3 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_Connect = 1
-    delta 0 In_ConnectNonClean = 1
-    delta 0 In_PublishQoS0Dup = 0
-    delta 0 In_PublishQoSMinus1 = 0
-    delta 0 In_PublishWildCard = 0
-    delta 0 In_SubscribeWildMatch = 0
-    delta 0 In_UnSubscribeWildMatch = 0
-    delta 0 In_Subscribe = 0
-    delta 0 In_SubscribeMinus1 = 0
-    delta 0 In_UnSubScribe = 0
-    delta 0 In_Disconnect = 0
-    delta 1 In_Connect = 0
-    delta 1 In_ConnectNonClean = 0
-    delta 1 In_PublishQoS0Dup = 1
-    delta 1 In_PublishQoSMinus1 = 0
-    delta 1 In_PublishWildCard = 0
-    delta 1 In_SubscribeWildMatch = 1
-    delta 1 In_UnSubscribeWildMatch = 1
-    delta 1 In_Subscribe = 2
-    delta 1 In_SubscribeMinus1 = 0
-    delta 1 In_UnSubScribe = 1
-    delta 1 In_Disconnect = 0
-    delta 2 In_Connect = 0
-    delta 2 In_ConnectNonClean = 0
-    delta 2 In_PublishQoS0Dup = 2
-    delta 2 In_PublishQoSMinus1 = 0
-    delta 2 In_PublishWildCard = 0
-    delta 2 In_SubscribeWildMatch = 2
-    delta 2 In_UnSubscribeWildMatch = 2
-    delta 2 In_Subscribe = 2
-    delta 2 In_SubscribeMinus1 = 0
-    delta 2 In_UnSubScribe = 1
-    delta 2 In_Disconnect = 0
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_Connect = Out_ConnAckPacket_false_0
-    lambda 0 In_ConnectNonClean = Out_ConnAckPacket_false_0
-    lambda 0 In_PublishQoS0Dup = Out_ConnectionClosed
-    lambda 0 In_PublishQoSMinus1 = Out_ConnectionClosed
-    lambda 0 In_PublishWildCard = Out_ConnectionClosed
-    lambda 0 In_SubscribeWildMatch = Out_ConnectionClosed
-    lambda 0 In_UnSubscribeWildMatch = Out_ConnectionClosed
-    lambda 0 In_Subscribe = Out_ConnectionClosed
-    lambda 0 In_SubscribeMinus1 = Out_ConnectionClosed
-    lambda 0 In_UnSubScribe = Out_ConnectionClosed
-    lambda 0 In_Disconnect = Out_ConnectionClosed
-    lambda 1 In_Connect = Out_ConnectionClosed
-    lambda 1 In_ConnectNonClean = Out_ConnectionClosed
-    lambda 1 In_PublishQoS0Dup = Out_Empty
-    lambda 1 In_PublishQoSMinus1 = Out_ConnectionClosed
-    lambda 1 In_PublishWildCard = Out_ConnectionClosed
-    lambda 1 In_SubscribeWildMatch = Out_SubAck
-    lambda 1 In_UnSubscribeWildMatch = Out_UnSubAck
-    lambda 1 In_Subscribe = Out_SubAck
-    lambda 1 In_SubscribeMinus1 = Out_ConnectionClosed
-    lambda 1 In_UnSubScribe = Out_UnSubAck
-    lambda 1 In_Disconnect = Out_ConnectionClosed
-    lambda 2 In_Connect = Out_ConnectionClosed
-    lambda 2 In_ConnectNonClean = Out_ConnectionClosed
-    lambda 2 In_PublishQoS0Dup = Out_Pub_my_topic_messageQos0
-    lambda 2 In_PublishQoSMinus1 = Out_ConnectionClosed
-    lambda 2 In_PublishWildCard = Out_ConnectionClosed
-    lambda 2 In_SubscribeWildMatch = Out_SubAck
-    lambda 2 In_UnSubscribeWildMatch = Out_UnSubAck
-    lambda 2 In_Subscribe = Out_SubAck
-    lambda 2 In_SubscribeMinus1 = Out_ConnectionClosed
-    lambda 2 In_UnSubScribe = Out_UnSubAck
-    lambda 2 In_Disconnect = Out_ConnectionClosed
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\1\0\0\0\0\0\0\0\0\0\
+        \\0\0\1\0\0\1\1\2\0\1\0\
+        \\0\0\2\0\0\2\2\2\0\1\0"
+    lambdaTable =
+        "\0\0\1\1\1\1\1\1\1\1\1\
+        \\1\1\2\1\1\3\4\3\1\4\1\
+        \\1\1\5\1\1\3\4\3\1\4\1"

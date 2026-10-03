@@ -8,6 +8,14 @@ and this project adheres to the
 
 ## Unreleased
 
+### Changed
+- All models are regenerated with the table-based `haal-gen`, which builds
+  them with `Haal.Automaton.MealyAutomaton.mkMealyAutomatonTable` instead of
+  one equation per transition. Types, state numbering, and transitions are
+  unchanged, and stepping a model is as fast as before. The package builds
+  in about half the time at `-O1` and a third at `-O0`. This requires the
+  `haal` release that adds `mkMealyAutomatonTable`.
+
 ## 0.1.1.0 - 2026-04-22
 
 ### Added

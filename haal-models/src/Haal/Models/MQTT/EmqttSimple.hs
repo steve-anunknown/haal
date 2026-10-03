@@ -5,8 +5,7 @@ module Haal.Models.MQTT.EmqttSimple
     , emqttSimple
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data EmqttSimpleInput
     = In_Connect
@@ -28,50 +27,40 @@ data EmqttSimpleOutput
     | Out_PublishPacket__PubAckPacket
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_Connect        -> 1 / Out_ConnAckPacket
+          In_Publish        -> 0 / Out_ConnectionClosed
+          In_Subscribe      -> 0 / Out_ConnectionClosed
+          In_UnSubScribe    -> 0 / Out_ConnectionClosed
+          In_Ping           -> 0 / Out_ConnectionClosed
+          In_Disconnect     -> 0 / Out_ConnectionClosed
+          In_DisconnectTCP  -> 0 / Out_ConnectionClosed
+    1     In_Connect        -> 0 / Out_ConnectionClosed
+          In_Publish        -> 1 / Out_PubAckPacket
+          In_Subscribe      -> 2 / Out_SubAckPacket
+          In_UnSubScribe    -> 1 / Out_UnSubAckPacket
+          In_Ping           -> 1 / Out_PingRespPacket
+          In_Disconnect     -> 0 / Out_ConnectionClosed
+          In_DisconnectTCP  -> 0 / Out_ConnectionClosed
+    2     In_Connect        -> 0 / Out_ConnectionClosed
+          In_Publish        -> 2 / Out_PublishPacket__PubAckPacket
+          In_Subscribe      -> 2 / Out_SubAckPacket
+          In_UnSubScribe    -> 1 / Out_UnSubAckPacket
+          In_Ping           -> 2 / Out_PingRespPacket
+          In_Disconnect     -> 0 / Out_ConnectionClosed
+          In_DisconnectTCP  -> 0 / Out_ConnectionClosed
+-}
 emqttSimple :: MealyAutomaton Int EmqttSimpleInput EmqttSimpleOutput
-emqttSimple = mkMealyAutomaton delta lambda (Set.fromList [0..2]) 0
+emqttSimple =
+    case mkMealyAutomatonTable 3 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_Connect = 1
-    delta 0 In_Publish = 0
-    delta 0 In_Subscribe = 0
-    delta 0 In_UnSubScribe = 0
-    delta 0 In_Ping = 0
-    delta 0 In_Disconnect = 0
-    delta 0 In_DisconnectTCP = 0
-    delta 1 In_Connect = 0
-    delta 1 In_Publish = 1
-    delta 1 In_Subscribe = 2
-    delta 1 In_UnSubScribe = 1
-    delta 1 In_Ping = 1
-    delta 1 In_Disconnect = 0
-    delta 1 In_DisconnectTCP = 0
-    delta 2 In_Connect = 0
-    delta 2 In_Publish = 2
-    delta 2 In_Subscribe = 2
-    delta 2 In_UnSubScribe = 1
-    delta 2 In_Ping = 2
-    delta 2 In_Disconnect = 0
-    delta 2 In_DisconnectTCP = 0
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_Connect = Out_ConnAckPacket
-    lambda 0 In_Publish = Out_ConnectionClosed
-    lambda 0 In_Subscribe = Out_ConnectionClosed
-    lambda 0 In_UnSubScribe = Out_ConnectionClosed
-    lambda 0 In_Ping = Out_ConnectionClosed
-    lambda 0 In_Disconnect = Out_ConnectionClosed
-    lambda 0 In_DisconnectTCP = Out_ConnectionClosed
-    lambda 1 In_Connect = Out_ConnectionClosed
-    lambda 1 In_Publish = Out_PubAckPacket
-    lambda 1 In_Subscribe = Out_SubAckPacket
-    lambda 1 In_UnSubScribe = Out_UnSubAckPacket
-    lambda 1 In_Ping = Out_PingRespPacket
-    lambda 1 In_Disconnect = Out_ConnectionClosed
-    lambda 1 In_DisconnectTCP = Out_ConnectionClosed
-    lambda 2 In_Connect = Out_ConnectionClosed
-    lambda 2 In_Publish = Out_PublishPacket__PubAckPacket
-    lambda 2 In_Subscribe = Out_SubAckPacket
-    lambda 2 In_UnSubScribe = Out_UnSubAckPacket
-    lambda 2 In_Ping = Out_PingRespPacket
-    lambda 2 In_Disconnect = Out_ConnectionClosed
-    lambda 2 In_DisconnectTCP = Out_ConnectionClosed
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\0\0\0\0\0\0\
+        \\0\1\2\1\1\0\0\
+        \\0\2\2\1\2\0\0"
+    lambdaTable =
+        "\0\1\1\1\1\1\1\
+        \\1\2\3\4\5\1\1\
+        \\1\6\3\4\5\1\1"

@@ -5,8 +5,7 @@ module Haal.Models.MQTT.HbmqttSimple
     , hbmqttSimple
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data HbmqttSimpleInput
     = In_Connect
@@ -29,78 +28,58 @@ data HbmqttSimpleOutput
     | Out_PublishPacket__PubAckPacket
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_Connect        -> 1 / Out_ConnAckPacket
+          In_Publish        -> 2 / Out_Empty
+          In_Subscribe      -> 2 / Out_Empty
+          In_UnSubScribe    -> 2 / Out_Empty
+          In_Ping           -> 2 / Out_Empty
+          In_Disconnect     -> 2 / Out_Empty
+          In_DisconnectTCP  -> 3 / Out_ConnectionClosed
+    1     In_Connect        -> 1 / Out_Empty
+          In_Publish        -> 1 / Out_PubAckPacket
+          In_Subscribe      -> 4 / Out_SubAckPacket
+          In_UnSubScribe    -> 1 / Out_UnSubAckPacket
+          In_Ping           -> 1 / Out_PingRespPacket
+          In_Disconnect     -> 3 / Out_ConnectionClosed
+          In_DisconnectTCP  -> 3 / Out_ConnectionClosed
+    2     In_Connect        -> 2 / Out_Empty
+          In_Publish        -> 2 / Out_Empty
+          In_Subscribe      -> 2 / Out_Empty
+          In_UnSubScribe    -> 2 / Out_Empty
+          In_Ping           -> 2 / Out_Empty
+          In_Disconnect     -> 2 / Out_Empty
+          In_DisconnectTCP  -> 3 / Out_ConnectionClosed
+    3     In_Connect        -> 1 / Out_ConnAckPacket
+          In_Publish        -> 3 / Out_ConnectionClosed
+          In_Subscribe      -> 3 / Out_ConnectionClosed
+          In_UnSubScribe    -> 3 / Out_ConnectionClosed
+          In_Ping           -> 3 / Out_ConnectionClosed
+          In_Disconnect     -> 3 / Out_ConnectionClosed
+          In_DisconnectTCP  -> 3 / Out_ConnectionClosed
+    4     In_Connect        -> 4 / Out_Empty
+          In_Publish        -> 4 / Out_PublishPacket__PubAckPacket
+          In_Subscribe      -> 4 / Out_SubAckPacket
+          In_UnSubScribe    -> 1 / Out_UnSubAckPacket
+          In_Ping           -> 4 / Out_PingRespPacket
+          In_Disconnect     -> 3 / Out_ConnectionClosed
+          In_DisconnectTCP  -> 3 / Out_ConnectionClosed
+-}
 hbmqttSimple :: MealyAutomaton Int HbmqttSimpleInput HbmqttSimpleOutput
-hbmqttSimple = mkMealyAutomaton delta lambda (Set.fromList [0..4]) 0
+hbmqttSimple =
+    case mkMealyAutomatonTable 5 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_Connect = 1
-    delta 0 In_Publish = 2
-    delta 0 In_Subscribe = 2
-    delta 0 In_UnSubScribe = 2
-    delta 0 In_Ping = 2
-    delta 0 In_Disconnect = 2
-    delta 0 In_DisconnectTCP = 3
-    delta 1 In_Connect = 1
-    delta 1 In_Publish = 1
-    delta 1 In_Subscribe = 4
-    delta 1 In_UnSubScribe = 1
-    delta 1 In_Ping = 1
-    delta 1 In_Disconnect = 3
-    delta 1 In_DisconnectTCP = 3
-    delta 3 In_Connect = 1
-    delta 3 In_Publish = 3
-    delta 3 In_Subscribe = 3
-    delta 3 In_UnSubScribe = 3
-    delta 3 In_Ping = 3
-    delta 3 In_Disconnect = 3
-    delta 3 In_DisconnectTCP = 3
-    delta 2 In_Connect = 2
-    delta 2 In_Publish = 2
-    delta 2 In_Subscribe = 2
-    delta 2 In_UnSubScribe = 2
-    delta 2 In_Ping = 2
-    delta 2 In_Disconnect = 2
-    delta 2 In_DisconnectTCP = 3
-    delta 4 In_Connect = 4
-    delta 4 In_Publish = 4
-    delta 4 In_Subscribe = 4
-    delta 4 In_UnSubScribe = 1
-    delta 4 In_Ping = 4
-    delta 4 In_Disconnect = 3
-    delta 4 In_DisconnectTCP = 3
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_Connect = Out_ConnAckPacket
-    lambda 0 In_Publish = Out_Empty
-    lambda 0 In_Subscribe = Out_Empty
-    lambda 0 In_UnSubScribe = Out_Empty
-    lambda 0 In_Ping = Out_Empty
-    lambda 0 In_Disconnect = Out_Empty
-    lambda 0 In_DisconnectTCP = Out_ConnectionClosed
-    lambda 1 In_Connect = Out_Empty
-    lambda 1 In_Publish = Out_PubAckPacket
-    lambda 1 In_Subscribe = Out_SubAckPacket
-    lambda 1 In_UnSubScribe = Out_UnSubAckPacket
-    lambda 1 In_Ping = Out_PingRespPacket
-    lambda 1 In_Disconnect = Out_ConnectionClosed
-    lambda 1 In_DisconnectTCP = Out_ConnectionClosed
-    lambda 3 In_Connect = Out_ConnAckPacket
-    lambda 3 In_Publish = Out_ConnectionClosed
-    lambda 3 In_Subscribe = Out_ConnectionClosed
-    lambda 3 In_UnSubScribe = Out_ConnectionClosed
-    lambda 3 In_Ping = Out_ConnectionClosed
-    lambda 3 In_Disconnect = Out_ConnectionClosed
-    lambda 3 In_DisconnectTCP = Out_ConnectionClosed
-    lambda 2 In_Connect = Out_Empty
-    lambda 2 In_Publish = Out_Empty
-    lambda 2 In_Subscribe = Out_Empty
-    lambda 2 In_UnSubScribe = Out_Empty
-    lambda 2 In_Ping = Out_Empty
-    lambda 2 In_Disconnect = Out_Empty
-    lambda 2 In_DisconnectTCP = Out_ConnectionClosed
-    lambda 4 In_Connect = Out_Empty
-    lambda 4 In_Publish = Out_PublishPacket__PubAckPacket
-    lambda 4 In_Subscribe = Out_SubAckPacket
-    lambda 4 In_UnSubScribe = Out_UnSubAckPacket
-    lambda 4 In_Ping = Out_PingRespPacket
-    lambda 4 In_Disconnect = Out_ConnectionClosed
-    lambda 4 In_DisconnectTCP = Out_ConnectionClosed
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\2\2\2\2\2\3\
+        \\1\1\4\1\1\3\3\
+        \\2\2\2\2\2\2\3\
+        \\1\3\3\3\3\3\3\
+        \\4\4\4\1\4\3\3"
+    lambdaTable =
+        "\0\1\1\1\1\1\2\
+        \\1\3\4\5\6\2\2\
+        \\1\1\1\1\1\1\2\
+        \\0\2\2\2\2\2\2\
+        \\1\7\4\5\6\2\2"

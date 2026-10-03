@@ -5,8 +5,7 @@ module Haal.Models.MQTT.HbmqttTwoClientWillRetain
     , hbmqttTwoClientWillRetain
     ) where
 
-import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomatonTable)
 
 data HbmqttTwoClientWillRetainInput
     = In_ConnectC2
@@ -45,314 +44,200 @@ data HbmqttTwoClientWillRetainOutput
     | Out_Empty__c2_SubAck__Pub_c2_my_topic_bye
     deriving (Show, Eq, Ord, Enum, Bounded)
 
+{- Transitions (state  input -> next state / output):
+    0     In_ConnectC2                -> 1 / Out_C1_ConnectionClosed__c2_ConnAck
+          In_ConnectC1WithWill        -> 2 / Out_C1_ConnAck__c2_ConnectionClosed
+          In_ConnectC1WithWillRetain  -> 3 / Out_C1_ConnAck__c2_ConnectionClosed
+          In_DeleteRetainedC1         -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DeleteRetainedC2         -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_SubscribeC2              -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_UnSubScribeC2            -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectTCPC1          -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC1             -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    1     In_ConnectC2                -> 1 / Out_C1_ConnectionClosed__Empty
+          In_ConnectC1WithWill        -> 4 / Out_C1_ConnAck__Empty
+          In_ConnectC1WithWillRetain  -> 6 / Out_C1_ConnAck__Empty
+          In_DeleteRetainedC1         -> 1 / Out_C1_ConnectionClosed__Empty
+          In_DeleteRetainedC2         -> 1 / Out_C1_ConnectionClosed__c2_PubAck
+          In_SubscribeC2              -> 7 / Out_C1_ConnectionClosed__c2_SubAck
+          In_UnSubScribeC2            -> 1 / Out_C1_ConnectionClosed__c2_UnSubAck
+          In_DisconnectTCPC1          -> 1 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 1 / Out_C1_ConnectionClosed__Empty
+    2     In_ConnectC2                -> 4 / Out_Empty__c2_ConnAck
+          In_ConnectC1WithWill        -> 2 / Out_Empty__c2_ConnectionClosed
+          In_ConnectC1WithWillRetain  -> 2 / Out_Empty__c2_ConnectionClosed
+          In_DeleteRetainedC1         -> 2 / Out_C1_PubAck__c2_ConnectionClosed
+          In_DeleteRetainedC2         -> 2 / Out_Empty__c2_ConnectionClosed
+          In_SubscribeC2              -> 2 / Out_Empty__c2_ConnectionClosed
+          In_UnSubScribeC2            -> 2 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectTCPC1          -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC1             -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    3     In_ConnectC2                -> 6 / Out_Empty__c2_ConnAck
+          In_ConnectC1WithWill        -> 3 / Out_Empty__c2_ConnectionClosed
+          In_ConnectC1WithWillRetain  -> 3 / Out_Empty__c2_ConnectionClosed
+          In_DeleteRetainedC1         -> 3 / Out_C1_PubAck__c2_ConnectionClosed
+          In_DeleteRetainedC2         -> 3 / Out_Empty__c2_ConnectionClosed
+          In_SubscribeC2              -> 3 / Out_Empty__c2_ConnectionClosed
+          In_UnSubScribeC2            -> 3 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectTCPC1          -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC1             -> 0 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    4     In_ConnectC2                -> 4 / Out_Empty__Empty
+          In_ConnectC1WithWill        -> 4 / Out_Empty__Empty
+          In_ConnectC1WithWillRetain  -> 4 / Out_Empty__Empty
+          In_DeleteRetainedC1         -> 4 / Out_C1_PubAck__Empty
+          In_DeleteRetainedC2         -> 4 / Out_Empty__c2_PubAck
+          In_SubscribeC2              -> 5 / Out_Empty__c2_SubAck
+          In_UnSubScribeC2            -> 4 / Out_Empty__c2_UnSubAck
+          In_DisconnectTCPC1          -> 1 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 1 / Out_C1_ConnectionClosed__Empty
+    5     In_ConnectC2                -> 5 / Out_Empty__Empty
+          In_ConnectC1WithWill        -> 5 / Out_Empty__Empty
+          In_ConnectC1WithWillRetain  -> 5 / Out_Empty__Empty
+          In_DeleteRetainedC1         -> 5 / Out_C1_PubAck__Pub_c2_my_topic
+          In_DeleteRetainedC2         -> 5 / Out_Empty__Pub_c2_my_topic____c2_PubAck
+          In_SubscribeC2              -> 5 / Out_Empty__c2_SubAck
+          In_UnSubScribeC2            -> 4 / Out_Empty__c2_UnSubAck
+          In_DisconnectTCPC1          -> 7 / Out_C1_ConnectionClosed__Pub_c2_my_topic_bye
+          In_DisconnectC1             -> 7 / Out_C1_ConnectionClosed__Empty
+    6     In_ConnectC2                -> 6 / Out_Empty__Empty
+          In_ConnectC1WithWill        -> 6 / Out_Empty__Empty
+          In_ConnectC1WithWillRetain  -> 6 / Out_Empty__Empty
+          In_DeleteRetainedC1         -> 6 / Out_C1_PubAck__Empty
+          In_DeleteRetainedC2         -> 6 / Out_Empty__c2_PubAck
+          In_SubscribeC2              -> 8 / Out_Empty__c2_SubAck
+          In_UnSubScribeC2            -> 6 / Out_Empty__c2_UnSubAck
+          In_DisconnectTCPC1          -> 9 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 1 / Out_C1_ConnectionClosed__Empty
+    7     In_ConnectC2                -> 7 / Out_C1_ConnectionClosed__Empty
+          In_ConnectC1WithWill        -> 5 / Out_C1_ConnAck__Empty
+          In_ConnectC1WithWillRetain  -> 8 / Out_C1_ConnAck__Empty
+          In_DeleteRetainedC1         -> 7 / Out_C1_ConnectionClosed__Empty
+          In_DeleteRetainedC2         -> 7 / Out_C1_ConnectionClosed__Pub_c2_my_topic____c2_PubAck
+          In_SubscribeC2              -> 7 / Out_C1_ConnectionClosed__c2_SubAck
+          In_UnSubScribeC2            -> 1 / Out_C1_ConnectionClosed__c2_UnSubAck
+          In_DisconnectTCPC1          -> 7 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 7 / Out_C1_ConnectionClosed__Empty
+    8     In_ConnectC2                -> 8 / Out_Empty__Empty
+          In_ConnectC1WithWill        -> 8 / Out_Empty__Empty
+          In_ConnectC1WithWillRetain  -> 8 / Out_Empty__Empty
+          In_DeleteRetainedC1         -> 8 / Out_C1_PubAck__Pub_c2_my_topic
+          In_DeleteRetainedC2         -> 8 / Out_Empty__Pub_c2_my_topic____c2_PubAck
+          In_SubscribeC2              -> 8 / Out_Empty__c2_SubAck
+          In_UnSubScribeC2            -> 6 / Out_Empty__c2_UnSubAck
+          In_DisconnectTCPC1          -> 12 / Out_C1_ConnectionClosed__Pub_c2_my_topic_bye
+          In_DisconnectC1             -> 7 / Out_C1_ConnectionClosed__Empty
+    9     In_ConnectC2                -> 9 / Out_C1_ConnectionClosed__Empty
+          In_ConnectC1WithWill        -> 10 / Out_C1_ConnAck__Empty
+          In_ConnectC1WithWillRetain  -> 11 / Out_C1_ConnAck__Empty
+          In_DeleteRetainedC1         -> 9 / Out_C1_ConnectionClosed__Empty
+          In_DeleteRetainedC2         -> 1 / Out_C1_ConnectionClosed__c2_PubAck
+          In_SubscribeC2              -> 12 / Out_C1_ConnectionClosed__c2_SubAck__Pub_c2_my_topic_bye
+          In_UnSubScribeC2            -> 9 / Out_C1_ConnectionClosed__c2_UnSubAck
+          In_DisconnectTCPC1          -> 9 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 9 / Out_C1_ConnectionClosed__Empty
+    10    In_ConnectC2                -> 10 / Out_Empty__Empty
+          In_ConnectC1WithWill        -> 10 / Out_Empty__Empty
+          In_ConnectC1WithWillRetain  -> 10 / Out_Empty__Empty
+          In_DeleteRetainedC1         -> 4 / Out_C1_PubAck__Empty
+          In_DeleteRetainedC2         -> 4 / Out_Empty__c2_PubAck
+          In_SubscribeC2              -> 13 / Out_Empty__c2_SubAck__Pub_c2_my_topic_bye
+          In_UnSubScribeC2            -> 10 / Out_Empty__c2_UnSubAck
+          In_DisconnectTCPC1          -> 9 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 9 / Out_C1_ConnectionClosed__Empty
+    11    In_ConnectC2                -> 11 / Out_Empty__Empty
+          In_ConnectC1WithWill        -> 11 / Out_Empty__Empty
+          In_ConnectC1WithWillRetain  -> 11 / Out_Empty__Empty
+          In_DeleteRetainedC1         -> 6 / Out_C1_PubAck__Empty
+          In_DeleteRetainedC2         -> 6 / Out_Empty__c2_PubAck
+          In_SubscribeC2              -> 13 / Out_Empty__c2_SubAck__Pub_c2_my_topic_bye
+          In_UnSubScribeC2            -> 11 / Out_Empty__c2_UnSubAck
+          In_DisconnectTCPC1          -> 9 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 9 / Out_C1_ConnectionClosed__Empty
+    12    In_ConnectC2                -> 12 / Out_C1_ConnectionClosed__Empty
+          In_ConnectC1WithWill        -> 13 / Out_C1_ConnAck__Empty
+          In_ConnectC1WithWillRetain  -> 13 / Out_C1_ConnAck__Empty
+          In_DeleteRetainedC1         -> 12 / Out_C1_ConnectionClosed__Empty
+          In_DeleteRetainedC2         -> 7 / Out_C1_ConnectionClosed__Pub_c2_my_topic____c2_PubAck
+          In_SubscribeC2              -> 12 / Out_C1_ConnectionClosed__c2_SubAck__Pub_c2_my_topic_bye
+          In_UnSubScribeC2            -> 9 / Out_C1_ConnectionClosed__c2_UnSubAck
+          In_DisconnectTCPC1          -> 12 / Out_C1_ConnectionClosed__Empty
+          In_DisconnectC1             -> 12 / Out_C1_ConnectionClosed__Empty
+    13    In_ConnectC2                -> 13 / Out_Empty__Empty
+          In_ConnectC1WithWill        -> 13 / Out_Empty__Empty
+          In_ConnectC1WithWillRetain  -> 13 / Out_Empty__Empty
+          In_DeleteRetainedC1         -> 5 / Out_C1_PubAck__Pub_c2_my_topic
+          In_DeleteRetainedC2         -> 5 / Out_Empty__Pub_c2_my_topic____c2_PubAck
+          In_SubscribeC2              -> 13 / Out_Empty__c2_SubAck__Pub_c2_my_topic_bye
+          In_UnSubScribeC2            -> 10 / Out_Empty__c2_UnSubAck
+          In_DisconnectTCPC1          -> 12 / Out_C1_ConnectionClosed__Pub_c2_my_topic_bye
+          In_DisconnectC1             -> 12 / Out_C1_ConnectionClosed__Empty
+    14    In_ConnectC2                -> 9 / Out_C1_ConnectionClosed__c2_ConnAck
+          In_ConnectC1WithWill        -> 15 / Out_C1_ConnAck__c2_ConnectionClosed
+          In_ConnectC1WithWillRetain  -> 16 / Out_C1_ConnAck__c2_ConnectionClosed
+          In_DeleteRetainedC1         -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DeleteRetainedC2         -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_SubscribeC2              -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_UnSubScribeC2            -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectTCPC1          -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC1             -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    15    In_ConnectC2                -> 10 / Out_Empty__c2_ConnAck
+          In_ConnectC1WithWill        -> 15 / Out_Empty__c2_ConnectionClosed
+          In_ConnectC1WithWillRetain  -> 15 / Out_Empty__c2_ConnectionClosed
+          In_DeleteRetainedC1         -> 2 / Out_C1_PubAck__c2_ConnectionClosed
+          In_DeleteRetainedC2         -> 15 / Out_Empty__c2_ConnectionClosed
+          In_SubscribeC2              -> 15 / Out_Empty__c2_ConnectionClosed
+          In_UnSubScribeC2            -> 15 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectTCPC1          -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC1             -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+    16    In_ConnectC2                -> 11 / Out_Empty__c2_ConnAck
+          In_ConnectC1WithWill        -> 16 / Out_Empty__c2_ConnectionClosed
+          In_ConnectC1WithWillRetain  -> 16 / Out_Empty__c2_ConnectionClosed
+          In_DeleteRetainedC1         -> 3 / Out_C1_PubAck__c2_ConnectionClosed
+          In_DeleteRetainedC2         -> 16 / Out_Empty__c2_ConnectionClosed
+          In_SubscribeC2              -> 16 / Out_Empty__c2_ConnectionClosed
+          In_UnSubScribeC2            -> 16 / Out_Empty__c2_ConnectionClosed
+          In_DisconnectTCPC1          -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+          In_DisconnectC1             -> 14 / Out_C1_ConnectionClosed__c2_ConnectionClosed
+-}
 hbmqttTwoClientWillRetain :: MealyAutomaton Int HbmqttTwoClientWillRetainInput HbmqttTwoClientWillRetainOutput
-hbmqttTwoClientWillRetain = mkMealyAutomaton delta lambda (Set.fromList [0..16]) 0
+hbmqttTwoClientWillRetain =
+    case mkMealyAutomatonTable 17 0 deltaTable lambdaTable of
+        Right m -> m
+        Left err -> error ("haal-gen: invalid transition table: " ++ err)
   where
-    delta 0 In_ConnectC2 = 1
-    delta 0 In_ConnectC1WithWill = 2
-    delta 0 In_ConnectC1WithWillRetain = 3
-    delta 0 In_DeleteRetainedC1 = 0
-    delta 0 In_DeleteRetainedC2 = 0
-    delta 0 In_SubscribeC2 = 0
-    delta 0 In_UnSubScribeC2 = 0
-    delta 0 In_DisconnectTCPC1 = 0
-    delta 0 In_DisconnectC1 = 0
-    delta 2 In_ConnectC2 = 4
-    delta 2 In_ConnectC1WithWill = 2
-    delta 2 In_ConnectC1WithWillRetain = 2
-    delta 2 In_DeleteRetainedC1 = 2
-    delta 2 In_DeleteRetainedC2 = 2
-    delta 2 In_SubscribeC2 = 2
-    delta 2 In_UnSubScribeC2 = 2
-    delta 2 In_DisconnectTCPC1 = 0
-    delta 2 In_DisconnectC1 = 0
-    delta 4 In_ConnectC2 = 4
-    delta 4 In_ConnectC1WithWill = 4
-    delta 4 In_ConnectC1WithWillRetain = 4
-    delta 4 In_DeleteRetainedC1 = 4
-    delta 4 In_DeleteRetainedC2 = 4
-    delta 4 In_SubscribeC2 = 5
-    delta 4 In_UnSubScribeC2 = 4
-    delta 4 In_DisconnectTCPC1 = 1
-    delta 4 In_DisconnectC1 = 1
-    delta 1 In_ConnectC2 = 1
-    delta 1 In_ConnectC1WithWill = 4
-    delta 1 In_ConnectC1WithWillRetain = 6
-    delta 1 In_DeleteRetainedC1 = 1
-    delta 1 In_DeleteRetainedC2 = 1
-    delta 1 In_SubscribeC2 = 7
-    delta 1 In_UnSubScribeC2 = 1
-    delta 1 In_DisconnectTCPC1 = 1
-    delta 1 In_DisconnectC1 = 1
-    delta 6 In_ConnectC2 = 6
-    delta 6 In_ConnectC1WithWill = 6
-    delta 6 In_ConnectC1WithWillRetain = 6
-    delta 6 In_DeleteRetainedC1 = 6
-    delta 6 In_DeleteRetainedC2 = 6
-    delta 6 In_SubscribeC2 = 8
-    delta 6 In_UnSubScribeC2 = 6
-    delta 6 In_DisconnectTCPC1 = 9
-    delta 6 In_DisconnectC1 = 1
-    delta 9 In_ConnectC2 = 9
-    delta 9 In_ConnectC1WithWill = 10
-    delta 9 In_ConnectC1WithWillRetain = 11
-    delta 9 In_DeleteRetainedC1 = 9
-    delta 9 In_DeleteRetainedC2 = 1
-    delta 9 In_SubscribeC2 = 12
-    delta 9 In_UnSubScribeC2 = 9
-    delta 9 In_DisconnectTCPC1 = 9
-    delta 9 In_DisconnectC1 = 9
-    delta 8 In_ConnectC2 = 8
-    delta 8 In_ConnectC1WithWill = 8
-    delta 8 In_ConnectC1WithWillRetain = 8
-    delta 8 In_DeleteRetainedC1 = 8
-    delta 8 In_DeleteRetainedC2 = 8
-    delta 8 In_SubscribeC2 = 8
-    delta 8 In_UnSubScribeC2 = 6
-    delta 8 In_DisconnectTCPC1 = 12
-    delta 8 In_DisconnectC1 = 7
-    delta 5 In_ConnectC2 = 5
-    delta 5 In_ConnectC1WithWill = 5
-    delta 5 In_ConnectC1WithWillRetain = 5
-    delta 5 In_DeleteRetainedC1 = 5
-    delta 5 In_DeleteRetainedC2 = 5
-    delta 5 In_SubscribeC2 = 5
-    delta 5 In_UnSubScribeC2 = 4
-    delta 5 In_DisconnectTCPC1 = 7
-    delta 5 In_DisconnectC1 = 7
-    delta 7 In_ConnectC2 = 7
-    delta 7 In_ConnectC1WithWill = 5
-    delta 7 In_ConnectC1WithWillRetain = 8
-    delta 7 In_DeleteRetainedC1 = 7
-    delta 7 In_DeleteRetainedC2 = 7
-    delta 7 In_SubscribeC2 = 7
-    delta 7 In_UnSubScribeC2 = 1
-    delta 7 In_DisconnectTCPC1 = 7
-    delta 7 In_DisconnectC1 = 7
-    delta 12 In_ConnectC2 = 12
-    delta 12 In_ConnectC1WithWill = 13
-    delta 12 In_ConnectC1WithWillRetain = 13
-    delta 12 In_DeleteRetainedC1 = 12
-    delta 12 In_DeleteRetainedC2 = 7
-    delta 12 In_SubscribeC2 = 12
-    delta 12 In_UnSubScribeC2 = 9
-    delta 12 In_DisconnectTCPC1 = 12
-    delta 12 In_DisconnectC1 = 12
-    delta 3 In_ConnectC2 = 6
-    delta 3 In_ConnectC1WithWill = 3
-    delta 3 In_ConnectC1WithWillRetain = 3
-    delta 3 In_DeleteRetainedC1 = 3
-    delta 3 In_DeleteRetainedC2 = 3
-    delta 3 In_SubscribeC2 = 3
-    delta 3 In_UnSubScribeC2 = 3
-    delta 3 In_DisconnectTCPC1 = 14
-    delta 3 In_DisconnectC1 = 0
-    delta 14 In_ConnectC2 = 9
-    delta 14 In_ConnectC1WithWill = 15
-    delta 14 In_ConnectC1WithWillRetain = 16
-    delta 14 In_DeleteRetainedC1 = 14
-    delta 14 In_DeleteRetainedC2 = 14
-    delta 14 In_SubscribeC2 = 14
-    delta 14 In_UnSubScribeC2 = 14
-    delta 14 In_DisconnectTCPC1 = 14
-    delta 14 In_DisconnectC1 = 14
-    delta 13 In_ConnectC2 = 13
-    delta 13 In_ConnectC1WithWill = 13
-    delta 13 In_ConnectC1WithWillRetain = 13
-    delta 13 In_DeleteRetainedC1 = 5
-    delta 13 In_DeleteRetainedC2 = 5
-    delta 13 In_SubscribeC2 = 13
-    delta 13 In_UnSubScribeC2 = 10
-    delta 13 In_DisconnectTCPC1 = 12
-    delta 13 In_DisconnectC1 = 12
-    delta 11 In_ConnectC2 = 11
-    delta 11 In_ConnectC1WithWill = 11
-    delta 11 In_ConnectC1WithWillRetain = 11
-    delta 11 In_DeleteRetainedC1 = 6
-    delta 11 In_DeleteRetainedC2 = 6
-    delta 11 In_SubscribeC2 = 13
-    delta 11 In_UnSubScribeC2 = 11
-    delta 11 In_DisconnectTCPC1 = 9
-    delta 11 In_DisconnectC1 = 9
-    delta 16 In_ConnectC2 = 11
-    delta 16 In_ConnectC1WithWill = 16
-    delta 16 In_ConnectC1WithWillRetain = 16
-    delta 16 In_DeleteRetainedC1 = 3
-    delta 16 In_DeleteRetainedC2 = 16
-    delta 16 In_SubscribeC2 = 16
-    delta 16 In_UnSubScribeC2 = 16
-    delta 16 In_DisconnectTCPC1 = 14
-    delta 16 In_DisconnectC1 = 14
-    delta 10 In_ConnectC2 = 10
-    delta 10 In_ConnectC1WithWill = 10
-    delta 10 In_ConnectC1WithWillRetain = 10
-    delta 10 In_DeleteRetainedC1 = 4
-    delta 10 In_DeleteRetainedC2 = 4
-    delta 10 In_SubscribeC2 = 13
-    delta 10 In_UnSubScribeC2 = 10
-    delta 10 In_DisconnectTCPC1 = 9
-    delta 10 In_DisconnectC1 = 9
-    delta 15 In_ConnectC2 = 10
-    delta 15 In_ConnectC1WithWill = 15
-    delta 15 In_ConnectC1WithWillRetain = 15
-    delta 15 In_DeleteRetainedC1 = 2
-    delta 15 In_DeleteRetainedC2 = 15
-    delta 15 In_SubscribeC2 = 15
-    delta 15 In_UnSubScribeC2 = 15
-    delta 15 In_DisconnectTCPC1 = 14
-    delta 15 In_DisconnectC1 = 14
-    delta _ _ = error "haal-gen: undefined transition"
-    lambda 0 In_ConnectC2 = Out_C1_ConnectionClosed__c2_ConnAck
-    lambda 0 In_ConnectC1WithWill = Out_C1_ConnAck__c2_ConnectionClosed
-    lambda 0 In_ConnectC1WithWillRetain = Out_C1_ConnAck__c2_ConnectionClosed
-    lambda 0 In_DeleteRetainedC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_DeleteRetainedC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_SubscribeC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_UnSubScribeC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 0 In_DisconnectC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 2 In_ConnectC2 = Out_Empty__c2_ConnAck
-    lambda 2 In_ConnectC1WithWill = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_ConnectC1WithWillRetain = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_DeleteRetainedC1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 2 In_DeleteRetainedC2 = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_SubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_UnSubScribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 2 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 2 In_DisconnectC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 4 In_ConnectC2 = Out_Empty__Empty
-    lambda 4 In_ConnectC1WithWill = Out_Empty__Empty
-    lambda 4 In_ConnectC1WithWillRetain = Out_Empty__Empty
-    lambda 4 In_DeleteRetainedC1 = Out_C1_PubAck__Empty
-    lambda 4 In_DeleteRetainedC2 = Out_Empty__c2_PubAck
-    lambda 4 In_SubscribeC2 = Out_Empty__c2_SubAck
-    lambda 4 In_UnSubScribeC2 = Out_Empty__c2_UnSubAck
-    lambda 4 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 4 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 1 In_ConnectC2 = Out_C1_ConnectionClosed__Empty
-    lambda 1 In_ConnectC1WithWill = Out_C1_ConnAck__Empty
-    lambda 1 In_ConnectC1WithWillRetain = Out_C1_ConnAck__Empty
-    lambda 1 In_DeleteRetainedC1 = Out_C1_ConnectionClosed__Empty
-    lambda 1 In_DeleteRetainedC2 = Out_C1_ConnectionClosed__c2_PubAck
-    lambda 1 In_SubscribeC2 = Out_C1_ConnectionClosed__c2_SubAck
-    lambda 1 In_UnSubScribeC2 = Out_C1_ConnectionClosed__c2_UnSubAck
-    lambda 1 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 1 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 6 In_ConnectC2 = Out_Empty__Empty
-    lambda 6 In_ConnectC1WithWill = Out_Empty__Empty
-    lambda 6 In_ConnectC1WithWillRetain = Out_Empty__Empty
-    lambda 6 In_DeleteRetainedC1 = Out_C1_PubAck__Empty
-    lambda 6 In_DeleteRetainedC2 = Out_Empty__c2_PubAck
-    lambda 6 In_SubscribeC2 = Out_Empty__c2_SubAck
-    lambda 6 In_UnSubScribeC2 = Out_Empty__c2_UnSubAck
-    lambda 6 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 6 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 9 In_ConnectC2 = Out_C1_ConnectionClosed__Empty
-    lambda 9 In_ConnectC1WithWill = Out_C1_ConnAck__Empty
-    lambda 9 In_ConnectC1WithWillRetain = Out_C1_ConnAck__Empty
-    lambda 9 In_DeleteRetainedC1 = Out_C1_ConnectionClosed__Empty
-    lambda 9 In_DeleteRetainedC2 = Out_C1_ConnectionClosed__c2_PubAck
-    lambda 9 In_SubscribeC2 = Out_C1_ConnectionClosed__c2_SubAck__Pub_c2_my_topic_bye
-    lambda 9 In_UnSubScribeC2 = Out_C1_ConnectionClosed__c2_UnSubAck
-    lambda 9 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 9 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 8 In_ConnectC2 = Out_Empty__Empty
-    lambda 8 In_ConnectC1WithWill = Out_Empty__Empty
-    lambda 8 In_ConnectC1WithWillRetain = Out_Empty__Empty
-    lambda 8 In_DeleteRetainedC1 = Out_C1_PubAck__Pub_c2_my_topic
-    lambda 8 In_DeleteRetainedC2 = Out_Empty__Pub_c2_my_topic____c2_PubAck
-    lambda 8 In_SubscribeC2 = Out_Empty__c2_SubAck
-    lambda 8 In_UnSubScribeC2 = Out_Empty__c2_UnSubAck
-    lambda 8 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Pub_c2_my_topic_bye
-    lambda 8 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 5 In_ConnectC2 = Out_Empty__Empty
-    lambda 5 In_ConnectC1WithWill = Out_Empty__Empty
-    lambda 5 In_ConnectC1WithWillRetain = Out_Empty__Empty
-    lambda 5 In_DeleteRetainedC1 = Out_C1_PubAck__Pub_c2_my_topic
-    lambda 5 In_DeleteRetainedC2 = Out_Empty__Pub_c2_my_topic____c2_PubAck
-    lambda 5 In_SubscribeC2 = Out_Empty__c2_SubAck
-    lambda 5 In_UnSubScribeC2 = Out_Empty__c2_UnSubAck
-    lambda 5 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Pub_c2_my_topic_bye
-    lambda 5 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 7 In_ConnectC2 = Out_C1_ConnectionClosed__Empty
-    lambda 7 In_ConnectC1WithWill = Out_C1_ConnAck__Empty
-    lambda 7 In_ConnectC1WithWillRetain = Out_C1_ConnAck__Empty
-    lambda 7 In_DeleteRetainedC1 = Out_C1_ConnectionClosed__Empty
-    lambda 7 In_DeleteRetainedC2 = Out_C1_ConnectionClosed__Pub_c2_my_topic____c2_PubAck
-    lambda 7 In_SubscribeC2 = Out_C1_ConnectionClosed__c2_SubAck
-    lambda 7 In_UnSubScribeC2 = Out_C1_ConnectionClosed__c2_UnSubAck
-    lambda 7 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 7 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 12 In_ConnectC2 = Out_C1_ConnectionClosed__Empty
-    lambda 12 In_ConnectC1WithWill = Out_C1_ConnAck__Empty
-    lambda 12 In_ConnectC1WithWillRetain = Out_C1_ConnAck__Empty
-    lambda 12 In_DeleteRetainedC1 = Out_C1_ConnectionClosed__Empty
-    lambda 12 In_DeleteRetainedC2 = Out_C1_ConnectionClosed__Pub_c2_my_topic____c2_PubAck
-    lambda 12 In_SubscribeC2 = Out_C1_ConnectionClosed__c2_SubAck__Pub_c2_my_topic_bye
-    lambda 12 In_UnSubScribeC2 = Out_C1_ConnectionClosed__c2_UnSubAck
-    lambda 12 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 12 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 3 In_ConnectC2 = Out_Empty__c2_ConnAck
-    lambda 3 In_ConnectC1WithWill = Out_Empty__c2_ConnectionClosed
-    lambda 3 In_ConnectC1WithWillRetain = Out_Empty__c2_ConnectionClosed
-    lambda 3 In_DeleteRetainedC1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 3 In_DeleteRetainedC2 = Out_Empty__c2_ConnectionClosed
-    lambda 3 In_SubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 3 In_UnSubScribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 3 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 3 In_DisconnectC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 14 In_ConnectC2 = Out_C1_ConnectionClosed__c2_ConnAck
-    lambda 14 In_ConnectC1WithWill = Out_C1_ConnAck__c2_ConnectionClosed
-    lambda 14 In_ConnectC1WithWillRetain = Out_C1_ConnAck__c2_ConnectionClosed
-    lambda 14 In_DeleteRetainedC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 14 In_DeleteRetainedC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 14 In_SubscribeC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 14 In_UnSubScribeC2 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 14 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 14 In_DisconnectC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 13 In_ConnectC2 = Out_Empty__Empty
-    lambda 13 In_ConnectC1WithWill = Out_Empty__Empty
-    lambda 13 In_ConnectC1WithWillRetain = Out_Empty__Empty
-    lambda 13 In_DeleteRetainedC1 = Out_C1_PubAck__Pub_c2_my_topic
-    lambda 13 In_DeleteRetainedC2 = Out_Empty__Pub_c2_my_topic____c2_PubAck
-    lambda 13 In_SubscribeC2 = Out_Empty__c2_SubAck__Pub_c2_my_topic_bye
-    lambda 13 In_UnSubScribeC2 = Out_Empty__c2_UnSubAck
-    lambda 13 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Pub_c2_my_topic_bye
-    lambda 13 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 11 In_ConnectC2 = Out_Empty__Empty
-    lambda 11 In_ConnectC1WithWill = Out_Empty__Empty
-    lambda 11 In_ConnectC1WithWillRetain = Out_Empty__Empty
-    lambda 11 In_DeleteRetainedC1 = Out_C1_PubAck__Empty
-    lambda 11 In_DeleteRetainedC2 = Out_Empty__c2_PubAck
-    lambda 11 In_SubscribeC2 = Out_Empty__c2_SubAck__Pub_c2_my_topic_bye
-    lambda 11 In_UnSubScribeC2 = Out_Empty__c2_UnSubAck
-    lambda 11 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 11 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 16 In_ConnectC2 = Out_Empty__c2_ConnAck
-    lambda 16 In_ConnectC1WithWill = Out_Empty__c2_ConnectionClosed
-    lambda 16 In_ConnectC1WithWillRetain = Out_Empty__c2_ConnectionClosed
-    lambda 16 In_DeleteRetainedC1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 16 In_DeleteRetainedC2 = Out_Empty__c2_ConnectionClosed
-    lambda 16 In_SubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 16 In_UnSubScribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 16 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 16 In_DisconnectC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 10 In_ConnectC2 = Out_Empty__Empty
-    lambda 10 In_ConnectC1WithWill = Out_Empty__Empty
-    lambda 10 In_ConnectC1WithWillRetain = Out_Empty__Empty
-    lambda 10 In_DeleteRetainedC1 = Out_C1_PubAck__Empty
-    lambda 10 In_DeleteRetainedC2 = Out_Empty__c2_PubAck
-    lambda 10 In_SubscribeC2 = Out_Empty__c2_SubAck__Pub_c2_my_topic_bye
-    lambda 10 In_UnSubScribeC2 = Out_Empty__c2_UnSubAck
-    lambda 10 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__Empty
-    lambda 10 In_DisconnectC1 = Out_C1_ConnectionClosed__Empty
-    lambda 15 In_ConnectC2 = Out_Empty__c2_ConnAck
-    lambda 15 In_ConnectC1WithWill = Out_Empty__c2_ConnectionClosed
-    lambda 15 In_ConnectC1WithWillRetain = Out_Empty__c2_ConnectionClosed
-    lambda 15 In_DeleteRetainedC1 = Out_C1_PubAck__c2_ConnectionClosed
-    lambda 15 In_DeleteRetainedC2 = Out_Empty__c2_ConnectionClosed
-    lambda 15 In_SubscribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 15 In_UnSubScribeC2 = Out_Empty__c2_ConnectionClosed
-    lambda 15 In_DisconnectTCPC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda 15 In_DisconnectC1 = Out_C1_ConnectionClosed__c2_ConnectionClosed
-    lambda _ _ = error "haal-gen: undefined transition"
+    deltaTable =
+        "\1\2\3\0\0\0\0\0\0\
+        \\1\4\6\1\1\7\1\1\1\
+        \\4\2\2\2\2\2\2\0\0\
+        \\6\3\3\3\3\3\3\14\0\
+        \\4\4\4\4\4\5\4\1\1\
+        \\5\5\5\5\5\5\4\7\7\
+        \\6\6\6\6\6\8\6\9\1\
+        \\7\5\8\7\7\7\1\7\7\
+        \\8\8\8\8\8\8\6\12\7\
+        \\9\10\11\9\1\12\9\9\9\
+        \\10\10\10\4\4\13\10\9\9\
+        \\11\11\11\6\6\13\11\9\9\
+        \\12\13\13\12\7\12\9\12\12\
+        \\13\13\13\5\5\13\10\12\12\
+        \\9\15\16\14\14\14\14\14\14\
+        \\10\15\15\2\15\15\15\14\14\
+        \\11\16\16\3\16\16\16\14\14"
+    lambdaTable =
+        "\0\1\1\2\2\2\2\2\2\
+        \\11\12\12\11\13\14\15\11\11\
+        \\3\4\4\5\4\4\4\2\2\
+        \\3\4\4\5\4\4\4\2\2\
+        \\6\6\6\7\8\9\10\11\11\
+        \\6\6\6\17\18\9\10\19\11\
+        \\6\6\6\7\8\9\10\11\11\
+        \\11\12\12\11\20\14\15\11\11\
+        \\6\6\6\17\18\9\10\19\11\
+        \\11\12\12\11\13\16\15\11\11\
+        \\6\6\6\7\8\21\10\11\11\
+        \\6\6\6\7\8\21\10\11\11\
+        \\11\12\12\11\20\16\15\11\11\
+        \\6\6\6\17\18\21\10\19\11\
+        \\0\1\1\2\2\2\2\2\2\
+        \\3\4\4\5\4\4\4\2\2\
+        \\3\4\4\5\4\4\4\2\2"
