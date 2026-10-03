@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
-## Unreleased
+## 0.1.2.0 - 2026-10-03
 
 ### Changed
 - All models are regenerated with the table-based `haal-gen`, which builds
@@ -14,7 +14,8 @@ and this project adheres to the
   one equation per transition. Types, state numbering, and transitions are
   unchanged, and stepping a model is as fast as before. The package builds
   in about half the time at `-O1` and a third at `-O0`. This requires the
-  `haal` release that adds `mkMealyAutomatonTable`.
+  `haal` release that adds `mkMealyAutomatonTable`. Bumped dependency 
+  to `haal >= 0.6 && haal < 0.7`.
 
 ## 0.1.1.0 - 2026-04-22
 

@@ -1,5 +1,5 @@
 name:                haal-models
-version:             0.1.1.0
+version:             0.1.2.0
 github:              "steve-anunknown/haal"
 license:             BSD-3-Clause
 author:              "Stefanos Anagnostou"
@@ -103,7 +103,7 @@ library:
     - Haal.Models.TLS.RSABSAFECV4V0V4ServerRegular
   dependencies:
     - containers >= 0.6.7 && < 0.8
-    - haal >= 0.5.0.0 && < 0.6
+    - haal >= 0.6.0.0 && < 0.7
 
 benchmarks:
   haal-models-bench:
