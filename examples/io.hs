@@ -1,107 +1,61 @@
 -- we will attempt to reproduce the `div.hs` learning experiment,
 -- but this time, instead of using a haskell function as a SUL,
--- we will use an actual program that performs IO, whose input and
--- output alphabet we know.
--- the output alphabet is just bool
--- the input alphabet is binary
+-- we will use an actual program that performs IO.
+-- the program reads an integer from stdin and prints whether it is
+-- divisible by 3, so its output alphabet is just bool.
+-- the input alphabet is binary, as in `div.hs`.
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-import Data.Functor ((<&>))
-import Haal.Automaton.MealyAutomaton
-import Haal.BlackBox
-import Haal.EquivalenceOracle.WpMethod
-import Haal.Experiment
-import Haal.Learning.LMstar
+import Haal.Automaton.MealyAutomaton (MealyAutomaton)
+import Haal.BlackBox (SUL (..))
+import Haal.EquivalenceOracle.WpMethod (WpMethodConfig (..), mkWpMethod)
+import Haal.Experiment (Statistics, experiment, runExperimentT)
+import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
 import System.Process (readProcess)
 
 -- Note that this is relative to the project root. Otherwise
--- the executable will not be found
-source :: String
+-- the executable will not be found. Build it first with
+--   ghc examples/divisible3.hs
+source :: FilePath
 source = "./examples/divisible3"
-
-inputMap :: Int -> String
-inputMap num = show num ++ "\n"
-
-innerQuery :: String -> IO String
-innerQuery = readProcess source []
-
-outputMap :: String -> Bool
-outputMap = read
-
-query :: Int -> IO Bool
-query = (<&> outputMap) . innerQuery . inputMap
 
 data Binary = B0 | B1 deriving (Show, Eq, Ord, Enum, Bounded)
 
--- now we are in the position to use binary digits to construct integers.
--- we need a mapper that maps from binary digits to integers that the program can actually use
+-- the bits seen so far are read as a binary number, most significant
+-- bit first. the history is stored newest bit first, so the head of the
+-- list is the least significant bit.
+convert :: [Binary] -> Integer
+convert = foldr (\b acc -> toInteger (fromEnum b) + 2 * acc) 0
 
-convert :: (Num a) => [Binary] -> a
-convert [] = 0
-convert [B0] = 0
-convert [B1] = 1
-convert (b : bs) = convert [b] + 2 * convert bs
+-- ask the external program about the number the bits represent
+query :: [Binary] -> IO Bool
+query bits = read <$> readProcess source [] (show (convert bits) ++ "\n")
 
--- this time, in contrast to div.hs, a Program performs IO actions,
--- instead of purely returning the computes values
-data Program i o = Program
-    { theStep :: i -> IO (Program i o, o)
-    , theReset :: IO (Program i o)
-    , buffer :: [i]
-    }
+-- the program itself is stateless, so the SUL keeps the inputs it has
+-- received since the last reset and queries the program with all of them
+-- on every step.
+data Program i o = Program ([i] -> IO o) [i]
 
 instance SUL Program IO where
-    step = theStep
-    reset = theReset
+    step (Program f buf) x = do
+        let buf' = x : buf
+        o <- f buf'
+        return (Program f buf', o)
+    reset (Program f _) = return (Program f [])
 
-wrapped :: [Binary] -> IO Bool
-wrapped = query . convert
-
-mkProg :: [Binary] -> Program Binary Bool
-mkProg buf =
-    Program
-        { theStep = \x -> do
-            let newBuf = x : buf
-            o <- wrapped newBuf
-            return (mkProg newBuf, o)
-        , theReset = return (mkProg [])
-        , buffer = buf
-        }
-
--- construct a sul with an empty buffer
 sul :: Program Binary Bool
-sul = mkProg []
-
-learner :: LMstar Binary Bool
-learner = mkLMstar Star
-
-oracle :: WpMethod
-oracle = case mkWpMethod (WpMethodConfig 3) of
-    Left msg -> error msg
-    Right oracle' -> oracle'
-
-exper ::
-    ExperimentT
-        (Program Binary Bool)
-        IO
-        ( MealyAutomaton
-            Int
-            Binary
-            Bool
-        , Statistics
-            MealyAutomaton
-            Int
-            Binary
-            Bool
-        )
-exper = experiment learner oracle
+sul = Program query []
 
 main :: IO ()
 main = do
-    (theModel, theStats) <- runExperimentT exper sul
+    oracle <- either fail return (mkWpMethod (WpMethodConfig 3))
+    let learner = mkLMstar Star :: LMstar Binary Bool
+    (theModel, theStats) <-
+        runExperimentT (experiment learner oracle) sul ::
+            IO (MealyAutomaton Int Binary Bool, Statistics MealyAutomaton Int Binary Bool)
     putStrLn "Learning Experiment"
     putStrLn "==================="
-    putStrLn "System Under Learning: \\x -> x `mod` 3 == 0"
+    putStrLn "System Under Learning: ./examples/divisible3"
     putStrLn $ "Learned Model: " ++ show theModel
     putStrLn $ "Experiment Statistics: " ++ show theStats
