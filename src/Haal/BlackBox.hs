@@ -21,6 +21,7 @@ module Haal.BlackBox (
     inputs,
     outputs,
     walk,
+    query,
     stepPure,
     walkPure,
     resetPure,
