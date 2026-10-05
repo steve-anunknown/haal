@@ -78,6 +78,18 @@ walk sul (x : xs) = do
     (sul'', os) <- walk sul' xs
     pure (sul'', o : os)
 
+{- | Run a single query: reset the SUL, then feed it the inputs and collect the
+outputs. Every query the library sends to a SUL goes through this function, so
+that queries are independent of each other.
+-}
+
+{-@ query :: (SUL sul m) => sul i o -> xs:[i] -> m {ys:[o] | len ys == len xs} @-}
+query :: (SUL sul m) => sul i o -> [i] -> m [o]
+query sul xs = do
+    sul' <- reset sul
+    (_, os) <- walk sul' xs
+    pure os
+
 {-@ rangeIN :: (Enum i, Bounded i) => sul i o -> {is:[i] | len is > 0} @-}
 rangeIN :: (Finite i) => sul i o -> [i]
 rangeIN _ = minBound : [succ minBound .. maxBound]
