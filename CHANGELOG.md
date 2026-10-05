@@ -6,8 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
-## Unreleased
-- Simplified examples.
+## 0.6.1.0 - 2026-10-05
 
 ### Added
 - `Haal.BlackBox.query` runs a single query: it resets the SUL, then walks it
@@ -23,6 +22,9 @@ and this project adheres to the
   not in its initial state is fixed too.
 - The documentation of `Haal.BlackBox.FiniteOrd` said `(Ord, Bounded)` instead
   of `(Ord, Finite)`.
+
+### Changed
+- Simplified the examples.
 
 ## 0.6.0.0 - 2026-10-03
 
