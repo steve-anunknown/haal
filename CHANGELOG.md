@@ -9,6 +9,21 @@ and this project adheres to the
 ## Unreleased
 - Simplified examples.
 
+### Added
+- `Haal.BlackBox.query` runs a single query: it resets the SUL, then walks it
+  over the given inputs and returns the outputs.
+
+### Fixed
+- The SUL is now reset before every membership query and every equivalence
+  test case. Before, queries only started from the initial state because the
+  library kept returning to the same SUL value. That works for pure automata,
+  but a SUL that wraps a stateful system (a running process, a socket) was
+  queried from whatever state the previous query left it in, so learning could
+  produce wrong models or never terminate. Learning from an automaton that is
+  not in its initial state is fixed too.
+- The documentation of `Haal.BlackBox.FiniteOrd` said `(Ord, Bounded)` instead
+  of `(Ord, Finite)`.
+
 ## 0.6.0.0 - 2026-10-03
 
 ### Added

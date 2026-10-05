@@ -146,6 +146,7 @@ test-suite haal-test
       AutomatonSpec
       DotSpec
       EquivalenceOracleSpec
+      SULSpec
       Utils
       Paths_haal
   autogen-modules:
