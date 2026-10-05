@@ -130,8 +130,7 @@ initializeOT = do
         em = Set.fromList alph
         {-@ domain :: Set.Set ([i], {v:[i] | len v = 1}) @-}
         domain = (sm `Set.union` sm_I) `Set.cartesianProduct` em
-    sulR <- lift $ reset sul
-    tm <- lift $ updateMap Map.empty domain sulR
+    tm <- lift $ updateMap Map.empty domain sul
 
     return
         ( ObservationTable
@@ -325,13 +324,13 @@ makeConsistent ot ([], []) = return ot
 makeConsistent ot (symbol, column) = do
     sul <- ask
     let
-        query = symbol ++ column
+        suffix = symbol ++ column
         em = suffixSetE ot
-        em' = query `Set.insert` em
+        em' = suffix `Set.insert` em
         sm = prefixSetS ot
         sm_I = prefixSetSI ot
         tm = mappingT ot
-        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` Set.singleton query
+        missing = (sm `Set.union` sm_I) `Set.cartesianProduct` Set.singleton suffix
     tm' <- lift $ updateMap tm missing sul
     return (ObservationTable{prefixSetS = sm, suffixSetE = em', mappingT = tm', prefixSetSI = sm_I})
 
@@ -430,7 +429,7 @@ insertStep ::
     ([i], [i]) ->
     m (Map.Map ([i], [i]) [o])
 insertStep thesul acc (a, b) = do
-    (_, outs) <- walk thesul (a ++ b)
+    outs <- query thesul (a ++ b)
     -- the table is prefix closed, so no need to store
     -- the whole length of outs, just the output that corresponds
     -- to the suffix
