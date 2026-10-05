@@ -144,7 +144,11 @@ experiment learner oracle = do
                     inner refinedLearner oracle' stats'
     inner initializedLearner oracle mkStats
 
--- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
+{- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
+Every test case is run from the initial state of both the SUL and the automaton. It returns
+the first test case on which they disagree, together with the outputs of the SUL, or a pair
+of empty lists if they agree on every test case.
+-}
 execute ::
     ( SUL sul m
     , Automaton aut s
@@ -157,32 +161,10 @@ execute ::
     m ([i], [o])
 execute _ _ [] = return ([], [])
 execute theSul theAut (s : ss) = do
-    continue <- pairwiseWalk theSul theAut s
-    if continue
+    out <- query theSul s
+    if out == runIdentity (query theAut s)
         then execute theSul theAut ss
-        else do
-            (_, out) <- walk theSul s
-            return (s, out)
-
-{- | The 'pairwiseWalk' function executes a test case on both the SUL and the automaton
-simultaneously, checking if the outputs are the same.
--}
-pairwiseWalk ::
-    ( SUL sul m
-    , Automaton aut s
-    , Ord i
-    , Eq o
-    ) =>
-    sul i o ->
-    aut s i o ->
-    [i] ->
-    m Bool
-pairwiseWalk _ _ [] = return True
-pairwiseWalk theSul theAut (s : ss) = do
-    (sul', out1) <- step theSul s
-    let (aut', out2) = runIdentity (step theAut s)
-    rest <- pairwiseWalk sul' aut' ss
-    return $ out1 == out2 && rest
+        else return (s, out)
 
 {- | The 'findCex' function executes the test suite of each oracle to the automaton
 and SUL.
