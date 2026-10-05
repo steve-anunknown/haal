@@ -40,9 +40,20 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
-It provides methods to step through the automaton and retrieve the current state.
+It provides methods to step through the automaton and reset it to its initial state.
 It also requires a monad m, that may be 'Identity' in case of a pure SUL, or 'IO'
 in case of an external program that performs IO.
+
+Active automata learning requires queries to be independent, so the library
+calls 'reset' before every membership query and every equivalence test case
+(see 'query'). 'reset' must therefore bring the system back to its initial
+state, and the library always continues with the value that 'reset' and 'step'
+return. This supports two kinds of SULs:
+
+* persistent ones, such as pure automata, where 'step' returns a new value and
+  leaves the old one unchanged;
+* stateful ones, such as a driver for a running process or a socket, where
+  'step' and 'reset' change the external system and may return the same handle.
 -}
 class (Monad m) => SUL sul m where
     step :: sul i o -> i -> m (sul i o, o)
