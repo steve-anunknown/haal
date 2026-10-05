@@ -65,7 +65,7 @@ type Finite i = (Enum i, Bounded i)
 -- | FiniteEq is an alias for (Eq, Finite).
 type FiniteEq i = (Eq i, Finite i)
 
--- | FiniteOrd is an alias for (Ord, Bounded).
+-- | FiniteOrd is an alias for (Ord, Finite).
 type FiniteOrd i = (Ord i, Finite i)
 
 -- | Generalization of 'step' that operates on a list of inputs.
