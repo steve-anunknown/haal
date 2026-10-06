@@ -21,7 +21,6 @@ module Haal.BlackBox (
     inputs,
     outputs,
     walk,
-    query,
     stepPure,
     walkPure,
     resetPure,
@@ -59,6 +58,16 @@ return. This supports two kinds of SULs:
 class (Monad m) => SUL sul m where
     step :: sul i o -> i -> m (sul i o, o)
     reset :: sul i o -> m (sul i o)
+    {-# MINIMAL step, reset #-}
+
+    -- | Run a single query: reset the SUL, then feed it the inputs and collect the
+    --     outputs. Every query the library sends to a SUL goes through this function, so
+    --     that queries are independent of each other.
+    query :: sul i o -> [i] -> m [o]
+    query sul is = do
+        sul' <- reset sul
+        (_, os) <- walk sul' is
+        pure os
 
 -- | Finite is an alias for (Enum, Bounded).
 type Finite i = (Enum i, Bounded i)
@@ -78,18 +87,6 @@ walk sul (x : xs) = do
     (sul', o) <- step sul x
     (sul'', os) <- walk sul' xs
     pure (sul'', o : os)
-
-{- | Run a single query: reset the SUL, then feed it the inputs and collect the
-outputs. Every query the library sends to a SUL goes through this function, so
-that queries are independent of each other.
--}
-
-{-@ query :: (SUL sul m) => sul i o -> xs:[i] -> m {ys:[o] | len ys == len xs} @-}
-query :: (SUL sul m) => sul i o -> [i] -> m [o]
-query sul xs = do
-    sul' <- reset sul
-    (_, os) <- walk sul' xs
-    pure os
 
 {-@ rangeIN :: (Enum i, Bounded i) => sul i o -> {is:[i] | len is > 0} @-}
 rangeIN :: (Finite i) => sul i o -> [i]
