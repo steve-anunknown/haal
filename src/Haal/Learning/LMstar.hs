@@ -429,7 +429,7 @@ insertStep ::
     ([i], [i]) ->
     m (Map.Map ([i], [i]) [o])
 insertStep thesul acc (a, b) = do
-    outs <- query thesul (a ++ b)
+    outs <- queryChecked thesul (a ++ b)
     -- the table is prefix closed, so no need to store
     -- the whole length of outs, just the output that corresponds
     -- to the suffix
