@@ -11,11 +11,11 @@ module Haal.Experiment (
     ExperimentT,
     Learner (..),
     EquivalenceOracle (..),
-    Statistics (..),
     experiment,
     findCex,
     runExperiment,
     runExperimentT,
+    experimentWith,
 ) where
 
 import Control.Monad.Reader (
@@ -28,6 +28,7 @@ import Control.Monad.Reader (
 
 import Control.Monad.Identity
 import Haal.BlackBox
+import Haal.Statistics (Hook (onCounterexample, onHypothesis, onPhase), Phase (Learning, Testing), noHooks)
 
 {- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
 Instances of this class should provide methods to generate a test suite
@@ -96,53 +97,55 @@ It is just an alias for 'runReader'.
 runExperiment :: Reader r a -> r -> a
 runExperiment = runReader
 
-{- | The 'Statistics' data type is parameterized by the type of model being learned
-and the state, input and output types of the model. Its purpose is to keep track of
-different experimental stats. For the time being, only the number of rounds 'statsRounds',
-the counterexamples 'statsCexs' and the intermediate hypotheses 'statsHyps' are being kept
-track of.
--}
-data Statistics aut s i o = Statistics
-    { statsRounds :: Int
-    , statsCexs :: [[i]]
-    , statsHyps :: [aut s i o]
-    }
-    deriving (Show)
-
--- | Empty 'Statistics' value.
-mkStats :: Statistics aut s i o
-mkStats = Statistics 0 [] []
+experimentWith ::
+    ( EquivalenceOracle t
+    , Learner l aut
+    , Bounded o
+    , Bounded i
+    , Enum o
+    , Enum i
+    , Ord o
+    , Ord i
+    , Automaton aut Int
+    , SUL sul m
+    ) =>
+    Hook m aut i o ->
+    l i o ->
+    t ->
+    ExperimentT (sul i o) m (aut Int i o)
+experimentWith hooks learner oracle = do
+    lift (onPhase hooks Learning)
+    initializedLearner <- initialize learner
+    let inner le orc = do
+            (learner', aut) <- learn le
+            lift (onHypothesis hooks aut)
+            lift (onPhase hooks Testing)
+            (oracle', cex) <- findCex orc aut
+            case cex of
+                ([], []) -> return aut
+                (ce, _) -> do
+                    lift (onCounterexample hooks ce)
+                    lift (onPhase hooks Learning)
+                    refinedLearner <- refine learner' ce
+                    inner refinedLearner oracle'
+    inner initializedLearner oracle
 
 {- | The 'experiment' function returns an 'Experiment' that can be run with
 the 'runExperiment' function. It takes a learner and an equivalence oracle
 and then requires a system under learning (SUL) to run the experiment.
 -}
 experiment ::
-    ( SUL sul m
-    , Automaton aut Int
-    , Learner learner aut
-    , EquivalenceOracle oracle
-    , FiniteOrd i
+    ( EquivalenceOracle t
+    , Learner l aut
     , FiniteOrd o
+    , FiniteOrd i
+    , Automaton aut Int
+    , SUL sul m
     ) =>
-    learner i o ->
-    oracle ->
-    ExperimentT (sul i o) m (aut Int i o, Statistics aut Int i o)
-experiment learner oracle = do
-    initializedLearner <- initialize learner
-    let inner le orc stats = do
-            (learner', aut) <- learn le
-            (oracle', cex) <- findCex orc aut
-            case cex of
-                ([], []) -> return (aut, stats)
-                (ce, _) -> do
-                    refinedLearner <- refine learner' ce
-                    let rounds = statsRounds stats
-                        cexs = statsCexs stats
-                        hyps = statsHyps stats
-                        stats' = Statistics (rounds + 1) (ce : cexs) (aut : hyps)
-                    inner refinedLearner oracle' stats'
-    inner initializedLearner oracle mkStats
+    l i o ->
+    t ->
+    ExperimentT (sul i o) m (aut Int i o)
+experiment = experimentWith noHooks
 
 {- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
 Every test case is run from the initial state of both the SUL and the automaton. It returns
@@ -161,7 +164,7 @@ execute ::
     m ([i], [o])
 execute _ _ [] = return ([], [])
 execute theSul theAut (s : ss) = do
-    out <- query theSul s
+    out <- queryChecked theSul s
     if out == runIdentity (query theAut s)
         then execute theSul theAut ss
         else return (s, out)
