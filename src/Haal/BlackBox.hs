@@ -21,6 +21,7 @@ module Haal.BlackBox (
     inputs,
     outputs,
     walk,
+    queryChecked,
     stepPure,
     walkPure,
     resetPure,
@@ -33,6 +34,7 @@ module Haal.BlackBox (
 )
 where
 
+import Control.Exception (ErrorCall (..), throw)
 import Control.Monad.Identity (Identity, runIdentity)
 import qualified Data.Bifunctor as Bif
 import qualified Data.List as List
@@ -61,13 +63,49 @@ class (Monad m) => SUL sul m where
     {-# MINIMAL step, reset #-}
 
     -- | Run a single query: reset the SUL, then feed it the inputs and collect the
-    --     outputs. Every query the library sends to a SUL goes through this function, so
+    --     outputs. Every query the library sends to a SUL goes through this method, so
     --     that queries are independent of each other.
+    --
+    --     Override it when a SUL can answer a whole query more efficiently than step by
+    --     step, e.g. by sending the whole word in one message. An override must:
+    --
+    --     * start from the initial state, like 'reset' does;
+    --     * return exactly one output per input;
+    --     * agree with 'reset' followed by 'walk'.
+    --
+    --     The library checks the number of outputs at runtime (see 'queryChecked').
     query :: sul i o -> [i] -> m [o]
     query sul is = do
         sul' <- reset sul
         (_, os) <- walk sul' is
         pure os
+
+{- | 'query', checking that the SUL returned exactly one output per input.
+A 'SUL' instance may override 'query', and the learners rely on this property,
+so they query through this function. A violation is a bug in the instance and
+fails with an error naming the expected and actual number of outputs.
+-}
+
+{-@ queryChecked :: (SUL sul m) => sul i o -> xs:[i] -> m {ys:[o] | len ys == len xs} @-}
+queryChecked :: (SUL sul m) => sul i o -> [i] -> m [o]
+queryChecked sul xs = do
+    os <- query sul xs
+    if length os == length xs
+        then pure os
+        else contractViolation (length xs) (length os)
+
+{- | Fail because a 'query' override broke its contract. Unlike an @impossible@
+error, this one is reachable. LiquidHaskell gives 'error' a @false@ precondition,
+so this throws an 'ErrorCall' directly instead, which behaves the same at runtime.
+-}
+contractViolation :: Int -> Int -> a
+contractViolation expected actual =
+    throw . ErrorCall $
+        "Haal.BlackBox.queryChecked: the SUL returned "
+            ++ show actual
+            ++ " outputs for a query of "
+            ++ show expected
+            ++ " inputs; an overridden 'query' must return one output per input"
 
 -- | Finite is an alias for (Enum, Bounded).
 type Finite i = (Enum i, Bounded i)
