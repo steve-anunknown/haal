@@ -12,15 +12,19 @@ module SULSpec (
     spec,
 ) where
 
+import Control.Exception (ErrorCall (..), evaluate)
+import Control.Monad.Identity (Identity)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Haal.Automaton.MealyAutomaton (MealyAutomaton)
+import qualified Data.List as List
+import qualified Data.Set as Set
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
 import Haal.BlackBox
 import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod)
 import Haal.Experiment (experiment, runExperiment, runExperimentT)
 import Haal.Learning.LMstar (LMstarConfig (..), mkLMstar)
-import Test.Hspec (Spec, describe, it)
+import Test.Hspec (Spec, describe, it, shouldThrow)
 import Test.QuickCheck (Property, ioProperty, property, within, (===))
-import Utils (Input, Mealy (..), Output)
+import Utils (Input (..), Mealy (..), Output (..))
 
 {- | A SUL that wraps a stateful system. The automaton lives behind an 'IORef',
 so 'step' and 'reset' mutate it and hand back the same handle, just like a
@@ -80,8 +84,50 @@ prop_currentStateIrrelevant cfg (Mealy aut) =
     terminates $
         learnPure cfg aut === learnPure cfg (resetPure aut)
 
+{- | A pure SUL that overrides 'query'. With @Correct@ the override computes the
+same outputs as the default; with @DropsOutput@ it loses the last output,
+breaking the contract of 'query'.
+-}
+data Override = Correct | DropsOutput
+
+data OverridingSUL i o = OverridingSUL Override (MealyAutomaton Int i o)
+
+instance SUL OverridingSUL Identity where
+    step (OverridingSUL ov aut) i =
+        let (aut', o) = stepPure aut i
+         in return (OverridingSUL ov aut', o)
+    reset (OverridingSUL ov aut) = return (OverridingSUL ov (resetPure aut))
+    query (OverridingSUL ov aut) xs =
+        let os = snd (walkPure (resetPure aut) xs)
+         in return $ case ov of
+                Correct -> os
+                DropsOutput -> List.take (length os - 1) os
+
+-- | A small fixed automaton: it counts @A@s modulo 3 and outputs the count.
+counter :: Model
+counter = mkMealyAutomaton delta lambda (Set.fromList [0, 1, 2]) 0
+  where
+    delta s A = (s + 1) `mod` 3
+    delta s _ = s
+    lambda s A = [X, Y, Z] !! ((s + 1) `mod` 3)
+    lambda _ _ = W
+
+learnOverriding :: Override -> Model -> Model
+learnOverriding ov aut =
+    fst (runExperiment (experiment (mkLMstar Star) oracle) (OverridingSUL ov aut))
+
+isContractViolation :: ErrorCall -> Bool
+isContractViolation (ErrorCall msg) = "one output per input" `List.isInfixOf` msg
+
 spec :: Spec
 spec = do
+    describe "Overriding query" $ do
+        it "a correct override learns the same model as the default" $
+            learnOverriding Correct counter == learnPure Star counter
+        it "an override returning too few outputs fails with a clear error" $
+            evaluate (length (show (learnOverriding DropsOutput counter)))
+                `shouldThrow` isContractViolation
+
     describe "Learning through a stateful SUL" $ do
         it "LM* learns the same model as through a pure SUL" $
             property (prop_statefulMatchesPure Star)
