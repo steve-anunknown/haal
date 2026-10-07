@@ -29,8 +29,8 @@ convert :: [Binary] -> Integer
 convert = foldr (\b acc -> toInteger (fromEnum b) + 2 * acc) 0
 
 -- ask the external program about the number the bits represent
-query :: [Binary] -> IO Bool
-query bits = read <$> readProcess source [] (show (convert bits) ++ "\n")
+askProgram :: [Binary] -> IO Bool
+askProgram bits = read <$> readProcess source [] (show (convert bits) ++ "\n")
 
 -- the program itself is stateless, so the SUL keeps the inputs it has
 -- received since the last reset and queries the program with all of them
@@ -45,7 +45,7 @@ instance SUL Program IO where
     reset (Program f _) = return (Program f [])
 
 sul :: Program Binary Bool
-sul = Program query []
+sul = Program askProgram []
 
 main :: IO ()
 main = do
