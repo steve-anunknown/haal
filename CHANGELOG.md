@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## Unreleased
+
+### Removed
+- `Haal.Automaton.MooreAutomaton` and `Haal.Automaton.DFA`. No learning
+  algorithm in haal produces or uses Moore machines or DFAs, so supporting
+  these types on their own was not useful, and their semantics had a known
+  quirk (a step emitted the output of the state it left, not the one it
+  reached). Support for more kinds of automata will come back properly in a
+  future release, together with learning algorithms for them. To learn a DFA
+  today, encode it as a Mealy machine with `Bool` outputs, where the output of
+  a transition says whether the state it reaches is accepting.
+
 ## 0.6.1.1 - 2026-10-09
 
 ### Fixed
