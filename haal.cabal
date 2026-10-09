@@ -33,9 +33,7 @@ flag liquid
 
 library
   exposed-modules:
-      Haal.Automaton.DFA
       Haal.Automaton.MealyAutomaton
-      Haal.Automaton.MooreAutomaton
       Haal.BlackBox
       Haal.Dot
       Haal.EquivalenceOracle.CombinedOracle
@@ -45,6 +43,7 @@ library
       Haal.EquivalenceOracle.WpMethod
       Haal.Experiment
       Haal.Learning.LMstar
+      Haal.Statistics
   other-modules:
       Paths_haal
   autogen-modules:
@@ -146,6 +145,7 @@ test-suite haal-test
       AutomatonSpec
       DotSpec
       EquivalenceOracleSpec
+      StatisticsSpec
       SULSpec
       Utils
       Paths_haal
