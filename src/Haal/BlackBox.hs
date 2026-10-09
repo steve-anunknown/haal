@@ -7,6 +7,7 @@
 {-# OPTIONS_GHC -fplugin=LiquidHaskell
                 -fplugin-opt=LiquidHaskell:--prune-unsorted
                 -fplugin-opt=LiquidHaskell:--no-termination #-}
+{- HLINT ignore "Use error" -}
 #endif
 
 {- | This module defines the BlackBox type class as well as the Automaton and SUL
@@ -96,7 +97,7 @@ queryChecked sul xs = do
 
 {- | Fail because a 'query' override broke its contract. Unlike an @impossible@
 error, this one is reachable. LiquidHaskell gives 'error' a @false@ precondition,
-so this throws an 'ErrorCall' directly instead, which behaves the same at runtime.
+so this throws an t'ErrorCall' directly instead, which behaves the same at runtime.
 -}
 contractViolation :: Int -> Int -> a
 contractViolation expected actual =

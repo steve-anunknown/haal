@@ -14,7 +14,6 @@ module Haal.Automaton.MealyAutomaton (
 )
 where
 
-import Control.Monad.Identity (Identity)
 import Data.Char (ord)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -150,7 +149,12 @@ mealyStep m i = (m{mealyCurrentS = nextState}, output)
 mealyReset :: MealyAutomaton s i o -> MealyAutomaton s i o
 mealyReset m = m{mealyCurrentS = mealyInitialS m}
 
-instance SUL (MealyAutomaton s) Identity where
+{- | An automaton is a SUL in any monad. Stepping it is pure, so it never uses
+the monad; this lets the automaton be learned inside whatever monad the
+experiment runs in, e.g. a 'Control.Monad.State.StateT' holding user-defined
+statistics.
+-}
+instance (Monad m) => SUL (MealyAutomaton s) m where
     step sul i = return (mealyStep sul i)
     reset = return . mealyReset
 

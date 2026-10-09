@@ -57,13 +57,13 @@ oracle = either error id (mkWpMethod (WpMethodConfig 1))
 
 -- | Learn an automaton purely, using the automaton itself as the SUL.
 learnPure :: LMstarConfig -> Model -> Model
-learnPure cfg aut = fst (runExperiment (experiment (mkLMstar cfg) oracle) aut)
+learnPure cfg aut = runExperiment (experiment (mkLMstar cfg) oracle) aut
 
 -- | Learn an automaton through a 'RefSUL' wrapping it.
 learnRef :: LMstarConfig -> Model -> IO Model
 learnRef cfg aut = do
     ref <- newIORef aut
-    fst <$> runExperimentT (experiment (mkLMstar cfg) oracle) (RefSUL ref)
+    runExperimentT (experiment (mkLMstar cfg) oracle) (RefSUL ref)
 
 {- | A stateful SUL must learn the same model as its pure counterpart. Both
 runs ask the same queries, so the answers, and the models, can only differ if
@@ -114,7 +114,7 @@ counter = mkMealyAutomaton delta lambda (Set.fromList [0, 1, 2]) 0
 
 learnOverriding :: Override -> Model -> Model
 learnOverriding ov aut =
-    fst (runExperiment (experiment (mkLMstar Star) oracle) (OverridingSUL ov aut))
+    runExperiment (experiment (mkLMstar Star) oracle) (OverridingSUL ov aut)
 
 isContractViolation :: ErrorCall -> Bool
 isContractViolation (ErrorCall msg) = "one output per input" `List.isInfixOf` msg
