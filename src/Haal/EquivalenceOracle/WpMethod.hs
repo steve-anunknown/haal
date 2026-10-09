@@ -53,17 +53,18 @@ wpmethodSuiteSize (WpMethod (WpMethodConfig d)) aut = firstPhaseSize + secondPha
     stateCover = accessSequences aut
     localSufSizes =
         Map.fromAscList
-            [ (st, Set.size (localCharacterizingSet aut st))
+            [ (st, Set.size (testSuffixes (localCharacterizingSet aut st)))
             | st <- Set.toAscList (states aut)
             ]
-    globalSufSize = Set.size (globalCharacterizingSet aut)
+    globalSufSize = Set.size (testSuffixes (globalCharacterizingSet aut))
     transitionCover =
         Set.fromList
             [ acc ++ [a]
             | acc <- Map.elems stateCover
             , a <- alphabetList
             ]
-    difference = Set.fromList (Map.elems stateCover) `Set.difference` transitionCover
+    -- the transitions that do not already lead to a state of the state cover
+    difference = transitionCover `Set.difference` Set.fromList (Map.elems stateCover)
 
     -- Closed form: |S| * |W| * (1 + |Σ| + ... + |Σ|^d)
     firstPhaseSize =
@@ -98,18 +99,19 @@ wpmethodSuite wpm@(WpMethod (WpMethodConfig d)) aut = (wpm, suite)
     stateCover = accessSequences aut
     localSuf =
         Map.fromAscList
-            [ (st, localCharacterizingSet aut st) | st <- Set.toAscList $ states aut
+            [ (st, testSuffixes (localCharacterizingSet aut st)) | st <- Set.toAscList $ states aut
             ]
-    globalSuf = globalCharacterizingSet aut
+    globalSuf = testSuffixes (globalCharacterizingSet aut)
 
     transitionCover =
         [ acc ++ [a]
         | acc <- Map.elems stateCover
         , a <- Set.toList alphabet
         ]
+    -- the transitions that do not already lead to a state of the state cover
     difference =
-        Set.fromList (Map.elems stateCover)
-            `Set.difference` Set.fromList transitionCover
+        Set.fromList transitionCover
+            `Set.difference` Set.fromList (Map.elems stateCover)
 
     firstPhase =
         concat
@@ -187,9 +189,9 @@ randomWpMethodSuite
         prefixes = accessSequences aut
         localSuf =
             Map.fromAscList
-                [ (st, localCharacterizingSet aut st) | st <- Set.toAscList $ states aut
+                [ (st, testSuffixes (localCharacterizingSet aut st)) | st <- Set.toAscList $ states aut
                 ]
-        globalSuf = globalCharacterizingSet aut
+        globalSuf = testSuffixes (globalCharacterizingSet aut)
 
         (suite, genfinal) = runState (replicateM lim genTestCase) g
 
@@ -229,3 +231,15 @@ instance EquivalenceOracle WpMethod where
 
 instance EquivalenceOracle RandomWpMethod where
     testSuite = randomWpMethodSuite
+
+{- | The suffixes that test words end with: the given characterizing set, or
+just the empty word when that set is empty. A hypothesis with a single state
+has an empty characterizing set (there is nothing to distinguish), and without
+the empty word it would get no test words at all, so it would be accepted
+without any testing. Ending a test word with the empty word still checks the
+outputs along the rest of the word.
+-}
+testSuffixes :: Set.Set [i] -> Set.Set [i]
+testSuffixes w
+    | Set.null w = Set.singleton []
+    | otherwise = w

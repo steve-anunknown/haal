@@ -3,9 +3,26 @@ module EquivalenceOracleSpec (
 ) where
 
 import Control.Monad.Reader
-import Haal.EquivalenceOracle.WMethod (wmethodSuiteSize)
+import qualified Data.Set as Set
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.BlackBox (states)
+import Haal.EquivalenceOracle.WMethod (
+    RandomWMethodConfig (..),
+    WMethodConfig (..),
+    mkRandomWMethod,
+    mkWMethod,
+    wmethodSuiteSize,
+ )
+import Haal.EquivalenceOracle.WpMethod (
+    RandomWpMethodConfig (..),
+    WpMethodConfig (..),
+    mkRandomWpMethod,
+    mkWpMethod,
+ )
 import Haal.Experiment
-import Test.Hspec (Spec, context, describe, it)
+import Haal.Learning.LMstar (LMstarConfig (..), mkLMstar)
+import System.Random (mkStdGen)
+import Test.Hspec (Spec, context, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
 import Test.QuickCheck (Property, property, (==>))
 import Utils
 
@@ -22,8 +39,56 @@ prop_WMethodCardinality :: ArbWMethod -> Mealy Input Output -> Bool
 prop_WMethodCardinality (ArbWMethod wm) (Mealy aut) =
     length (snd (testSuite wm aut)) == wmethodSuiteSize wm aut
 
+{- | A counter modulo 5 that outputs 'Y' when input 'A' makes it wrap around and
+'X' otherwise; every other input resets it. No single input tells its states
+apart, so the first hypothesis of LM* has one state.
+-}
+counter :: MealyAutomaton Int Input Output
+counter = mkMealyAutomaton delta lambda (Set.fromList [0 .. 4]) 0
+  where
+    delta s A = (s + 1) `mod` 5
+    delta _ _ = 0
+    lambda 4 A = Y
+    lambda _ _ = X
+
+-- | A hypothesis with a single state, which always outputs 'X'.
+oneState :: MealyAutomaton Int Input Output
+oneState = mkMealyAutomaton (\_ _ -> 0) (\_ _ -> X) (Set.fromList [0]) 0
+
+-- | The test suite an oracle generates for the one-state hypothesis.
+suiteForOneState :: (EquivalenceOracle oracle) => Either String oracle -> [[Input]]
+suiteForOneState = either error (\o -> snd (testSuite o oneState))
+
+-- | The counterexample an oracle finds for the one-state hypothesis of 'counter'.
+cexForOneState :: (EquivalenceOracle oracle) => Either String oracle -> [Input]
+cexForOneState = either error (\o -> fst (snd (runReader (findCex o oneState) counter)))
+
 spec :: Spec
 spec = do
+    describe "A hypothesis with a single state" $ do
+        -- Its characterizing set is empty. The oracles used to build no test
+        -- words from it (W, Wp) or crash on it (random Wp).
+        it "gets a non-empty W-method test suite" $
+            suiteForOneState (mkWMethod (WMethodConfig 1)) `shouldNotBe` []
+        it "gets a non-empty Wp-method test suite" $
+            suiteForOneState (mkWpMethod (WpMethodConfig 1)) `shouldNotBe` []
+        -- Summing the lengths generates every test word, which is where the
+        -- random Wp-method crashed.
+        it "gets a non-empty random W-method test suite" $
+            sum (map length (suiteForOneState (mkRandomWMethod (RandomWMethodConfig (mkStdGen 1) 20 6))))
+                `shouldSatisfy` (> 0)
+        it "gets a non-empty random Wp-method test suite" $
+            sum (map length (suiteForOneState (mkRandomWpMethod (RandomWpMethodConfig (mkStdGen 1) 4 3 20))))
+                `shouldSatisfy` (> 0)
+        it "is refuted by the W-method with enough extra states" $
+            cexForOneState (mkWMethod (WMethodConfig 4)) `shouldNotBe` []
+        it "is refuted by the Wp-method with enough extra states" $
+            cexForOneState (mkWpMethod (WpMethodConfig 4)) `shouldNotBe` []
+        it "does not stop LM* from learning all states of the counter" $ do
+            let oracle = either error id (mkWMethod (WMethodConfig 4))
+                model = fst (runExperiment (experiment (mkLMstar Star) oracle) counter)
+            Set.size (states model) `shouldBe` 5
+
     describe "WMethod Equivalence Oracle" $ do
         context "when two automatons differ" $
             it "WMethod returns Just" $

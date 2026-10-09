@@ -50,7 +50,7 @@ wmethodSuiteSize (WMethod (WMethodConfig d)) aut = size
   where
     alphabet = Set.size $ inputs aut
     accessSeqs = Map.size $ accessSequences aut
-    characterizingSet = Set.size $ globalCharacterizingSet aut
+    characterizingSet = Set.size $ testSuffixes (globalCharacterizingSet aut)
     transitionCover = accessSeqs * alphabet
     size = sum [transitionCover * (alphabet ^ n) * characterizingSet | n <- [0 .. d]]
 
@@ -68,7 +68,7 @@ wmethodSuite wm@(WMethod (WMethodConfig d)) aut = (wm, suite)
   where
     alphabet = Set.toList $ inputs aut
     accessSeqs = accessSequences aut
-    characterizingSet = Set.toList $ globalCharacterizingSet aut
+    characterizingSet = Set.toList $ testSuffixes (globalCharacterizingSet aut)
     transitionCover = [a ++ [inp] | a <- Map.elems accessSeqs, inp <- alphabet]
     middlesByDepth = [replicateM n alphabet | n <- [0 .. d]]
     suite =
@@ -114,7 +114,7 @@ randomWMethodSuite ::
     (RandomWMethod, [[i]])
 randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
     let prefixes = Map.elems $ accessSequences aut
-        suffixes = Set.toList $ globalCharacterizingSet aut
+        suffixes = Set.toList $ testSuffixes (globalCharacterizingSet aut)
         alphaVec = Vec.fromList . Set.toList $ inputs aut
         genWord =
             if wl == 0
@@ -134,3 +134,15 @@ randomWMethodSuite (RandomWMethod (RandomWMethodConfig g wpr wl)) aut =
 
 instance EquivalenceOracle RandomWMethod where
     testSuite = randomWMethodSuite
+
+{- | The suffixes that test words end with: the given characterizing set, or
+just the empty word when that set is empty. A hypothesis with a single state
+has an empty characterizing set (there is nothing to distinguish), and without
+the empty word it would get no test words at all, so it would be accepted
+without any testing. Ending a test word with the empty word still checks the
+outputs along the rest of the word.
+-}
+testSuffixes :: Set.Set [i] -> Set.Set [i]
+testSuffixes w
+    | Set.null w = Set.singleton []
+    | otherwise = w
