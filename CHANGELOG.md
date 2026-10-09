@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## 0.6.1.1 - 2026-10-09
+
+### Fixed
+- The W-method and the Wp-method (and their random variants) did not test a
+  hypothesis with a single state. Such a hypothesis has an empty characterizing
+  set, so the W-method and the Wp-method generated no test words at all and
+  accepted it without testing, at any depth, and the random Wp-method crashed
+  with `Set.elemAt: index out of range`. This happens whenever no single input
+  distinguishes the states of the SUL, so learning stopped after the first
+  hypothesis with a wrong one-state model. Test words now end with the empty
+  word when the characterizing set is empty, which still checks the outputs
+  along the rest of the word.
+- The second phase of the Wp-method started from the wrong prefixes: the state
+  cover without the transition cover instead of the transition cover without
+  the state cover. Depth `k` therefore only accounted for about `k - 1` extra
+  states. Learned models can now be correct at a lower depth: on four
+  `haal-models` protocol models, depth 1 now learns three of them correctly
+  (before: none) and depth 2 all four (before: three).
+
 ## 0.6.1.0 - 2026-10-05
 
 ### Added
