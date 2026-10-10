@@ -5,6 +5,7 @@ import Haal.Automaton.MealyAutomaton
 import Haal.EquivalenceOracle.WMethod
 import Haal.Experiment
 import Haal.Learning.LMstar
+import Haal.Statistics (statistics)
 
 -- Define input, output, and state types
 data Input = A | B deriving (Show, Eq, Ord, Enum, Bounded)
@@ -23,7 +24,7 @@ oracle = case mkWMethod (WMethodConfig 2) of
     Right oracle' -> oracle'
 
 -- Set up the experiment.
-myexperiment = experiment learner oracle
+myexperiment = measuredExperiment statistics learner oracle
 
 -- Define the Mealy system under learning. Remember that automata can act as suls.
 mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
