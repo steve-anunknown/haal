@@ -32,6 +32,7 @@ module Haal.BlackBox (
     localCharacterizingSet,
     globalCharacterizingSet,
     reachable,
+    difference,
 )
 where
 
@@ -40,6 +41,7 @@ import Control.Monad.Identity (Identity, runIdentity)
 import qualified Data.Bifunctor as Bif
 import qualified Data.List as List
 import qualified Data.Map as Map
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 
 {- | The 'SUL' type class defines the basic interface for a black box automaton.
@@ -223,39 +225,35 @@ accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singl
         newVisited = foldr (Set.insert . fst) visited successors
         newQueue = successors
 
-{- | Returns an input sequence that distinguishes the given states in
-the given automaton.
--}
-distinguish ::
-    ( Automaton aut s
-    , FiniteOrd i
-    , Ord s
+differenceFrom ::
+    ( FiniteOrd i
+    , FiniteOrd s
+    , FiniteOrd s'
     , Eq o
+    , Automaton aut1 s
+    , Automaton aut2 s'
     ) =>
-    aut s i o ->
+    aut1 s i o ->
     s ->
-    s ->
-    [i]
-{-@ distinguish :: (Automaton aut s, FiniteOrd i, Ord s, Eq o) =>
-      aut s i o ->
-      s1:s ->
-      s2:s ->
-      {is:[i] | s1 == s2 ==> len is = 0}
-@-}
-distinguish _ s1 s2 | s1 == s2 = [] -- short circuit the computation
-distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
+    aut2 s' i o ->
+    s' ->
+    Maybe [i]
+differenceFrom aut1 s1 aut2 s2 = explore Map.empty [(s1, s2, [])]
   where
-    alphabet = Set.toList (inputs m)
+    alphabet = Set.toList (inputs aut1)
+    stepAndCurrent mo i = Bif.first current (stepPure mo i)
 
-    explore _ [] = []
-    explore visited ((q1, q2, prefix) : queue)
-        | Just symbol <- discrepancy = reverse (symbol : prefix)
-        | otherwise = explore newVisited (queue ++ newQueue)
+    explore _ [] = Nothing
+    explore visited ((q1, q2, prefix) : queue) =
+        if (q1, q2) `Map.member` visited
+            then explore visited queue
+            else case discrepancy of
+                Just symbol -> Just $ reverse (symbol : prefix)
+                Nothing -> explore newVisited (queue ++ newQueue)
       where
         newVisited = Map.insert (q1, q2) prefix visited
-        mo1 = update m q1
-        mo2 = update m q2
-
+        mo1 = update aut1 q1
+        mo2 = update aut2 q2
         (nextStates1, outputs1) = unzip $ map (stepAndCurrent mo1) alphabet
         (nextStates2, outputs2) = unzip $ map (stepAndCurrent mo2) alphabet
 
@@ -264,10 +262,46 @@ distinguish m s1 s2 = explore Map.empty [(s1, s2, [])]
         appended = map (: prefix) alphabet
 
         toBeVisited = Map.fromList $ zip (zip nextStates1 nextStates2) appended
-
         newQueue = [(s1', s2', p) | ((s1', s2'), p) <- Map.toList toBeVisited, (s1', s2') `Map.notMember` visited]
 
-    stepAndCurrent mo i = Bif.first current (stepPure mo i)
+{- | Finds a distinguishing sequence between two automata starting from their
+ - initial states.
+-}
+difference ::
+    ( FiniteOrd i
+    , FiniteOrd s
+    , FiniteOrd s'
+    , Eq o
+    , Automaton aut1 s
+    , Automaton aut2 s'
+    ) =>
+    aut1 s i o ->
+    aut2 s' i o ->
+    Maybe [i]
+difference aut1 aut2 = differenceFrom aut1 (initial aut1) aut2 (initial aut2)
+
+{- | Returns an input sequence that distinguishes the given states in
+the given automaton.
+-}
+
+{-@ distinguish :: (Automaton aut s, FiniteOrd i, Ord s, Eq o) =>
+      aut s i o ->
+      s1:s ->
+      s2:s ->
+      {is:[i] | s1 == s2 ==> len is = 0}
+@-}
+distinguish ::
+    ( Automaton aut s
+    , FiniteOrd s
+    , FiniteOrd i
+    , Eq o
+    ) =>
+    aut s i o ->
+    s ->
+    s ->
+    [i]
+distinguish _ s1 s2 | s1 == s2 = []
+distinguish m s1 s2 = fromMaybe [] $ differenceFrom m s1 m s2
 
 {- | Returns a set of lists of inputs that can be used to distinguish between the given state and
 - any other state of the automaton.
