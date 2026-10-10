@@ -3,7 +3,7 @@
 
 import qualified Data.List as List
 import Haal.BlackBox
-import Haal.EquivalenceOracle.WMethod (WMethodConfig (..), mkWMethod)
+import Haal.EquivalenceOracle.WpMethod
 import Haal.Experiment
 import Haal.Learning.LMstar
 import System.Process (readProcess)
@@ -85,7 +85,7 @@ instance SUL WebsiteSUL IO where
 --------------------------------------------------------------------------------
 
 learner = mkLMstar Star
-teacher = case mkWMethod (WMethodConfig 2) of
+teacher = case mkWpMethod (WpMethodConfig 1) of
     Left msg -> error msg
     Right oracle -> oracle
 exper = experiment learner teacher
@@ -110,5 +110,5 @@ main = do
                 , notFound = NotFoundTag
                 } ::
                 WebsiteSUL Page PageTag
-    (model, _) <- runExperimentT exper website
+    model <- runExperimentT exper website
     putStrLn $ "Learned Model: " ++ show model
