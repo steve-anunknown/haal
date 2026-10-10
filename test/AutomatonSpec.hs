@@ -6,6 +6,7 @@ module AutomatonSpec (
 )
 where
 
+import Control.Monad (replicateM)
 import Control.Monad.Identity (runIdentity)
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -15,11 +16,12 @@ import Haal.Automaton.MealyAutomaton (
     MealyAutomaton (..),
     mealyDelta,
     mealyLambda,
+    mkMealyAutomaton,
  )
 import Haal.BlackBox
-import Test.Hspec (Spec, context, describe, it)
-import Test.QuickCheck (Property, forAll, property, (==>))
-import Utils (Input, Mealy (..), NonMinimalMealy (..), Output, genState, statesAreEquivalent)
+import Test.Hspec (Spec, context, describe, it, shouldBe)
+import Test.QuickCheck (Property, forAll, property, (.&&.), (===), (==>))
+import Utils (Input (..), Mealy (..), NonMinimalMealy (..), Output (..), genState, statesAreEquivalent)
 
 -- The global characterizing set of a non minimal mealy automaton contains
 -- the empty list. This will fail if 'stateSpace' has fewer than 6-7 states
@@ -92,8 +94,69 @@ prop_shortestAccessSequences (Mealy automaton) s1 s2 =
         Nothing -> False
         Just _ -> True
 
+{- | A counter modulo 5 that outputs 'Y' when input 'A' makes it wrap around and
+'X' otherwise; every other input resets it.
+-}
+counter :: MealyAutomaton Int Input Output
+counter = mkMealyAutomaton delta lambda (Set.fromList [0 .. 4]) 0
+  where
+    delta s A = (s + 1) `mod` 5
+    delta _ _ = 0
+    lambda 4 A = Y
+    lambda _ _ = X
+
+-- | 'counter' with its states renumbered, so a different but equivalent automaton.
+renumberedCounter :: MealyAutomaton Int Input Output
+renumberedCounter = mkMealyAutomaton delta lambda (Set.fromList [10 .. 14]) 10
+  where
+    delta s A = 10 + (s - 10 + 1) `mod` 5
+    delta _ _ = 10
+    lambda 14 A = Y
+    lambda _ _ = X
+
+-- | A single state that always outputs 'X'.
+oneState :: MealyAutomaton Int Input Output
+oneState = mkMealyAutomaton (\_ _ -> 0) (\_ _ -> X) (Set.fromList [0]) 0
+
+-- | The outputs of an automaton on a word, from its initial state.
+run :: MealyAutomaton Int Input Output -> [Input] -> [Output]
+run aut = snd . walkPure (resetPure aut)
+
+{- | The word 'difference' returns is a shortest witness: the two automata
+differ on its last output, and agree on every word one symbol shorter. Outputs
+are prefix-closed, so they then agree on every shorter word too. Witnesses of
+more than 5 symbols are only checked for the first part, to keep the
+enumeration small.
+-}
+prop_differenceIsShortestWitness :: Mealy Input Output -> Mealy Input Output -> Property
+prop_differenceIsShortestWitness (Mealy a) (Mealy b) = case difference a b of
+    Nothing -> property True
+    Just w ->
+        let (oa, ob) = (run a w, run b w)
+            shorter = replicateM (length w - 1) [minBound .. maxBound]
+            agreeOnShorter = length w > 5 || all (\v -> run a v == run b v) shorter
+         in (last oa /= last ob) === True .&&. agreeOnShorter === True
+
+-- | An automaton has no difference with itself.
+prop_noDifferenceWithItself :: Mealy Input Output -> Property
+prop_noDifferenceWithItself (Mealy a) = difference a a === Nothing
+
 spec :: Spec
 spec = do
+    describe "BlackBox.difference" $ do
+        it "finds the shortest word on which the counter and a one-state automaton differ" $ do
+            let w = difference counter oneState
+            w `shouldBe` Just [A, A, A, A, A]
+            fmap (run counter) w `shouldBe` Just [X, X, X, X, Y]
+        it "finds no difference between an automaton and itself" $
+            difference counter counter `shouldBe` Nothing
+        it "finds no difference between equivalent automata with different states" $
+            difference counter renumberedCounter `shouldBe` Nothing
+        it "returns a shortest witness" $
+            property prop_differenceIsShortestWitness
+        it "returns nothing for an automaton compared with itself" $
+            property prop_noDifferenceWithItself
+
     describe "Blackbox.distinguish for MealyAutomaton" $
         context "if 2 automatons states are not equivalent" $
             it "returns an input sequence that distinguishes them" $
