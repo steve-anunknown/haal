@@ -16,8 +16,16 @@ import Control.Monad.Identity (Identity (runIdentity))
 import Control.Monad.State (MonadState (state), State, runState)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Haal.BlackBox
-import Haal.Experiment
+import Haal.BlackBox (
+    Automaton (current, states),
+    FiniteOrd,
+    accessSequences,
+    globalCharacterizingSet,
+    inputs,
+    localCharacterizingSet,
+    walk,
+ )
+import Haal.Experiment (EquivalenceOracle (..))
 import System.Random (Random (randomR), StdGen)
 
 -- | The 'WpMethodConfig' type is used to configure the Wp-method equivalence oracle.
