@@ -123,7 +123,7 @@ ghci> myexperiment = experiment learner teacher
 ghci> mysul = mkMealyAutomaton2 sulTransitions (Set.fromList [S0, S1, S2]) S0
 
 -- Run the experiment
-ghci> (learnedmodel, stats) = runExperiment myexperiment mysul
+ghci> learnedmodel = runExperiment myexperiment mysul
 
 -- View the learned model
 ghci> learnedmodel
