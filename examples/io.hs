@@ -7,11 +7,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-import Haal.Automaton.MealyAutomaton (MealyAutomaton)
 import Haal.BlackBox (SUL (..))
 import Haal.EquivalenceOracle.WpMethod (WpMethodConfig (..), mkWpMethod)
-import Haal.Experiment (Statistics, experiment, runExperimentT)
-import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
+import Haal.Experiment (measuredExperiment, runExperimentT)
+import Haal.Learning.LMstar (LMstarConfig (Star), mkLMstar)
+import Haal.Statistics (statistics)
 import System.Process (readProcess)
 
 -- Note that this is relative to the project root. Otherwise
@@ -50,10 +50,8 @@ sul = Program askProgram []
 main :: IO ()
 main = do
     oracle <- either fail return (mkWpMethod (WpMethodConfig 3))
-    let learner = mkLMstar Star :: LMstar Binary Bool
-    (theModel, theStats) <-
-        runExperimentT (experiment learner oracle) sul ::
-            IO (MealyAutomaton Int Binary Bool, Statistics MealyAutomaton Int Binary Bool)
+    let learner = mkLMstar Star
+    (theModel, theStats) <- runExperimentT (measuredExperiment statistics learner oracle) sul
     putStrLn "Learning Experiment"
     putStrLn "==================="
     putStrLn "System Under Learning: ./examples/divisible3"
