@@ -7,6 +7,7 @@ import Haal.BlackBox (SUL (..))
 import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod)
 import Haal.Experiment
 import Haal.Learning.LMstar (LMstar, LMstarConfig (Star), mkLMstar)
+import Haal.Statistics (Statistics, statistics)
 
 -- main logic
 divisible :: Integer -> Bool
@@ -87,11 +88,11 @@ oracle = case mkWpMethod (WpMethodConfig 3) of
     Left msg -> error msg
     Right oracle' -> oracle'
 
-exper :: Experiment (Program Binary Bool) (MealyAutomaton Int Binary Bool, Statistics MealyAutomaton Int Binary Bool)
-exper = experiment learner oracle
+exper :: ExperimentT (Program Binary Bool) Identity (MealyAutomaton Int Binary Bool, Statistics MealyAutomaton Binary Bool)
+exper = measuredExperiment statistics learner oracle
 
 theModel :: MealyAutomaton Int Binary Bool
-theStats :: Statistics MealyAutomaton Int Binary Bool
+theStats :: Statistics MealyAutomaton Binary Bool
 (theModel, theStats) = runExperiment exper sul
 
 main :: IO ()
