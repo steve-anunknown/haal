@@ -86,7 +86,7 @@ spec = do
             cexForOneState (mkWpMethod (WpMethodConfig 4)) `shouldNotBe` []
         it "does not stop LM* from learning all states of the counter" $ do
             let oracle = either error id (mkWMethod (WMethodConfig 4))
-                model = fst (runExperiment (experiment (mkLMstar Star) oracle) counter)
+                model = runExperiment (experiment (mkLMstar Star) oracle) counter
             Set.size (states model) `shouldBe` 5
 
     describe "WMethod Equivalence Oracle" $ do
