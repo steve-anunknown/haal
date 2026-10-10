@@ -6,7 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
-## Unreleased
+## 0.7.0.0 - 2026-10-10
+
+This release replaces the built-in statistics with a general mechanism:
+experiments report events, and statistics are folds over them. It also makes
+`query` overridable, adds a way to compare automata, and removes the Moore and
+DFA types. See "Migrating from 0.6" at the end of this entry.
+
+### Added
+- `query` is now a method of `Haal.BlackBox.SUL`, with the old behaviour
+  (reset, then walk) as its default. A SUL can override it to answer a whole
+  query at once, e.g. by sending the whole word in one message. The
+  documentation of `query` lists what an override must guarantee.
+- `Haal.BlackBox.queryChecked`: `query`, checking that the SUL returned exactly
+  one output per input. The learners and oracles query through it, so an
+  override that breaks this fails with a clear error instead of corrupting the
+  observation table.
+- `Haal.Statistics`, with the events an experiment reports (`Event`:
+  `PhaseChanged`, `Queried`, `Hypothesis`, `Counterexample`, and `Phase`), the
+  `Statistics` record and the `statistics` fold. `statistics` measures the
+  membership queries and symbols sent while constructing hypotheses and while
+  validating them, and records every hypothesis and counterexample. A
+  statistic is a `Control.Foldl.Fold` over events, so statistics combine with
+  `<*>` and users can define their own.
+- `Haal.Experiment.experimentWith`: run an experiment, reporting every event
+  to a monadic handler.
+- `Haal.Experiment.measuredExperiment`: run an experiment and a fold over its
+  events in one pass, returning the model and the fold's result.
+- `Haal.BlackBox.difference`: a shortest input word on which two Mealy
+  automata produce different outputs, or `Nothing` if they are equivalent.
+- `MealyAutomaton` is a SUL in any monad, not only in `Identity`, so an
+  automaton can be learned inside the monad that holds a user's own state.
+
+### Changed (breaking)
+- `Haal.Experiment.experiment` returns only the learned model, instead of the
+  model and a `Statistics` record.
+- `Haal.Experiment.Statistics` is removed; the new `Haal.Statistics.Statistics`
+  record, measured with `measuredExperiment statistics`, replaces it. Its
+  `hypotheses` include the final one; the number of rounds is
+  `rounds stats`, and the number of equivalence queries is
+  `length (hypotheses stats)`.
+- `query` is a class method now, so a module that imports `SUL (..)` and
+  defines its own top-level `query` gets an ambiguity error. Rename the local
+  definition (the `io` example renames it to `askProgram`).
+- New dependency: `foldl`.
 
 ### Removed
 - `Haal.Automaton.MooreAutomaton` and `Haal.Automaton.DFA`. No learning
@@ -17,6 +60,26 @@ and this project adheres to the
   future release, together with learning algorithms for them. To learn a DFA
   today, encode it as a Mealy machine with `Bool` outputs, where the output of
   a transition says whether the state it reaches is accepting.
+
+### Migrating from 0.6
+
+```haskell
+-- 0.6
+(model, stats) = runExperiment (experiment learner oracle) sul
+-- statsRounds stats, statsCexs stats, statsHyps stats
+
+-- 0.7: the model only
+model = runExperiment (experiment learner oracle) sul
+
+-- 0.7: the model and statistics
+(model, stats) = runExperiment (measuredExperiment statistics learner oracle) sul
+-- rounds stats, counterexamples stats, hypotheses stats (incl. the final one),
+-- learning stats / testing stats: membership queries and symbols per phase
+
+-- 0.7: your own statistics alongside, e.g. the number of events
+import qualified Control.Foldl as L
+(model, (stats, n)) = runExperiment (measuredExperiment ((,) <$> statistics <*> L.length) learner oracle) sul
+```
 
 ## 0.6.1.1 - 2026-10-09
 
