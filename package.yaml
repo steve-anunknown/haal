@@ -134,6 +134,17 @@ executables:
     - base
     - process >= 1.6.19 && < 1.7
     - mtl
+  email:
+    main: email.hs
+    source-dirs: examples
+    dependencies:
+    - haal
+    - base
+    - bytestring >= 0.12 && < 0.13
+    - containers
+    - email-validate >= 2.3.2 && < 2.4
+    - process >= 1.6.19 && < 1.7
+    - random
   website:
     main: website.hs
     source-dirs: examples
