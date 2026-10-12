@@ -1,13 +1,15 @@
-// Driver for examples/email.hs: asks headless Chromium whether strings are
+// Driver for examples/email.hs: asks a headless browser whether strings are
 // valid values of an <input type="email">.
+//
+// Usage: node driver.mjs chromium|firefox
 //
 // Protocol, one query per line:
 //   stdin:  a JSON string, e.g. "a@a.a"
 //   stdout: one character per nonempty prefix of it, 1 = valid, 0 = invalid
 //
-// The browser is the one installed on the system (CHROMIUM, default
-// /snap/bin/chromium). The temporary profile lives in the snap's own data
-// directory, because the snap can write neither to /tmp nor to hidden
+// The browser is the one installed on the system (BROWSER_PATH, default
+// /snap/bin/<browser>). The temporary profile lives in the snap's own data
+// directory, because a snap can write neither to /tmp nor to hidden
 // directories in $HOME (PROFILE_PARENT overrides it for a non-snap browser).
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -16,13 +18,20 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import puppeteer from "puppeteer-core";
 
+const name = process.argv[2];
+if (name !== "chromium" && name !== "firefox") {
+  console.error("usage: node driver.mjs chromium|firefox");
+  process.exit(2);
+}
+
 const profileParent =
-  process.env.PROFILE_PARENT ?? join(homedir(), "snap", "chromium", "common");
+  process.env.PROFILE_PARENT ?? join(homedir(), "snap", name, "common");
 const profile = mkdtempSync(join(profileParent, "haal-email-driver-"));
 const browser = await puppeteer.launch({
-  executablePath: process.env.CHROMIUM ?? "/snap/bin/chromium",
+  browser: name === "firefox" ? "firefox" : "chrome",
+  executablePath: process.env.BROWSER_PATH ?? `/snap/bin/${name}`,
   userDataDir: profile,
-  args: ["--no-first-run", "--no-default-browser-check"],
+  args: name === "chromium" ? ["--no-first-run", "--no-default-browser-check"] : [],
 });
 
 async function shutdown() {

@@ -7,8 +7,8 @@
 --
 -- \* @email-validate@: Haskell's attoparsec parser aiming at RFC 5322.
 -- \* The WHATWG rule behind @\<input type="email"\>@, written out by hand below.
--- \* Chromium's @\<input type="email"\>@ itself, queried through a Node driver
---   (@examples/email-driver@; run @npm install@ there first).
+-- \* Chromium's and Firefox's @\<input type="email"\>@ itself, queried through a
+--   Node driver (@examples/email-driver@; run @npm install@ there first).
 --
 -- Each validator becomes a SUL over an abstract alphabet: every input symbol is
 -- one character class, concretised to one representative character. The output
@@ -116,39 +116,39 @@ instance (Monad m) => SUL Validator m where
 mkValidator :: (String -> Bool) -> Validator Symbol Bool
 mkValidator f = Validator (f . map concretise) []
 
-{- | Chromium, through the driver process. A query is one line each way: the
+{- | A browser, through the driver process. A query is one line each way: the
 concrete word as a JSON string, and back one character per nonempty prefix
-(@1@ valid, @0@ invalid). 'chBuffer' holds the input read so far, reversed,
+(@1@ valid, @0@ invalid). 'brBuffer' holds the input read so far, reversed,
 for the rare plain 'step'.
 -}
-data Chromium i o = Chromium
-    { chIn :: Handle
-    , chOut :: Handle
-    , chEncode :: i -> Char
-    , chDecode :: Char -> Maybe o
-    , chBuffer :: [i]
+data Browser i o = Browser
+    { brIn :: Handle
+    , brOut :: Handle
+    , brEncode :: i -> Char
+    , brDecode :: Char -> Maybe o
+    , brBuffer :: [i]
     }
 
-instance SUL Chromium IO where
+instance SUL Browser IO where
     step c i = do
-        let buf = i : chBuffer c
+        let buf = i : brBuffer c
         os <- ask c (reverse buf)
         case reverse os of
-            o : _ -> pure (c{chBuffer = buf}, o)
+            o : _ -> pure (c{brBuffer = buf}, o)
             [] -> fail "driver returned no verdicts"
-    reset c = pure c{chBuffer = []}
+    reset c = pure c{brBuffer = []}
 
     query c xs = ask c xs
 
 -- | Send a word to the driver and read its verdicts on all nonempty prefixes.
-ask :: Chromium i o -> [i] -> IO [o]
+ask :: Browser i o -> [i] -> IO [o]
 ask _ [] = pure []
 ask c xs = do
-    hPutStrLn (chIn c) (jsonString (map (chEncode c) xs))
-    answer <- hGetLine (chOut c)
+    hPutStrLn (brIn c) (jsonString (map (brEncode c) xs))
+    answer <- hGetLine (brOut c)
     traverse decode answer
   where
-    decode x = maybe (fail ("unexpected driver output: " ++ show x)) pure (chDecode c x)
+    decode x = maybe (fail ("unexpected driver output: " ++ show x)) pure (brDecode c x)
 
 -- | A JSON string literal (the driver parses each line with @JSON.parse@).
 jsonString :: String -> String
@@ -162,14 +162,16 @@ jsonString s = "\"" ++ concatMap escape s ++ "\""
       where
         hex = showHex (fromEnum c) ""
 
--- | Start the driver, run an action with it, and shut it down (closing its stdin closes the browser).
-withChromium :: (Chromium Symbol Bool -> IO a) -> IO a
-withChromium act =
-    withCreateProcess (proc "node" ["examples/email-driver/driver.mjs"]){std_in = CreatePipe, std_out = CreatePipe} $
+{- | Start the driver for a browser (@chromium@ or @firefox@), run an action
+with it, and shut it down (closing its stdin closes the browser).
+-}
+withBrowser :: String -> (Browser Symbol Bool -> IO a) -> IO a
+withBrowser browser act =
+    withCreateProcess (proc "node" ["examples/email-driver/driver.mjs", browser]){std_in = CreatePipe, std_out = CreatePipe} $
         \mIn mOut _ ph -> case (mIn, mOut) of
             (Just hin, Just hout) -> do
                 hSetBuffering hin LineBuffering
-                result <- act (Chromium hin hout concretise decodeVerdict [])
+                result <- act (Browser hin hout concretise decodeVerdict [])
                 hClose hin
                 _ <- waitForProcess ph
                 pure result
@@ -239,11 +241,13 @@ main = do
         wg = mkValidator whatwg
     evModel <- learnSUL "email-validate" ev
     wgModel <- learnSUL "WHATWG (hand-written)" wg
-    withChromium $ \ch -> do
+    withBrowser "chromium" $ \ch -> withBrowser "firefox" $ \ff -> do
         chModel <- learnSUL "Chromium" ch
+        ffModel <- learnSUL "Firefox" ff
         let models =
                 [ Learned "email-validate" evModel (query ev)
                 , Learned "WHATWG" wgModel (query wg)
                 , Learned "Chromium" chModel (query ch)
+                , Learned "Firefox" ffModel (query ff)
                 ]
         sequence_ [compareModels a b | (k, a) <- zip [0 :: Int ..] models, b <- drop (k + 1) models]
