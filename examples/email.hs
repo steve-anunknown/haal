@@ -15,7 +15,8 @@
 -- at each step is the validator's verdict on the prefix read so far.
 
 import Control.Monad (when)
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Lazy as BL
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import qualified Data.Set as Set
@@ -26,7 +27,7 @@ import Haal.Experiment
 import Haal.Learning.LMstar (LMstarConfig (Star), mkLMstar)
 import Haal.Statistics (Event (..))
 import Numeric (showHex)
-import System.IO (BufferMode (LineBuffering), Handle, hClose, hGetLine, hPutStrLn, hSetBuffering, stdout)
+import System.IO (BufferMode (LineBuffering), Handle, hClose, hGetLine, hPutStrLn, hSetBuffering, hSetEncoding, stdout, utf8)
 import System.Process (CreateProcess (..), StdStream (..), proc, waitForProcess, withCreateProcess)
 import System.Random (mkStdGen)
 import qualified Text.Email.Validate as EV
@@ -36,10 +37,13 @@ import qualified Text.Email.Validate as EV
 --------------------------------------------------------------------------------
 
 {- | Character classes. They must be a common refinement for every validator
-compared, or a class can hide a difference. Non-ASCII input is left out for now,
-and so are parentheses: @email-validate@ accepts RFC 5322 comments, which nest,
-so its language is not regular and learning never converges (every round finds
-one more level of nesting, e.g. @a\@a(())@).
+compared, or a class can hide a difference. Parentheses are left out:
+@email-validate@ accepts RFC 5322 comments, which nest, so its language is not
+regular and learning never converges (every round finds one more level of
+nesting, e.g. @a\@a(())@).
+
+'NonAscii' is aimed at internationalised domains, which browsers convert to
+punycode before validating; it can appear anywhere in the address, though.
 -}
 data Symbol
     = Letter
@@ -53,6 +57,7 @@ data Symbol
     | Space
     | LBracket
     | RBracket
+    | NonAscii -- a letter outside ASCII
     deriving (Show, Eq, Ord, Enum, Bounded)
 
 concretise :: Symbol -> Char
@@ -67,13 +72,14 @@ concretise Backslash = '\\'
 concretise Space = ' '
 concretise LBracket = '['
 concretise RBracket = ']'
+concretise NonAscii = '\252' -- ü
 
 --------------------------------------------------------------------------------
 -- Validators
 --------------------------------------------------------------------------------
 
 emailValidate :: String -> Bool
-emailValidate = EV.isValid . BS.pack
+emailValidate = EV.isValid . BL.toStrict . BB.toLazyByteString . BB.stringUtf8
 
 {- | The WHATWG "valid email address" rule:
 
@@ -171,6 +177,7 @@ withBrowser browser act =
         \mIn mOut _ ph -> case (mIn, mOut) of
             (Just hin, Just hout) -> do
                 hSetBuffering hin LineBuffering
+                mapM_ (`hSetEncoding` utf8) [hin, hout]
                 result <- act (Browser hin hout concretise decodeVerdict [])
                 hClose hin
                 _ <- waitForProcess ph
@@ -190,7 +197,7 @@ type Model = MealyAutomaton Int Symbol Bool
 oracle :: RandomWpMethod
 oracle = either error id (mkRandomWpMethod config)
   where
-    config = RandomWpMethodConfig{rwpGen = mkStdGen 42, rwpExpected = 10, rwpMin = 1, rwpLimit = 20000}
+    config = RandomWpMethodConfig{rwpGen = mkStdGen 17, rwpExpected = 10, rwpMin = 1, rwpLimit = 50000}
 
 -- | Learn a SUL, printing progress: query counts, hypotheses and counterexamples.
 learnSUL :: (SUL sul IO) => String -> sul Symbol Bool -> IO Model
