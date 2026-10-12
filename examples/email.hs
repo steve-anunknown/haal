@@ -19,14 +19,18 @@ import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as BL
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.IORef (modifyIORef', newIORef, readIORef)
+import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Haal.Automaton.MealyAutomaton (MealyAutomaton)
+import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton2)
 import Haal.BlackBox (Automaton (..), SUL (..), difference)
+import Haal.Dot (ParsedMealy (..), mealyToDot, parseDot)
 import Haal.EquivalenceOracle.WpMethod
 import Haal.Experiment
 import Haal.Learning.LMstar (LMstarConfig (Star), mkLMstar)
 import Haal.Statistics (Event (..))
 import Numeric (showHex)
+import System.Directory (createDirectoryIfMissing, doesFileExist)
+import System.FilePath ((<.>), (</>))
 import System.IO (BufferMode (LineBuffering), Handle, hClose, hGetLine, hPutStrLn, hSetBuffering, hSetEncoding, stdout, utf8)
 import System.Process (CreateProcess (..), StdStream (..), proc, waitForProcess, withCreateProcess)
 import System.Random (mkStdGen)
@@ -144,7 +148,7 @@ instance SUL Browser IO where
             [] -> fail "driver returned no verdicts"
     reset c = pure c{brBuffer = []}
 
-    query c xs = ask c xs
+    query = ask
 
 -- | Send a word to the driver and read its verdicts on all nonempty prefixes.
 ask :: Browser i o -> [i] -> IO [o]
@@ -197,7 +201,7 @@ type Model = MealyAutomaton Int Symbol Bool
 oracle :: RandomWpMethod
 oracle = either error id (mkRandomWpMethod config)
   where
-    config = RandomWpMethodConfig{rwpGen = mkStdGen 17, rwpExpected = 10, rwpMin = 1, rwpLimit = 50000}
+    config = RandomWpMethodConfig{rwpGen = mkStdGen 17, rwpExpected = 10, rwpMin = 1, rwpLimit = 20000}
 
 -- | Learn a SUL, printing progress: query counts, hypotheses and counterexamples.
 learnSUL :: (SUL sul IO) => String -> sul Symbol Bool -> IO Model
@@ -220,6 +224,7 @@ learnSUL name sul = do
 -- | A learned model, with the system it was learned from, to check its verdicts.
 data Learned = Learned
     { learnedName :: String
+    , learnedFile :: FilePath
     , learnedModel :: Model
     , learnedSystem :: [Symbol] -> IO [Bool]
     }
@@ -241,6 +246,65 @@ compareModels a b = do
         putStrLn ("    " ++ learnedName l ++ ": " ++ maybe "no verdict" show (lastMaybe os))
     lastMaybe = foldl (\_ x -> Just x) Nothing
 
+--------------------------------------------------------------------------------
+-- Saved models
+--------------------------------------------------------------------------------
+
+-- | Where the models are saved, relative to the working directory.
+modelDir :: FilePath
+modelDir = "email-models"
+
+{- | Read a model saved by 'saveModel'. States are numbered in the order
+'parseDot' lists them, so the initial state is @0@.
+-}
+loadModel :: FilePath -> IO (Either String Model)
+loadModel path = do
+    src <- readFile path
+    pure (parseDot src >>= fromParsed)
+  where
+    fromParsed pm = do
+        let stateIdx = Map.fromList (zip (parsedStates pm) [0 :: Int ..])
+            symbols = Map.fromList [(show x, x) | x <- [minBound .. maxBound :: Symbol]]
+            outputs = Map.fromList [("True", True), ("False", False)]
+            look what m k = maybe (Left ("unknown " ++ what ++ " " ++ show k)) Right (Map.lookup k m)
+        table <-
+            Map.fromList
+                <$> traverse
+                    ( \(src, i, dst, o) -> do
+                        k <- (,) <$> look "state" stateIdx src <*> look "input" symbols i
+                        v <- (,) <$> look "state" stateIdx dst <*> look "output" outputs o
+                        pure (k, v)
+                    )
+                    (parsedTrans pm)
+        let sts = Map.elems stateIdx
+            complete = and [Map.member (q, x) table | q <- sts, x <- [minBound .. maxBound]]
+        if complete
+            then -- the default is never used: every transition was checked above
+                Right (mkMealyAutomaton2 (\q x -> Map.findWithDefault (q, False) (q, x) table) (Set.fromList sts) 0)
+            else Left "incomplete model"
+
+saveModel :: FilePath -> Model -> IO ()
+saveModel path m = either (fail . ("cannot save model: " ++)) (writeFile path) (mealyToDot m)
+
+{- | Compare a model with the one saved by the previous run, if any, then save it
+in its place.
+-}
+checkAndSave :: Learned -> IO ()
+checkAndSave l = do
+    let path = modelDir </> learnedFile l <.> "dot"
+    exists <- doesFileExist path
+    if not exists
+        then putStrLn ("  " ++ learnedName l ++ ": no saved model")
+        else do
+            saved <- loadModel path
+            putStrLn $
+                "  " ++ learnedName l ++ ": " ++ case saved of
+                    Left err -> "cannot read saved model (" ++ err ++ ")"
+                    Right old -> case difference old (learnedModel l) of
+                        Nothing -> "same as the saved model"
+                        Just w -> "differs from the saved model on " ++ show (map concretise w)
+    saveModel path (learnedModel l)
+
 main :: IO ()
 main = do
     hSetBuffering stdout LineBuffering
@@ -252,9 +316,12 @@ main = do
         chModel <- learnSUL "Chromium" ch
         ffModel <- learnSUL "Firefox" ff
         let models =
-                [ Learned "email-validate" evModel (query ev)
-                , Learned "WHATWG" wgModel (query wg)
-                , Learned "Chromium" chModel (query ch)
-                , Learned "Firefox" ffModel (query ff)
+                [ Learned "email-validate" "email-validate" evModel (query ev)
+                , Learned "WHATWG" "whatwg" wgModel (query wg)
+                , Learned "Chromium" "chromium" chModel (query ch)
+                , Learned "Firefox" "firefox" ffModel (query ff)
                 ]
         sequence_ [compareModels a b | (k, a) <- zip [0 :: Int ..] models, b <- drop (k + 1) models]
+        createDirectoryIfMissing True modelDir
+        putStrLn ("Saved models (" ++ modelDir ++ ")")
+        mapM_ checkAndSave models
