@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## Unreleased
+
+### Added 
+
+- `email.hs` example where models of different email validators are learned.
+  An important note: even though it's possible to run the example with 
+  `stack run email`, that does not mean it is completely reproducible.
+  The example supposes that `chrome` and `firefox` are available as 
+  snaps. It's better to view the `email-driver` first to make sure 
+  the example can be run successfully.
+
 ## 0.7.0.0 - 2026-10-10
 
 This release replaces the built-in statistics with a general mechanism:
