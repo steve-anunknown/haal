@@ -252,7 +252,7 @@ compareModels a b = do
 
 -- | Where the models are saved, relative to the working directory.
 modelDir :: FilePath
-modelDir = "email-models"
+modelDir = "./examples/email-models"
 
 {- | Read a model saved by 'saveModel'. States are numbered in the order
 'parseDot' lists them, so the initial state is @0@.
