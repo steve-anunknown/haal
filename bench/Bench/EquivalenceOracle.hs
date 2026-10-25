@@ -9,9 +9,9 @@ import GHC.Generics (Generic)
 import Test.Tasty.Bench (Benchmark, bench, bgroup, nf)
 
 import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
+import Haal.EquivalenceOracle (EquivalenceOracle (testSuite))
 import Haal.EquivalenceOracle.WMethod (WMethod, WMethodConfig (..), mkWMethod, wmethodSuiteSize)
 import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod, wpmethodSuiteSize)
-import Haal.Experiment (EquivalenceOracle (testSuite))
 
 -- | Input alphabet for benchmark automata.
 data In = IA | IB | IC | ID deriving (Show, Eq, Ord, Enum, Bounded, Generic)
