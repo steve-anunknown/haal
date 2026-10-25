@@ -48,14 +48,14 @@ library:
     - Haal.Automaton.MealyAutomaton
     - Haal.BlackBox
     - Haal.Dot
-    - Haal.EquivalenceOracle.EquivalenceOracle
+    - Haal.EquivalenceOracle
     - Haal.EquivalenceOracle.CombinedOracle
     - Haal.EquivalenceOracle.RandomWalk
     - Haal.EquivalenceOracle.RandomWords
     - Haal.EquivalenceOracle.WMethod
     - Haal.EquivalenceOracle.WpMethod
     - Haal.Experiment
-    - Haal.Learning.Learner
+    - Haal.Learning
     - Haal.Learning.LMstar
     - Haal.Statistics
   dependencies:

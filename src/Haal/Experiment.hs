@@ -30,9 +30,10 @@ import Control.Monad.State (StateT, modify', runStateT)
 
 import Control.Foldl (Fold (..))
 import Control.Monad.Identity
+import qualified Data.Map as Map
 import Haal.BlackBox
-import Haal.EquivalenceOracle.EquivalenceOracle
-import Haal.Learning.Learner
+import Haal.EquivalenceOracle
+import Haal.Learning
 import Haal.Statistics (Event (..), Phase (Learning, Testing))
 
 {- | The 'ExperimentT' type is a monad transformer that allows for
@@ -187,3 +188,20 @@ experiment ::
     oracle ->
     ExperimentT (sul i o) m (aut Int i o)
 experiment = loop (\_ -> return ())
+
+data LRUCache i o = LRUCache
+    { mapping :: Map.Map (Int, [i]) [o]
+    , capacity :: Int
+    }
+
+mkLRUCache capacity = LRUCache Map.empty capacity
+
+insertToCache cache input output =
+    if input `Map.member` (mapping cache)
+        then cache
+        else undefined
+
+-- | A SUL lifted into 'StateT', so that 'measuredExperiment' can keep its state there.
+newtype Cached sul i o = Cached (sul i o)
+
+cachedExperiment = undefined

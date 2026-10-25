@@ -9,7 +9,7 @@ where
 import qualified Data.Set as Set
 import qualified Data.Vector as V
 import Haal.BlackBox
-import Haal.EquivalenceOracle.EquivalenceOracle
+import Haal.EquivalenceOracle
 import System.Random (
     Random (randomR, randomRs),
     SplitGen (splitGen),

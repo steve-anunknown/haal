@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Haal.Learning.Learner (
+module Haal.Learning (
     Learner (..),
 )
 where

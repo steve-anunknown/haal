@@ -1,4 +1,4 @@
-module Haal.EquivalenceOracle.EquivalenceOracle (
+module Haal.EquivalenceOracle (
     EquivalenceOracle (..),
     execute,
     findCex,

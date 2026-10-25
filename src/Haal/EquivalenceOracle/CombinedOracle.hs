@@ -4,7 +4,7 @@ module Haal.EquivalenceOracle.CombinedOracle (
     mkCombinedOracle,
 ) where
 
-import Haal.EquivalenceOracle.EquivalenceOracle
+import Haal.EquivalenceOracle
 
 {- | The 'CombinedOracle' type is a data type for combining two equivalence oracles.
 It is used to chain multiple oracles together by first exhausting the test suite

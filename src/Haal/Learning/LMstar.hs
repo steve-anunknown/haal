@@ -29,7 +29,7 @@ import qualified Data.Set as Set
 import Haal.Automaton.MealyAutomaton
 import Haal.BlackBox
 import Haal.Experiment
-import Haal.Learning.Learner
+import Haal.Learning
 
 {-@ ignore otRefinePlus @-}
 {-@ ignore otRefineAngluin @-}

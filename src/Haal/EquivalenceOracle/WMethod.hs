@@ -17,7 +17,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Vector as Vec
 import Haal.BlackBox
-import Haal.EquivalenceOracle.EquivalenceOracle
+import Haal.EquivalenceOracle
 import System.Random (Random (randomR), StdGen)
 
 -- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.

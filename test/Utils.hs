@@ -32,7 +32,7 @@ import Haal.Automaton.MealyAutomaton (
     mkMealyAutomaton,
  )
 import Haal.BlackBox
-import Haal.EquivalenceOracle.EquivalenceOracle (EquivalenceOracle)
+import Haal.EquivalenceOracle (EquivalenceOracle)
 import Haal.EquivalenceOracle.RandomWalk (
     RandomWalk,
     RandomWalkConfig (..),
