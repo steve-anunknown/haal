@@ -25,7 +25,7 @@ import Haal.BlackBox (
     localCharacterizingSet,
     walk,
  )
-import Haal.Experiment (EquivalenceOracle (..))
+import Haal.EquivalenceOracle.EquivalenceOracle
 import System.Random (Random (randomR), StdGen)
 
 -- | The 'WpMethodConfig' type is used to configure the Wp-method equivalence oracle.

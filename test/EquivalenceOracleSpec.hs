@@ -6,6 +6,7 @@ import Control.Monad.Reader
 import qualified Data.Set as Set
 import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
 import Haal.BlackBox (states)
+import Haal.EquivalenceOracle.EquivalenceOracle (EquivalenceOracle (..))
 import Haal.EquivalenceOracle.WMethod (
     RandomWMethodConfig (..),
     WMethodConfig (..),

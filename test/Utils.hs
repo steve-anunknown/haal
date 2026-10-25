@@ -32,6 +32,7 @@ import Haal.Automaton.MealyAutomaton (
     mkMealyAutomaton,
  )
 import Haal.BlackBox
+import Haal.EquivalenceOracle.EquivalenceOracle (EquivalenceOracle)
 import Haal.EquivalenceOracle.RandomWalk (
     RandomWalk,
     RandomWalkConfig (..),
@@ -58,7 +59,6 @@ import Haal.EquivalenceOracle.WpMethod (
     mkRandomWpMethod,
     mkWpMethod,
  )
-import Haal.Experiment (EquivalenceOracle)
 import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
 

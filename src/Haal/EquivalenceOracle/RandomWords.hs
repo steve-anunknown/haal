@@ -12,7 +12,7 @@ import Control.Monad.State (MonadState (state), runState)
 import qualified Data.Set as Set
 import qualified Data.Vector as V
 import Haal.BlackBox
-import Haal.Experiment
+import Haal.EquivalenceOracle.EquivalenceOracle
 import System.Random (Random (randomR), StdGen)
 
 -- | Data type that represents the configuration for an instance of the 'RandomWords' algorithm.
