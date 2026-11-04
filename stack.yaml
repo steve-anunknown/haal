@@ -5,7 +5,7 @@
 # https://docs.haskellstack.org/en/stable/configure/yaml/
 
 resolver: nightly-2025-12-15
-compiler: ghc-9.12.4
+compiler: ghc-9.12.3
 
 extra-deps:
   - liquidhaskell-boot-0.9.12.2.1
