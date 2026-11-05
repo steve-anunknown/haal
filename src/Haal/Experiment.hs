@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- | This module exports the basic types, classes and functions that are required to
@@ -10,14 +11,13 @@ easily construct and configure learning experiments.
 module Haal.Experiment (
     Experiment,
     ExperimentT,
-    Learner (..),
-    EquivalenceOracle (..),
     experiment,
     findCex,
     runExperiment,
     runExperimentT,
     experimentWith,
     measuredExperiment,
+    cachedExperiment,
 ) where
 
 import Control.Monad.Reader (
@@ -33,51 +33,10 @@ import Control.Monad.State (StateT, modify', runStateT)
 import Control.Foldl (Fold (..))
 import Control.Monad.Identity
 import Haal.BlackBox
+import Haal.EquivalenceOracle
+import Haal.Learning
+import Haal.SUL.Cached (CacheState (..), CachedSUL (..), emptyCacheState)
 import Haal.Statistics (Event (..), Phase (Learning, Testing))
-
-{- | The 'EquivalenceOracle' type class defines the interface for equivalence oracles.
-Instances of this class should provide methods to generate a test suite
--}
-class EquivalenceOracle or where
-    testSuite ::
-        ( Automaton aut s
-        , FiniteOrd i
-        , FiniteOrd s
-        , Eq o
-        ) =>
-        or ->
-        aut s i o ->
-        (or, [[i]])
-
-{- | The 'Learner' type class defines the interface for learning algorithms.
-Instances of this class should provide methods to initialize the learner,
-refine the learner with a counterexample, and learn an automaton. The type @l@
-determines the type of automaton @aut@ that is learned.
--}
-class Learner l aut | l -> aut where
-    initialize ::
-        ( SUL sul m
-        , FiniteOrd i
-        , Finite o
-        ) =>
-        l i o ->
-        ExperimentT (sul i o) m (l i o)
-    refine ::
-        ( SUL sul m
-        , FiniteOrd i
-        , Finite o
-        ) =>
-        l i o ->
-        [i] ->
-        ExperimentT (sul i o) m (l i o)
-    learn ::
-        ( SUL sul m
-        , Automaton aut Int
-        , FiniteOrd i
-        , FiniteOrd o
-        ) =>
-        l i o ->
-        ExperimentT (sul i o) m (l i o, aut Int i o)
 
 {- | The 'ExperimentT' type is a monad transformer that allows for
 running experiments in a reader monad. This may prove useful for
@@ -111,8 +70,8 @@ loop ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     (Event aut i o -> m ()) ->
     learner i o ->
@@ -140,7 +99,7 @@ and reports the queries to the experiment loop.
 -}
 data Observed m sul i o = Observed (sul i o) ([i] -> [o] -> m ())
 
-instance (SUL sul m) => SUL (Observed m sul) m where
+instance (SUL sul i o m) => SUL (Observed m sul) i o m where
     step :: Observed m sul i o -> i -> m (Observed m sul i o, o)
     step (Observed sul report) input = do
         (sul', output) <- step sul input
@@ -166,8 +125,8 @@ experimentWith ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     (Event aut i o -> m ()) ->
     learner i o ->
@@ -179,7 +138,7 @@ experimentWith emit learner oracle =
 -- | A SUL lifted into 'StateT', so that 'measuredExperiment' can keep its state there.
 newtype Lifted sul i o = Lifted (sul i o)
 
-instance (SUL sul m) => SUL (Lifted sul) (StateT x m) where
+instance (SUL sul i o m) => SUL (Lifted sul) i o (StateT x m) where
     step :: Lifted sul i o -> i -> StateT x m (Lifted sul i o, o)
     step (Lifted sul) input = do
         (sul', output) <- lift (step sul input)
@@ -202,8 +161,8 @@ measuredExperiment ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     Fold (Event aut i o) r ->
     learner i o ->
@@ -224,52 +183,36 @@ experiment ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     learner i o ->
     oracle ->
     ExperimentT (sul i o) m (aut Int i o)
 experiment = loop (\_ -> return ())
 
-{- | The 'execute' function executes the test suite of an oracle, given a SUL and an automaton.
-Every test case is run from the initial state of both the SUL and the automaton. It returns
-the first test case on which they disagree, together with the outputs of the SUL, or a pair
-of empty lists if they agree on every test case.
--}
-execute ::
-    ( SUL sul m
-    , Automaton aut s
-    , Ord i
-    , Eq o
-    ) =>
-    sul i o ->
-    aut s i o ->
-    [[i]] ->
-    m ([i], [o])
-execute _ _ [] = return ([], [])
-execute theSul theAut (s : ss) = do
-    out <- queryChecked theSul s
-    if out == runIdentity (query theAut s)
-        then execute theSul theAut ss
-        else return (s, out)
+{- | The 'cachedExperiment' function is 'experiment', wrapping the SUL in a
+'Haal.SUL.Cached.CachedSUL' so that a query already answered, or a prefix of
+one, is answered from a cache instead of sent to the underlying SUL. Returns
+the number of queries the cache saved alongside the model.
 
-{- | The 'findCex' function executes the test suite of each oracle to the automaton
-and SUL.
+> (model, saved) = runExperiment (cachedExperiment learner oracle) sul
 -}
-findCex ::
-    ( SUL sul m
-    , Automaton aut s
-    , EquivalenceOracle or
+cachedExperiment ::
+    forall learner aut i o oracle sul m.
+    ( EquivalenceOracle oracle
+    , Learner learner aut
     , FiniteOrd i
-    , FiniteOrd s
-    , Eq o
+    , FiniteOrd o
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
-    or ->
-    aut s i o ->
-    ExperimentT (sul i o) m (or, ([i], [o]))
-findCex oracle aut = do
+    learner i o ->
+    oracle ->
+    ExperimentT (sul i o) m (aut Int i o, Int)
+cachedExperiment learner oracle = do
     sul <- ask
-    let (oracle', theSuite) = testSuite oracle aut
-    (cin, cout) <- lift $ execute sul aut theSuite
-    return (oracle', (cin, cout))
+    let cached :: StateT (CacheState i o) m (aut Int i o)
+        cached = runReaderT (experiment learner oracle) (CachedSUL sul)
+    (model, final) <- lift (runStateT cached emptyCacheState)
+    pure (model, queriesSaved final)

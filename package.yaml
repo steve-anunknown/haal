@@ -48,14 +48,18 @@ library:
     - Haal.Automaton.MealyAutomaton
     - Haal.BlackBox
     - Haal.Dot
+    - Haal.EquivalenceOracle
     - Haal.EquivalenceOracle.CombinedOracle
     - Haal.EquivalenceOracle.RandomWalk
     - Haal.EquivalenceOracle.RandomWords
     - Haal.EquivalenceOracle.WMethod
     - Haal.EquivalenceOracle.WpMethod
     - Haal.Experiment
+    - Haal.Learning
     - Haal.Learning.LMstar
     - Haal.Statistics
+    - Haal.Trie
+    - Haal.SUL.Cached
   dependencies:
     - containers >= 0.6.7 && < 0.8
     - foldl >= 1.4.18 && < 1.5

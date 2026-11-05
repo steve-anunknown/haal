@@ -17,7 +17,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Vector as Vec
 import Haal.BlackBox
-import Haal.Experiment
+import Haal.EquivalenceOracle
 import System.Random (Random (randomR), StdGen)
 
 -- | The 'WMethodConfig' type is used to configure the W-method equivalence oracle.
@@ -38,7 +38,7 @@ mkWMethod cfg
 
 -- | The 'wmethodSuiteSize' function computes the size of the test suite for the W-method.
 wmethodSuiteSize ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -56,7 +56,7 @@ wmethodSuiteSize (WMethod (WMethodConfig d)) aut = size
 
 -- | The 'wmethodSuite' function generates the test suite for the W-method and a new oracle.
 wmethodSuite ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -104,7 +104,7 @@ mkRandomWMethod cfg
 -- | The 'randomWMethodSuite' function generates the test suite for the random W-method and a new oracle.
 randomWMethodSuite ::
     forall i o s aut.
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o

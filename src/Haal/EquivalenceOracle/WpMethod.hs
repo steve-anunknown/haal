@@ -25,7 +25,7 @@ import Haal.BlackBox (
     localCharacterizingSet,
     walk,
  )
-import Haal.Experiment (EquivalenceOracle (..))
+import Haal.EquivalenceOracle
 import System.Random (Random (randomR), StdGen)
 
 -- | The 'WpMethodConfig' type is used to configure the Wp-method equivalence oracle.
@@ -46,7 +46,7 @@ mkWpMethod cfg
 
 -- | The 'wpmethodSuiteSize' returns the number of test cases in the test suite of WpMethod.
 wpmethodSuiteSize ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -93,7 +93,7 @@ wpmethodSuiteSize (WpMethod (WpMethodConfig d)) aut = firstPhaseSize + secondPha
 -- | Returns the test suite for the WpMethod.
 wpmethodSuite ::
     forall aut i o s.
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -174,7 +174,7 @@ mkRandomWpMethod cfg
 -- | Return the 'RandomWpMethod' test suite.
 randomWpMethodSuite ::
     forall aut i o s.
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
