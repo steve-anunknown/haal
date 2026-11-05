@@ -32,7 +32,7 @@ driver for a real process or socket would.
 -}
 newtype RefSUL i o = RefSUL (IORef (MealyAutomaton Int i o))
 
-instance SUL RefSUL IO where
+instance (Ord i) => SUL RefSUL i o IO where
     step h@(RefSUL ref) i = do
         aut <- readIORef ref
         let (aut', o) = stepPure aut i
@@ -92,7 +92,7 @@ data Override = Correct | DropsOutput
 
 data OverridingSUL i o = OverridingSUL Override (MealyAutomaton Int i o)
 
-instance SUL OverridingSUL Identity where
+instance (Ord i) => SUL OverridingSUL i o Identity where
     step (OverridingSUL ov aut) i =
         let (aut', o) = stepPure aut i
          in return (OverridingSUL ov aut', o)

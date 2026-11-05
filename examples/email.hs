@@ -116,7 +116,7 @@ data Validator i o = Validator
     , buffer :: [i]
     }
 
-instance (Monad m) => SUL Validator m where
+instance (Monad m, Ord i) => SUL Validator i o m where
     step v i = let buf = i : buffer v in pure (v{buffer = buf}, verdict v (reverse buf))
     reset v = pure v{buffer = []}
 
@@ -139,7 +139,7 @@ data Browser i o = Browser
     , brBuffer :: [i]
     }
 
-instance SUL Browser IO where
+instance (Ord i) => SUL Browser i o IO where
     step c i = do
         let buf = i : brBuffer c
         os <- ask c (reverse buf)
@@ -204,7 +204,7 @@ oracle = either error id (mkRandomWpMethod config)
     config = RandomWpMethodConfig{rwpGen = mkStdGen 17, rwpExpected = 10, rwpMin = 1, rwpLimit = 20000}
 
 -- | Learn a SUL, printing progress: query counts, hypotheses and counterexamples.
-learnSUL :: (SUL sul IO) => String -> sul Symbol Bool -> IO Model
+learnSUL :: (SUL sul Symbol Bool IO) => String -> sul Symbol Bool -> IO Model
 learnSUL name sul = do
     putStrLn name
     count <- newIORef (0 :: Int)

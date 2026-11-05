@@ -154,7 +154,7 @@ the monad; this lets the automaton be learned inside whatever monad the
 experiment runs in, e.g. a 'Control.Monad.State.StateT' holding user-defined
 statistics.
 -}
-instance (Monad m) => SUL (MealyAutomaton s) m where
+instance (Monad m, Ord i) => SUL (MealyAutomaton s) i o m where
     step sul i = return (mealyStep sul i)
     reset = return . mealyReset
 
@@ -173,7 +173,7 @@ mealyTransitions m = Map.fromList [((s, i), (delta s i, lambda s i)) | s <- doma
     domainS = Set.toList $ mealyStates m
     domainI = Set.toList $ inputs m
 
-instance Automaton MealyAutomaton s where
+instance (Ord i) => Automaton MealyAutomaton s i o where
     transitions = mealyTransitions
     states = mealyStates
     current = mealyCurrentS

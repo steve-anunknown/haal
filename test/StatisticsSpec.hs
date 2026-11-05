@@ -56,7 +56,7 @@ spyTick spy r s = do
         Learning -> (add l, t)
         Testing -> (l, add t)
 
-instance SUL Spy IO where
+instance (Ord i) => SUL Spy i o IO where
     step spy i = do
         spyTick spy 0 1
         let (aut', o) = stepPure (spyAut spy) i

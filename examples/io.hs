@@ -37,7 +37,7 @@ askProgram bits = read <$> readProcess source [] (show (convert bits) ++ "\n")
 -- on every step.
 data Program i o = Program ([i] -> IO o) [i]
 
-instance SUL Program IO where
+instance (Ord i) => SUL Program i o IO where
     step (Program f buf) x = do
         let buf' = x : buf
         o <- f buf'

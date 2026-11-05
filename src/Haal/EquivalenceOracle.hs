@@ -13,7 +13,7 @@ Instances of this class should provide methods to generate a test suite
 -}
 class EquivalenceOracle or where
     testSuite ::
-        ( Automaton aut s
+        ( Automaton aut s i o
         , FiniteOrd i
         , FiniteOrd s
         , Eq o
@@ -28,9 +28,8 @@ the first test case on which they disagree, together with the outputs of the SUL
 of empty lists if they agree on every test case.
 -}
 execute ::
-    ( SUL sul m
-    , Automaton aut s
-    , Ord i
+    ( SUL sul i o m
+    , Automaton aut s i o
     , Eq o
     ) =>
     sul i o ->
@@ -48,8 +47,8 @@ execute theSul theAut (s : ss) = do
 and SUL.
 -}
 findCex ::
-    ( SUL sul m
-    , Automaton aut s
+    ( SUL sul i o m
+    , Automaton aut s i o
     , EquivalenceOracle or
     , FiniteOrd i
     , FiniteOrd s

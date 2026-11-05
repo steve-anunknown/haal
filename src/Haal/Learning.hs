@@ -16,14 +16,14 @@ determines the type of automaton @aut@ that is learned.
 -}
 class Learner l aut | l -> aut where
     initialize ::
-        ( SUL sul m
+        ( SUL sul i o m
         , FiniteOrd i
         , Finite o
         ) =>
         l i o ->
         ReaderT (sul i o) m (l i o)
     refine ::
-        ( SUL sul m
+        ( SUL sul i o m
         , FiniteOrd i
         , Finite o
         ) =>
@@ -31,8 +31,8 @@ class Learner l aut | l -> aut where
         [i] ->
         ReaderT (sul i o) m (l i o)
     learn ::
-        ( SUL sul m
-        , Automaton aut Int
+        ( SUL sul i o m
+        , Automaton aut Int i o
         , FiniteOrd i
         , FiniteOrd o
         ) =>

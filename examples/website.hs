@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
@@ -67,7 +68,7 @@ outputMap html
 -- SUL instance
 --------------------------------------------------------------------------------
 
-instance SUL WebsiteSUL IO where
+instance (Ord i) => SUL WebsiteSUL i o IO where
     reset sul = pure sul{currentUrl = "/"}
 
     step sul input = do

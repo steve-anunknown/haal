@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 #ifdef LIQUID
@@ -49,6 +50,12 @@ It provides methods to step through the automaton and reset it to its initial st
 It also requires a monad m, that may be 'Identity' in case of a pure SUL, or 'IO'
 in case of an external program that performs IO.
 
+@i@ and @o@ are class parameters, rather than left to vary per method call, so
+that an instance (such as a caching SUL, see "Haal.SUL.Cached") can mention
+them in its own context, e.g. to require @Ord i@ for a cache keyed on the
+query's inputs; every input alphabet in this library already derives 'Ord',
+so this is not an additional burden in practice.
+
 Active automata learning requires queries to be independent, so the library
 calls 'reset' before every membership query and every equivalence test case
 (see 'query'). 'reset' must therefore bring the system back to its initial
@@ -60,7 +67,7 @@ return. This supports two kinds of SULs:
 * stateful ones, such as a driver for a running process or a socket, where
   'step' and 'reset' change the external system and may return the same handle.
 -}
-class (Monad m) => SUL sul m where
+class (Monad m, Ord i) => SUL sul i o m where
     step :: sul i o -> i -> m (sul i o, o)
     reset :: sul i o -> m (sul i o)
     {-# MINIMAL step, reset #-}
@@ -89,8 +96,8 @@ so they query through this function. A violation is a bug in the instance and
 fails with an error naming the expected and actual number of outputs.
 -}
 
-{-@ queryChecked :: (SUL sul m) => sul i o -> xs:[i] -> m {ys:[o] | len ys == len xs} @-}
-queryChecked :: (SUL sul m) => sul i o -> [i] -> m [o]
+{-@ queryChecked :: (SUL sul i o m) => sul i o -> xs:[i] -> m {ys:[o] | len ys == len xs} @-}
+queryChecked :: (SUL sul i o m) => sul i o -> [i] -> m [o]
 queryChecked sul xs = do
     os <- query sul xs
     if length os == length xs
@@ -121,8 +128,8 @@ type FiniteOrd i = (Ord i, Finite i)
 
 -- | Generalization of 'step' that operates on a list of inputs.
 
-{-@ walk :: (SUL sul m) => sul i o -> xs:[i] -> m (sul i o, {ys:[o] | len ys == len xs}) @-}
-walk :: (SUL sul m) => sul i o -> [i] -> m (sul i o, [o])
+{-@ walk :: (SUL sul i o m) => sul i o -> xs:[i] -> m (sul i o, {ys:[o] | len ys == len xs}) @-}
+walk :: (SUL sul i o m) => sul i o -> [i] -> m (sul i o, [o])
 walk sul [] = pure (sul, [])
 walk sul (x : xs) = do
     (sul', o) <- step sul x
@@ -155,7 +162,7 @@ outputs x = Set.fromList $ rangeOUT x
 support for automata operations. Automatons are models, not programs,
 so they are pure and operate in the Identity monad.
 -}
-class (SUL (aut s) Identity) => Automaton aut s where
+class (SUL (aut s) i o Identity) => Automaton aut s i o where
     transitions ::
         (FiniteOrd i, FiniteOrd s) =>
         aut s i o ->
@@ -165,25 +172,25 @@ class (SUL (aut s) Identity) => Automaton aut s where
     update :: aut s i o -> s -> aut s i o
 
 -- | Pure instance of 'step'.
-stepPure :: (SUL sul Identity) => sul i o -> i -> (sul i o, o)
+stepPure :: (SUL sul i o Identity) => sul i o -> i -> (sul i o, o)
 stepPure sul i = runIdentity (step sul i)
 
 -- | Pure instance of 'walk'.
 
-{-@ walkPure :: (SUL sul Identity) => sul i o -> is:[i] -> (sul i o, {os:[o] | len os == len is})@-}
-walkPure :: (SUL sul Identity) => sul i o -> [i] -> (sul i o, [o])
+{-@ walkPure :: (SUL sul i o Identity) => sul i o -> is:[i] -> (sul i o, {os:[o] | len os == len is})@-}
+walkPure :: (SUL sul i o Identity) => sul i o -> [i] -> (sul i o, [o])
 walkPure sul i = runIdentity (walk sul i)
 
 -- | Pure instance of 'reset'.
-resetPure :: (SUL sul Identity) => sul i o -> sul i o
+resetPure :: (SUL sul i o Identity) => sul i o -> sul i o
 resetPure sul = runIdentity (reset sul)
 
 -- | Return the initial state of an automaton.
-initial :: (Automaton aut s) => aut s i o -> s
+initial :: (Automaton aut s i o) => aut s i o -> s
 initial = current . resetPure
 
 -- | Return the set of reachable states of an automaton.
-reachable :: forall s i o aut. (Automaton aut s, Ord s, FiniteOrd i) => aut s i o -> Set.Set s
+reachable :: forall s i o aut. (Automaton aut s i o, Ord s, FiniteOrd i) => aut s i o -> Set.Set s
 reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
   where
     alphabet = inputs aut
@@ -200,7 +207,7 @@ reachable aut = bfs [initial aut] $ Set.singleton (initial aut)
 -- | Returns a map containing the shortest sequence to access each reachable state from the initial state.
 accessSequences ::
     forall s i o aut.
-    (Automaton aut s, FiniteOrd i, Ord s) =>
+    (Automaton aut s i o, FiniteOrd i, Ord s) =>
     aut s i o ->
     Map.Map s [i]
 accessSequences aut = bfs [(initialSt, [])] (Set.singleton initialSt) (Map.singleton initialSt [])
@@ -230,8 +237,8 @@ differenceFrom ::
     , FiniteOrd s
     , FiniteOrd s'
     , Eq o
-    , Automaton aut1 s
-    , Automaton aut2 s'
+    , Automaton aut1 s i o
+    , Automaton aut2 s' i o
     ) =>
     aut1 s i o ->
     s ->
@@ -272,8 +279,8 @@ difference ::
     , FiniteOrd s
     , FiniteOrd s'
     , Eq o
-    , Automaton aut1 s
-    , Automaton aut2 s'
+    , Automaton aut1 s i o
+    , Automaton aut2 s' i o
     ) =>
     aut1 s i o ->
     aut2 s' i o ->
@@ -284,14 +291,14 @@ difference aut1 aut2 = differenceFrom aut1 (initial aut1) aut2 (initial aut2)
 the given automaton.
 -}
 
-{-@ distinguish :: (Automaton aut s, FiniteOrd i, Ord s, Eq o) =>
+{-@ distinguish :: (Automaton aut s i o, FiniteOrd i, Ord s, Eq o) =>
       aut s i o ->
       s1:s ->
       s2:s ->
       {is:[i] | s1 == s2 ==> len is = 0}
 @-}
 distinguish ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd s
     , FiniteOrd i
     , Eq o
@@ -307,7 +314,7 @@ distinguish m s1 s2 = fromMaybe [] $ differenceFrom m s1 m s2
 - any other state of the automaton.
 -}
 localCharacterizingSet ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o
@@ -323,7 +330,7 @@ localCharacterizingSet m s = Set.fromList [d s sx | sx <- Set.toList $ states m,
 of the automaton.
 -}
 globalCharacterizingSet ::
-    ( Automaton aut s
+    ( Automaton aut s i o
     , FiniteOrd i
     , FiniteOrd s
     , Eq o

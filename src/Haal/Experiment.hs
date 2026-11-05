@@ -30,7 +30,6 @@ import Control.Monad.State (StateT, modify', runStateT)
 
 import Control.Foldl (Fold (..))
 import Control.Monad.Identity
-import qualified Data.Map as Map
 import Haal.BlackBox
 import Haal.EquivalenceOracle
 import Haal.Learning
@@ -68,8 +67,8 @@ loop ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     (Event aut i o -> m ()) ->
     learner i o ->
@@ -97,7 +96,7 @@ and reports the queries to the experiment loop.
 -}
 data Observed m sul i o = Observed (sul i o) ([i] -> [o] -> m ())
 
-instance (SUL sul m) => SUL (Observed m sul) m where
+instance (SUL sul i o m) => SUL (Observed m sul) i o m where
     step :: Observed m sul i o -> i -> m (Observed m sul i o, o)
     step (Observed sul report) input = do
         (sul', output) <- step sul input
@@ -123,8 +122,8 @@ experimentWith ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     (Event aut i o -> m ()) ->
     learner i o ->
@@ -136,7 +135,7 @@ experimentWith emit learner oracle =
 -- | A SUL lifted into 'StateT', so that 'measuredExperiment' can keep its state there.
 newtype Lifted sul i o = Lifted (sul i o)
 
-instance (SUL sul m) => SUL (Lifted sul) (StateT x m) where
+instance (SUL sul i o m) => SUL (Lifted sul) i o (StateT x m) where
     step :: Lifted sul i o -> i -> StateT x m (Lifted sul i o, o)
     step (Lifted sul) input = do
         (sul', output) <- lift (step sul input)
@@ -159,8 +158,8 @@ measuredExperiment ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     Fold (Event aut i o) r ->
     learner i o ->
@@ -181,27 +180,10 @@ experiment ::
     , Learner learner aut
     , FiniteOrd i
     , FiniteOrd o
-    , Automaton aut Int
-    , SUL sul m
+    , Automaton aut Int i o
+    , SUL sul i o m
     ) =>
     learner i o ->
     oracle ->
     ExperimentT (sul i o) m (aut Int i o)
 experiment = loop (\_ -> return ())
-
-data LRUCache i o = LRUCache
-    { mapping :: Map.Map (Int, [i]) [o]
-    , capacity :: Int
-    }
-
-mkLRUCache capacity = LRUCache Map.empty capacity
-
-insertToCache cache input output =
-    if input `Map.member` (mapping cache)
-        then cache
-        else undefined
-
--- | A SUL lifted into 'StateT', so that 'measuredExperiment' can keep its state there.
-newtype Cached sul i o = Cached (sul i o)
-
-cachedExperiment = undefined
