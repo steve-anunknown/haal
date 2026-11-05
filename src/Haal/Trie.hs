@@ -11,7 +11,7 @@ module Haal.Trie (
 )
 where
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Prelude hiding (lookup)
 
 -- | A trie from sequences of @i@ to the @o@ produced at each step along the way.
