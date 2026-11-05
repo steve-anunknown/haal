@@ -15,14 +15,6 @@ returned value. Instead it is threaded explicitly through a
 the same way 'Haal.Experiment.measuredExperiment' threads statistics through
 'Haal.Experiment.Lifted'. Run one with 'Haal.Experiment.cachedExperiment'.
 
-This only works now because @i@\/@o@ are parameters of the 'Haal.BlackBox.SUL'
-class itself, rather than varying per method call: the instance below pins
-@m@ to @StateT (CacheState i o) m0@ for the *same* @i@\/@o@ that the rest of
-the instance is defined at, instead of a fresh pair chosen independently by
-each caller. Before that change, an earlier attempt at this exact design
-didn't type-check for exactly that reason, and the cache had to live inside
-the 'CachedSUL' value via an 'Data.IORef.IORef' instead, restricted to 'IO'.
-
 Caching only applies to 'Haal.BlackBox.query': 'Haal.BlackBox.step' and
 'Haal.BlackBox.reset' always go to the underlying SUL, since the cache only
 ever sees whole, reset-to-end queries.
