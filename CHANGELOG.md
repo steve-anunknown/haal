@@ -16,6 +16,32 @@ and this project adheres to the
   The example supposes that `chrome` and `firefox` are available as 
   snaps. It's better to view the `email-driver` first to make sure 
   the example can be run successfully.
+- `Haal.Trie`: a trie keyed by a sequence of inputs, storing one output per
+  step along the way. Nodes along a shared prefix are shared, so a prefix of
+  an inserted sequence is also a cache hit.
+- `Haal.SUL.Cached`: `CachedSUL`, a caching wrapper around any SUL. It answers
+  a query whose whole input sequence (or a prefix of one) has already been
+  sent, from a `Haal.Trie.Trie`, instead of sending it to the underlying SUL
+  again. `CacheState` carries the cache and how many queries it has saved so
+  far; `emptyCacheState` is a fresh one. The cache is threaded through a
+  `Control.Monad.State.StateT` layer around the underlying SUL's monad, the
+  same way `Haal.Experiment.measuredExperiment` threads statistics through
+  `Haal.Experiment.Lifted`, so it works for any SUL and any monad.
+- `Haal.Experiment.cachedExperiment`: `experiment`, wrapping the SUL in a
+  `CachedSUL`, returning the model and the number of queries the cache saved.
+
+### Changed (breaking)
+
+- `Haal.BlackBox.SUL` takes `i` and `o` as class parameters again
+  (`SUL sul i o m`), reverting 0.3.0.0, and now requires `Ord i` as a
+  superclass constraint. Without `i`/`o` in the class head, an instance has
+  no way to mention them in its own context, which `CachedSUL`'s cache needs
+  (its state's type, `CacheState i o`, depends on them). Instances drop the
+  per-method freedom of 0.3.0.0 and fix `i`/`o` once instead:
+  `instance SUL MyType i o IO` instead of `instance SUL MyType IO`.
+- `Haal.BlackBox.Automaton` likewise takes `i` and `o` back
+  (`Automaton aut s i o`), since its superclass constraint is
+  `SUL (aut s) i o Identity`, which needs them in scope the same way.
 
 ## 0.7.0.0 - 2026-10-10
 
