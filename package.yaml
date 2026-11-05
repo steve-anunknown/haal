@@ -58,6 +58,8 @@ library:
     - Haal.Learning
     - Haal.Learning.LMstar
     - Haal.Statistics
+    - Haal.Trie
+    - Haal.SUL.Cached
   dependencies:
     - containers >= 0.6.7 && < 0.8
     - foldl >= 1.4.18 && < 1.5

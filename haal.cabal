@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.38.0.
+-- This file has been generated from package.yaml by hpack version 0.39.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -46,6 +46,8 @@ library
       Haal.Learning
       Haal.Learning.LMstar
       Haal.Statistics
+      Haal.Trie
+      Haal.SUL.Cached
   other-modules:
       Paths_haal
   autogen-modules:
@@ -167,10 +169,12 @@ test-suite haal-test
   main-is: Spec.hs
   other-modules:
       AutomatonSpec
+      CachedSpec
       DotSpec
       EquivalenceOracleSpec
       StatisticsSpec
       SULSpec
+      TrieSpec
       Utils
       Paths_haal
   autogen-modules:
