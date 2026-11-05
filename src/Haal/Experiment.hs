@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- | This module exports the basic types, classes and functions that are required to
@@ -16,6 +17,7 @@ module Haal.Experiment (
     runExperimentT,
     experimentWith,
     measuredExperiment,
+    cachedExperiment,
 ) where
 
 import Control.Monad.Reader (
@@ -33,6 +35,7 @@ import Control.Monad.Identity
 import Haal.BlackBox
 import Haal.EquivalenceOracle
 import Haal.Learning
+import Haal.SUL.Cached (CacheState (..), CachedSUL (..), emptyCacheState)
 import Haal.Statistics (Event (..), Phase (Learning, Testing))
 
 {- | The 'ExperimentT' type is a monad transformer that allows for
@@ -187,3 +190,29 @@ experiment ::
     oracle ->
     ExperimentT (sul i o) m (aut Int i o)
 experiment = loop (\_ -> return ())
+
+{- | The 'cachedExperiment' function is 'experiment', wrapping the SUL in a
+'Haal.SUL.Cached.CachedSUL' so that a query already answered, or a prefix of
+one, is answered from a cache instead of sent to the underlying SUL. Returns
+the number of queries the cache saved alongside the model.
+
+> (model, saved) = runExperiment (cachedExperiment learner oracle) sul
+-}
+cachedExperiment ::
+    forall learner aut i o oracle sul m.
+    ( EquivalenceOracle oracle
+    , Learner learner aut
+    , FiniteOrd i
+    , FiniteOrd o
+    , Automaton aut Int i o
+    , SUL sul i o m
+    ) =>
+    learner i o ->
+    oracle ->
+    ExperimentT (sul i o) m (aut Int i o, Int)
+cachedExperiment learner oracle = do
+    sul <- ask
+    let cached :: StateT (CacheState i o) m (aut Int i o)
+        cached = runReaderT (experiment learner oracle) (CachedSUL sul)
+    (model, final) <- lift (runStateT cached emptyCacheState)
+    pure (model, queriesSaved final)
