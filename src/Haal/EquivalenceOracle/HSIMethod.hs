@@ -2,7 +2,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
--- | Copyright: (c) 2026 Joshua Moerman, Open Universiteit
+-- | Copyright: (c) 2025-2026 Joshua Moerman, Open Universiteit
+-- SPDX-License-Identifier: BSD-3-Clause
 --
 -- This file is ported from https://git.cs.ou.nl/joshua.moerman/mealy-decompose.
 -- It implements the splitting tree algorithm [1] for computing all
