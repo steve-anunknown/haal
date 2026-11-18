@@ -16,7 +16,7 @@ class EquivalenceOracle or where
         ( Automaton aut s i o
         , FiniteOrd i
         , FiniteOrd s
-        , Eq o
+        , Ord o
         ) =>
         or ->
         aut s i o ->
@@ -52,7 +52,7 @@ findCex ::
     , EquivalenceOracle or
     , FiniteOrd i
     , FiniteOrd s
-    , Eq o
+    , Ord o
     ) =>
     or ->
     aut s i o ->
