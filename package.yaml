@@ -50,6 +50,7 @@ library:
     - Haal.Dot
     - Haal.EquivalenceOracle
     - Haal.EquivalenceOracle.CombinedOracle
+    - Haal.EquivalenceOracle.HSIMethod
     - Haal.EquivalenceOracle.RandomWalk
     - Haal.EquivalenceOracle.RandomWords
     - Haal.EquivalenceOracle.WMethod
