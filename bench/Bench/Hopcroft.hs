@@ -8,7 +8,20 @@
 -- Implementations of the two automata families in Hopcrofts minimisation
 -- paper from 1971. Note that these did not originally have an initial state,
 -- so we added one. Also these are DFAs, but we can implement them as Mealy.
-module Bench.Hopcroft where
+--
+-- "An n log n algorithm for minimizing states in a finite automaton", 1971,
+-- John Hopcroft.
+-- https://doi.org/10.1016/B978-0-12-417750-5.50022-1
+
+module Bench.Hopcroft
+  ( -- * Example automata
+    hopcroftA
+  , hopcroftB
+  , hopcroftB2
+    -- * Input and output
+  , Input(..)
+  , Output(..)
+  ) where
 
 import Control.DeepSeq
 import Data.Set qualified as Set
@@ -16,11 +29,16 @@ import GHC.Generics (Generic)
 
 import Haal.Automaton.MealyAutomaton
 
+
+-- | Hopcrofts automata have a single symbol, we add another to convert
+-- the DFA to a Mealy machine.
 data Input
   = A
   | Get
   deriving (Show, Eq, Ord, Enum, Bounded, Generic, NFData)
 
+-- | The `Get` symbol returns the output as specified by the DFA (either
+-- `Accept` or `Reject`), and it outputs `None` otherwise.
 data Output
   = None
   | Accept
@@ -28,7 +46,7 @@ data Output
   deriving (Show, Eq, Ord, Enum, Bounded, Generic, NFData)
 
 -- | Long chain of states, of which the last is accepting. For
--- the input @n@, the number of states is n.
+-- the input @n@, the number of states is @n@.
 hopcroftA :: Int -> MealyAutomaton Int Input Output
 hopcroftA n = mkMealyAutomaton delta lambda sts initS
  where
@@ -42,7 +60,9 @@ hopcroftA n = mkMealyAutomaton delta lambda sts initS
   initS = n-1
 
 -- | The B family of automata in Hopcrofts paper. For the input
--- @n@, the number of states is 4n. Not all states are reachable.
+-- @n@, the number of states is @4n@. Not all states are reachable.
+-- This is an example where the "split the smaller half" make a big
+-- algorithmic improvement.
 hopcroftB :: Int -> MealyAutomaton Int Input Output
 hopcroftB n = mkMealyAutomaton delta lambda sts initS
  where
@@ -60,7 +80,8 @@ hopcroftB n = mkMealyAutomaton delta lambda sts initS
   sts = Set.fromList [0 .. 4*n-1]
   initS = 0
 
--- | Variation of `hopcroftB` so that it is reachable.
+-- | Variation of `hopcroftB` so that it is reachable. This does not
+-- correspond to a DFA anymore.
 hopcroftB2 :: Int -> MealyAutomaton Int Input Output
 hopcroftB2 n = mkMealyAutomaton delta lambda sts initS
  where
@@ -78,4 +99,3 @@ hopcroftB2 n = mkMealyAutomaton delta lambda sts initS
     | otherwise = error "hopcroftB2 out of bounds"
   sts = Set.fromList [0 .. 4*n-1]
   initS = 0
-

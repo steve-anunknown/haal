@@ -8,24 +8,33 @@
 -- This file is ported from https://git.cs.ou.nl/joshua.moerman/mealy-decompose.
 -- It implements the splitting tree algorithm [1] for computing all
 -- separating sequences efficiently. This can be used as a characterisation
--- set for the W-method, or as the basis of the HSI-method. (The splitting
--- tree algorithm itself is derived from Hopcroft's minimisation algorithm [2].)
+-- set for the W-method, or as the basis of the HSI-method. The splitting
+-- tree algorithm is derived from Hopcroft's minimisation algorithm [2].
+-- The HSI method itself was first described in [3], although their algorithm
+-- does not use the efficient splitting tree algorithm.
 --
--- [1]: Minimal Separating Sequences for All Pairs of States
+-- (1) "Minimal Separating Sequences for All Pairs of States", 2016,
+-- Rick Smetsers, Joshua Moerman & David N. Jansen.
 -- https://doi.org/10.1007/978-3-319-30000-9_14
 --
--- [2]: An n log n algorithm for minimizing states in a finite automaton
+-- (2) "An n log n algorithm for minimizing states in a finite automaton", 1971,
+-- John Hopcroft.
 -- https://doi.org/10.1016/B978-0-12-417750-5.50022-1
+--
+-- (3) "Selecting Test Sequences For Partially-Specified Nondeterministic Finite State Machines", 1994,
+-- Gang Luo, Alexandre Petrenko, Gregor V. Bochmann.
+-- https://doi.org/10.1007/978-0-387-34883-4_6
+
 module Haal.EquivalenceOracle.HSIMethod (
+  -- * HSI-method Equivalence Oracle
   HSIMethod,
   mkHSIMethod,
-  Block,
-  Partition(..),
-  InnerNode,
-  SplittingTree(..),
-  refine,
-  splittingTreeMealy,
+  -- * State cover
+  computePrefixes,
+  -- * State characteriser
   stateIdentifierFor,
+  -- * Helper functions
+  splittingTreeMealy,
 ) where
 
 import Control.Monad.State (gets, modify', evalState, MonadState(..))
@@ -39,7 +48,6 @@ import Haal.BlackBox (Automaton(..), Finite, FiniteOrd, accessSequences)
 import Haal.EquivalenceOracle (EquivalenceOracle(..))
 import Haal.EquivalenceOracle.WMethod (WMethodConfig(..))
 
--- * HSI-method Equivalence Oracle
 
 -- | The 'HSIMethod' type represents the HSI-method equivalence oracle.
 newtype HSIMethod = HSIMethod
@@ -52,6 +60,7 @@ mkHSIMethod cfg
     | 0 <= wmDepth cfg = Right (HSIMethod cfg)
     | otherwise = Left ("Must be 0 <= wmDepth but got " ++ show cfg)
 
+-- | The HSI-Method is a complete test suite, similar to the W-method.
 instance EquivalenceOracle HSIMethod where
   testSuite hsi aut =
     let
@@ -62,9 +71,42 @@ instance EquivalenceOracle HSIMethod where
       suite = [(reverse px) <> sx | (s, ps) <- Map.toList stateCover, px <- Set.toList ps, sx <- si s]
     in (hsi, suite)
 
--- * Splitting Tree algorithm
+-- | Computes the state cover and returns a data structure which relates
+-- the state and the access sequence. This is needed, because the HSI method
+-- uses local state identifiers (meaning that the suffix depends on the state).
+computePrefixes :: (Automaton aut s i o, FiniteOrd i, FiniteOrd s) => Int -> aut s i o -> Map.Map s (Set.Set [i])
+computePrefixes extraStates aut = stateCover
+ where
+    alphabet = [minBound .. maxBound]
+    delta s i = fst $ transitions aut Map.! (s, i)
 
--- ** Basics
+    -- we keep the sequences in reverse order, because we want to prepend
+    -- for extra states. Slightly inconvenient here. Maybe should use @Seq@?
+    spanningTree = Map.map (Set.singleton . reverse) $ accessSequences aut
+    stateCover = nTimes (extraStates + 1) extendStateCover spanningTree
+
+    nTimes 0 _ = id
+    nTimes 1 f = f
+    nTimes n f = f . nTimes (n-1) f
+
+    -- A set data structure is used to avoid adding prefixes which are already
+    -- visited. This is done per state, as this will result in smaller sets.
+    extendStateCover m =
+      let moreCover = [(delta s a, Set.singleton (a : px)) | (s, pxs) <- Map.toList m, px <- Set.toList pxs, a <- alphabet]
+       in foldr (uncurry (Map.insertWith Set.union)) m moreCover
+
+-- | Computes the state characteriser. In this case it is a set of suffixes
+-- for each state. It is computed from a "splitting tree". The set of
+-- suffixes is so-called "harmonised".
+stateIdentifierFor :: Ord s => Partition s -> SplittingTree s i o -> s -> [[i]]
+stateIdentifierFor p st s = go firstNode
+ where
+  firstNode = fst <$> (blockParent st) Map.!? ((getPartition p) Map.! s)
+  getParent n = fst <$> (innerParent st) Map.!? n
+  go Nothing = []
+  go (Just n) = ((label st) Map.! n) : go (getParent n)
+
+-- Underlying algorithms
 
 -- | A `Block` is a unique identifier for a set of elements.
 newtype Block = Block Int
@@ -150,6 +192,8 @@ genNextNodeId = do
   modify' (\prs -> prs{nextNodeId = succ (nextNodeId prs)})
   return idx
 
+-- | Normalises a partition in the sense that the block numbers start at 0
+-- and leave no gaps in between block numbers.
 cleanupP :: Partition s -> Partition s
 cleanupP (Partition m) = Partition p
  where
@@ -334,6 +378,9 @@ refineWithSplitterAllInputs ls splitter = concat <$> traverse (\(i, rev) -> refi
 
 -- ** Usage
 
+-- | Runs the partition refinement algorithm on an automaton. It uses state,
+-- it could be generalised so that mutations to the queue can be made.
+-- This could be useful for a randomised algorithm.
 refine :: (MonadState (PRState s i o) m, Ord o, Ord s) => [(i, s -> o)] -> [(i, s -> [s])] -> m (Partition s, SplittingTree s i o)
 refine outputs transitionsReverse = do
   initialQueue <- refineWithAllOutputs outputs
@@ -348,6 +395,13 @@ refine outputs transitionsReverse = do
   prState <- get
   pure (cleanupP (partition prState), splittingTree prState)
 
+-- | Computes the partition which corresponds to the bisimulation equivalence
+-- relation. And at the same time computes a splitting tree, these contain
+-- the witnesses of in-equivalence. This can be used as state identifier.
+--
+-- Currently, it is only used in the HSI-method, but it can also be used for
+-- the W- and Wp-methods. As such the types @Partition@ and @SplittingTree@
+-- are not (yet) exported.
 splittingTreeMealy :: (Automaton aut s i o, Finite i, FiniteOrd s, Ord o) => aut s i o -> (Partition s, SplittingTree s i o)
 splittingTreeMealy aut =
   let alphabet = [minBound .. maxBound]
@@ -358,39 +412,6 @@ splittingTreeMealy aut =
       reverseFuns = [(i, fun) | i <- alphabet, let m = reverseTransitionMaps i, let fun s = Map.findWithDefault [] s m]
   in evalState (refine stateOutputs reverseFuns) (initialPRState (Set.toList (states aut)))
 
-stateIdentifierFor :: Ord s => Partition s -> SplittingTree s i o -> s -> [[i]]
-stateIdentifierFor p st state = go firstNode
- where
-  firstNode = fst <$> (blockParent st) Map.!? ((getPartition p) Map.! state)
-  getParent n = fst <$> (innerParent st) Map.!? n
-  go Nothing = []
-  go (Just n) = ((label st) Map.! n) : go (getParent n)
-
--- * Access sequences
-
--- When extending the access sequences, the HSI method needs
--- to know what state we reach, because the suffix depends
--- on the state. The following function does that.
-computePrefixes :: (Automaton aut s i o, FiniteOrd i, FiniteOrd s) => Int -> aut s i o -> Map.Map s (Set.Set [i])
-computePrefixes extraStates aut = stateCover
- where
-    alphabet = [minBound .. maxBound]
-    delta s i = fst $ transitions aut Map.! (s, i)
-
-    -- we keep the sequences in reverse order, because we want to prepend
-    -- for extra states. Slightly inconvenient here. Maybe should use `Seq`?
-    spanningTree = Map.map (Set.singleton . reverse) $ accessSequences aut
-    stateCover = nTimes (extraStates + 1) extendStateCover spanningTree
-
-    nTimes 0 _ = id
-    nTimes 1 f = f
-    nTimes n f = f . nTimes (n-1) f
-
-    -- A set data structure is used to avoid adding prefixes which are already
-    -- visited. This is done per state, as this will result in smaller sets.
-    extendStateCover m =
-      let moreCover = [(delta s a, Set.singleton (a : px)) | (s, pxs) <- Map.toList m, px <- Set.toList pxs, a <- alphabet]
-       in foldr (uncurry (Map.insertWith Set.union)) m moreCover
 
 {- Notes on performance:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -399,7 +420,7 @@ computePrefixes extraStates aut = stateCover
   Hopcroft. However, this requires a slightly more sophisticated data
   structure (sometimes called a /refinable partition/). This introduces a
   second indirection, and is a bit more bookkeeping. Instead of processing
-  the smaller half, we process a half (not necessarily the smallest). When
+  the smaller half, we process *a* half (not necessarily the smallest). When
   lucky, this could be the smallest, and we get the O(n log n) bound. But
   when unlucky, we get the O(n^2) bound.
 
