@@ -13,6 +13,7 @@ module Utils (
     Output (..),
     ArbWMethod (..),
     ArbWpMethod (..),
+    ArbHSIMethod (..),
     ArbRandomWords (..),
     ArbRandomWalk (..),
     ArbRandomWMethod (..),
@@ -61,12 +62,17 @@ import Haal.EquivalenceOracle.WpMethod (
  )
 import System.Random
 import Test.QuickCheck (Arbitrary (..), Gen, choose, elements, vectorOf)
+import Haal.EquivalenceOracle.HSIMethod
+import Data.Coerce (coerce)
 
 newtype ArbWMethodConfig = ArbWMethodConfig WMethodConfig deriving (Show, Eq)
 newtype ArbWMethod = ArbWMethod WMethod deriving (Show, Eq)
 
 newtype ArbWpMethodConfig = ArbWpMethodConfig WpMethodConfig deriving (Show, Eq)
 newtype ArbWpMethod = ArbWpMethod WpMethod deriving (Show, Eq)
+
+-- HSI method re-uses WMethodConfig
+newtype ArbHSIMethod = ArbHSIMethod HSIMethod deriving (Show, Eq)
 
 newtype ArbRandomWordsConfig = ArbRandomWordsConfig RandomWordsConfig deriving (Show, Eq)
 newtype ArbRandomWords = ArbRandomWords RandomWords deriving (Show, Eq)
@@ -97,6 +103,9 @@ instance Arbitrary ArbWpMethod where
     arbitrary = do
         (ArbWpMethodConfig config) <- arbitrary :: Gen ArbWpMethodConfig
         return (ArbWpMethod (either error id (mkWpMethod config)))
+
+instance Arbitrary ArbHSIMethod where
+    arbitrary = ArbHSIMethod . either error id . mkHSIMethod . coerce <$> (arbitrary :: Gen ArbWMethodConfig)
 
 instance Arbitrary ArbRandomWordsConfig where
     arbitrary = do
@@ -157,6 +166,9 @@ instance OracleWrapper ArbWMethod WMethod where
 
 instance OracleWrapper ArbWpMethod WpMethod where
     unwrap (ArbWpMethod o) = o
+
+instance OracleWrapper ArbHSIMethod HSIMethod where
+    unwrap (ArbHSIMethod o) = o
 
 instance OracleWrapper ArbRandomWords RandomWords where
     unwrap (ArbRandomWords o) = o

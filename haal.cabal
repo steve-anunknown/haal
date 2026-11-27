@@ -193,6 +193,7 @@ test-suite haal-test
     , mtl
     , random
   default-language: Haskell2010
+  build-tool-depends: hspec-discover:hspec-discover == 2.*
 
 benchmark haal-bench
   type: exitcode-stdio-1.0
