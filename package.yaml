@@ -103,8 +103,9 @@ benchmarks:
     - -O2
     dependencies:
     - haal
-    - tasty-bench
     - tasty
+    - tasty-bench
+    - tasty-hunit
     - containers
     - mtl
     - random

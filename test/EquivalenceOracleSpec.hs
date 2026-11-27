@@ -111,6 +111,15 @@ spec = do
             it "WpMethod returns Nothing" $
                 property (prop_identity :: Mealy Input Output -> ArbWpMethod -> Bool)
 
+    describe "HSIMethod Equivalence Oracle" $ do
+        context "when two automatons differ" $
+            it "HSIMethod returns Just" $
+                property (prop_difference :: Mealy Input Output -> Mealy Input Output -> ArbHSIMethod -> Property)
+
+        context "when two automatons are the same" $
+            it "HSIMethod returns Nothing" $
+                property (prop_identity :: Mealy Input Output -> ArbHSIMethod -> Bool)
+
     describe "RandomWords Equivalence Oracle" $ do
         context "when two automatons differ" $
             it "RandomWords returns Just" $
