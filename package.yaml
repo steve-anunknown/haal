@@ -7,7 +7,7 @@ maintainer:          "steve.anunknown@gmail.com"
 copyright:           "2025 Stefanos Anagnostou"
 
 extra-source-files:
-- README.md 
+- README.md
 extra-doc-files:
 - CHANGELOG.md
 
@@ -50,6 +50,7 @@ library:
     - Haal.Dot
     - Haal.EquivalenceOracle
     - Haal.EquivalenceOracle.CombinedOracle
+    - Haal.EquivalenceOracle.HSIMethod
     - Haal.EquivalenceOracle.RandomWalk
     - Haal.EquivalenceOracle.RandomWords
     - Haal.EquivalenceOracle.WMethod
@@ -87,7 +88,7 @@ tests:
     - foldl
     - QuickCheck
     - mtl
-    - random 
+    - random
 
 
 
@@ -117,24 +118,24 @@ executables:
       - haal
       - base
   div:
-    main: div.hs 
+    main: div.hs
     source-dirs: examples
-    dependencies: 
-    - haal 
+    dependencies:
+    - haal
     - base
-    - mtl 
-  demo: 
-    main: demo.hs 
+    - mtl
+  demo:
+    main: demo.hs
     source-dirs: examples
-    dependencies: 
-    - haal 
+    dependencies:
+    - haal
     - base
-    - containers 
+    - containers
   io:
-    main: io.hs 
+    main: io.hs
     source-dirs: examples
-    dependencies: 
-    - haal 
+    dependencies:
+    - haal
     - base
     - process >= 1.6.19 && < 1.7
     - mtl

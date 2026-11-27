@@ -8,8 +8,10 @@ import qualified Data.Set as Set
 import GHC.Generics (Generic)
 import Test.Tasty.Bench (Benchmark, bench, bgroup, nf)
 
+import Bench.Hopcroft (Input, Output, hopcroftB2)
 import Haal.Automaton.MealyAutomaton (MealyAutomaton, mkMealyAutomaton)
 import Haal.EquivalenceOracle (EquivalenceOracle (testSuite))
+import Haal.EquivalenceOracle.HSIMethod (HSIMethod, mkHSIMethod)
 import Haal.EquivalenceOracle.WMethod (WMethod, WMethodConfig (..), mkWMethod, wmethodSuiteSize)
 import Haal.EquivalenceOracle.WpMethod (WpMethod, WpMethodConfig (..), mkWpMethod, wpmethodSuiteSize)
 
@@ -78,6 +80,9 @@ wmethod d = either error id (mkWMethod (WMethodConfig d))
 wpmethod :: Int -> WpMethod
 wpmethod d = either error id (mkWpMethod (WpMethodConfig d))
 
+hsimethod :: Int -> HSIMethod
+hsimethod d = either error id (mkHSIMethod (WMethodConfig d))
+
 equivalenceOracleBenchmarks :: Benchmark
 equivalenceOracleBenchmarks =
     bgroup
@@ -112,4 +117,14 @@ equivalenceOracleBenchmarks =
                 , bench "depth=3" $ nf (\w -> wpmethodSuiteSize w benchAutomaton) (wpmethod 3)
                 ]
             ]
+        , bgroup
+            "Scaling"
+            [bench (name ++ " " ++ show depth ++ " " ++ show size) (nf (fun depth) (hopcroftB2 size)) | (name, fun) <- hopcroftTests, depth <- [1, 2], size <- [20, 100]]
         ]
+
+hopcroftTests :: [(String, Int -> MealyAutomaton Int Input Output -> [[Input]])]
+hopcroftTests =
+    [ ("W", \d m -> snd (testSuite (wmethod d) m))
+    , ("Wp", \d m -> snd (testSuite (wpmethod d) m))
+    , ("HSI", \d m -> snd (testSuite (hsimethod d) m))
+    ]

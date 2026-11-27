@@ -8,13 +8,16 @@ and this project adheres to the
 
 ## Unreleased
 
-### Added 
+### Added
 
+- `HSIMethod.hs` introduces a new equivalence oracle, based on the HSI-method.
+  It is more efficient than the current W-method and Wp-method, both in
+  terms of computation and in test suite size.
 - `email.hs` example where models of different email validators are learned.
-  An important note: even though it's possible to run the example with 
+  An important note: even though it's possible to run the example with
   `stack run email`, that does not mean it is completely reproducible.
-  The example supposes that `chrome` and `firefox` are available as 
-  snaps. It's better to view the `email-driver` first to make sure 
+  The example supposes that `chrome` and `firefox` are available as
+  snaps. It's better to view the `email-driver` first to make sure
   the example can be run successfully.
 - `Haal.Trie`: a trie keyed by a sequence of inputs, storing one output per
   step along the way. Nodes along a shared prefix are shared, so a prefix of
@@ -42,6 +45,8 @@ and this project adheres to the
 - `Haal.BlackBox.Automaton` likewise takes `i` and `o` back
   (`Automaton aut s i o`), since its superclass constraint is
   `SUL (aut s) i o Identity`, which needs them in scope the same way.
+- `Haal.EquivalenceOracle.testSuite` now requires `Ord o` instead of
+  just `Eq o`.
 
 ## 0.7.0.0 - 2026-10-10
 
@@ -224,7 +229,7 @@ import qualified Control.Foldl as L
 
 ## 0.4.1.0 - 2026-03-21
 
-### Added 
+### Added
 - Serializer from Mealy Automaton to Dot format.
 - haal-gen executable that accepts a .dot file and produces a haskell module
   that exports a function for the specified Mealy Automaton, with specific
@@ -234,7 +239,7 @@ import qualified Control.Foldl as L
 
 ## 0.4.0.2 - 2026-03-17
 
-### Changed 
+### Changed
 - Dependency bounds.
 
 ## 0.4.0.1 - 2026-03-17
@@ -251,10 +256,10 @@ import qualified Control.Foldl as L
 
 ## 0.4.0.0 - 2026-03-16
 
-### Changed 
+### Changed
 - Changed the types of oracles' constructors from `<Oracle>` to `Either String <Oracle>`
   where `String` is an error message indicating invalid values to `<OracleConfig>`.
-  Now, for example, instead of `oracle = mkWMethod (WMethodConfig 2)`, one should either 
+  Now, for example, instead of `oracle = mkWMethod (WMethodConfig 2)`, one should either
   pattern match with `case` or do `oracle = either error id (mkWMethod (WMethodConfig 2))`.
 
 ## 0.3.0.0 - 2026-03-11
@@ -294,8 +299,8 @@ import qualified Control.Foldl as L
 
 - Initial release of `haal`.
     - Support for Mealy Automata and DFAs.
-    - One learner for Mealy Automata and DFAs with 2 configurations. 
+    - One learner for Mealy Automata and DFAs with 2 configurations.
         - LStar.
         - LPlus.
-    - Basic equivalence oracles. 
+    - Basic equivalence oracles.
     - Examples that showcase usage of the library.

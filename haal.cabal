@@ -38,6 +38,7 @@ library
       Haal.Dot
       Haal.EquivalenceOracle
       Haal.EquivalenceOracle.CombinedOracle
+      Haal.EquivalenceOracle.HSIMethod
       Haal.EquivalenceOracle.RandomWalk
       Haal.EquivalenceOracle.RandomWords
       Haal.EquivalenceOracle.WMethod
@@ -201,6 +202,7 @@ benchmark haal-bench
       Bench.Dot
       Bench.EndToEnd
       Bench.EquivalenceOracle
+      Bench.Hopcroft
       Paths_haal
   autogen-modules:
       Paths_haal
