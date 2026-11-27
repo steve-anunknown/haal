@@ -45,6 +45,8 @@ and this project adheres to the
 - `Haal.BlackBox.Automaton` likewise takes `i` and `o` back
   (`Automaton aut s i o`), since its superclass constraint is
   `SUL (aut s) i o Identity`, which needs them in scope the same way.
+- `Haal.EquivalenceOracle.testSuite` now requires `Ord o` instead of
+  just `Eq o`.
 
 ## 0.7.0.0 - 2026-10-10
 
